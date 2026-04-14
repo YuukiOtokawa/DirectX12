@@ -50,6 +50,5 @@ using namespace DirectX;
 
 namespace EngineCore {
 	HWND GetWindow();
-
 }
 

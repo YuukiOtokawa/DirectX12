@@ -10,6 +10,9 @@ namespace GUIController {
 		class ImGuiController {
 		private:
 			ImGuiID m_DockspaceID;
+
+			void DrawDockspace();
+
 		public:
 			ImGuiController() = default;
 			~ImGuiController() = default;
@@ -17,6 +20,7 @@ namespace GUIController {
 			void BeginFrame();
 			void EndFrame();
 			void Finalize();
+
 
 			LRESULT WindowProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		};

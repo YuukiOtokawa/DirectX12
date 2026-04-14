@@ -29,6 +29,7 @@ void ImGuiController::Initialize() {
 
     ImGuiStyle& style = ImGui::GetStyle();
     style.ItemSpacing.y = 8.0f;
+	style.WindowPadding = ImVec2(1.0f, 1.0f);
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
@@ -79,19 +80,7 @@ void ImGuiController::BeginFrame() {
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-	ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-	ImGui::SetNextWindowPos(mainViewport->WorkPos);
-	ImGui::SetNextWindowSize(mainViewport->WorkSize);
-
-	ImGui::Begin("DockSpace", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground);
-
-	m_DockspaceID = ImGui::GetID("DockSpace");
-
-	ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
-
-	ImGui::DockSpace(m_DockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
-
-	ImGui::End();
+    DrawDockspace();
 }
 
 void ImGuiController::EndFrame() {
@@ -116,6 +105,20 @@ void ImGuiController::Finalize() {
     ImGui_ImplDX12_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
+}
+
+void ImGuiController::DrawDockspace() {
+    ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(mainViewport->WorkPos);
+    ImGui::SetNextWindowSize(mainViewport->WorkSize);
+
+    ImGui::Begin("DockSpace", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground);
+
+    m_DockspaceID = ImGui::GetID("DockSpace");
+    ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
+    ImGui::DockSpace(m_DockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+
+    ImGui::End();
 }
 
 
