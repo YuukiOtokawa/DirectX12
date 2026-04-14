@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="DirectX12.vcxproj" Id="38a2ba2e-51a6-4ab4-99c9-943f84ce34c0" />
+  <Project Path="ImGui/ImGui.vcxproj" Id="76200ea9-6f73-49d3-9d5d-9ae9fcd35388" />
+</Solution>
