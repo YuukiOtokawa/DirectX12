@@ -6,6 +6,10 @@
 // ImGuiテスト用 早めに消す
 #include "ImGui/Code/imgui.h"
 
+#include "Resource/resource.h"
+
+#include "Code/GUIController/DefaultWindowController.h"
+
 namespace EngineManager {
 
 	GameManager* GameManager::m_Instance = nullptr;
@@ -57,10 +61,23 @@ namespace EngineManager {
 		ImGui::Checkbox("Window Visible", &show);
 		ImGui::End();
 
+		_WindowManager.Draw();
+		_WindowManager.DrawWindows();
+
 		m_ImGuiController.EndFrame();
 
 		m_RenderManger.DrawEnd();
 
+	}
+
+	void GameManager::EngineManagerMenuBarCommand(WPARAM wParam) {
+		switch (LOWORD(wParam)) {
+		case ID_WINDOW_NEWWINDOW:
+			_WindowManager.NewWindow<GUIController::EngineWindow::DefaultWindowController>()->Initialize();
+			break;
+		default:
+			break;
+		}
 	}
 
 

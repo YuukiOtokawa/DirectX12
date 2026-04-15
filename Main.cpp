@@ -2,6 +2,8 @@
 #include "Main.h"
 #include "GameManager.h"
 
+#include "Resource/resource.h"
+
 #include "Code/GUIController/ImGuiController.h"
 
 using namespace EngineManager;
@@ -19,7 +21,7 @@ bool        g_FullWindow;
 int         g_WindowWidth;
 int         g_WindowHeight;
 
-GameManager* g_GameManager = nullptr;
+std::unique_ptr<GameManager> g_GameManager = nullptr;
 
 namespace EngineCore {
 	HWND GetWindow() {
@@ -85,17 +87,21 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 		g_WindowHeight = rc.bottom - rc.top;
 
 		g_Window = CreateWindow(CLASS_NAME, APP_NAME, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-			rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, g_Instance, nullptr);
+			rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, g_Instance, nullptr);// TODO : ウィンドウサイズを記録できるようにする
 	}
-
-
 
 
 
 	{
 
 
-		g_GameManager = new GameManager();
+		g_GameManager = std::make_unique<GameManager>();
+
+		{
+			HMENU hMenu = LoadMenu(g_Instance, MAKEINTRESOURCE(IDR_MENU1));
+
+			SetMenu(g_Window, hMenu);
+		}
 
 
 		ShowWindow(g_Window, SW_SHOW);
@@ -174,7 +180,18 @@ void ChangeFullWindow()
 	}
 }
 
-
+void EngineMenuBarCommand(WPARAM wParam) {
+	switch (LOWORD(wParam)) {
+	case ID_WINDOW_NEWWINDOW:
+		g_GameManager->EngineManagerMenuBarCommand(wParam);
+		break;
+	case ID_FILE_EXIT:
+		DestroyWindow(g_Window);
+		break;
+	default:
+		break;
+	}
+}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -206,6 +223,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
+	case WM_COMMAND:
+		EngineMenuBarCommand(wParam);
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 

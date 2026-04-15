@@ -3,11 +3,13 @@
 
 #include "RenderManager.h"
 #include "Code/GUIController/ImGuiController.h"
+#include "Code/GUIController/WindowManager.h"
 
 namespace EngineManager {
 
 	using namespace Render;
 	using namespace GUIController::ImGuiControl;
+	using namespace GUIController::EngineWindow::WindowManager;
 
 	class GameManager {
 	private:
@@ -17,6 +19,8 @@ namespace EngineManager {
 		RenderManager	m_RenderManger;
 
 		ImGuiController m_ImGuiController;
+
+		WindowManager  _WindowManager;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }
@@ -34,6 +38,8 @@ namespace EngineManager {
 				return true;
 			return false;
 		}
+
+		void EngineManagerMenuBarCommand(WPARAM wParam);
 	};
 
 }

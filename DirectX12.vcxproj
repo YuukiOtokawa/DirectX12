@@ -106,11 +106,13 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>yaml-cpp\Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -122,33 +124,47 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>yaml-cpp\Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DDSTextureLoader12.cpp" />
+    <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="RenderManager.cpp" />
+    <ClCompile Include="YamlConfigLoader.cpp" />
+    <ClCompile Include="Code\GUIController\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3DX12.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
+    <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="RenderManager.h" />
     <ClInclude Include="Resource\resource.h" />
+    <ClInclude Include="YamlConfigLoader.h" />
+    <ClInclude Include="Code\GUIController\WindowManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="yaml-cpp\yaml-cpp.vcxproj">
+      <Project>{1160a550-1277-485a-9893-ebecae3ca89a}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

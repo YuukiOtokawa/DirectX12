@@ -5,4 +5,5 @@
   </Configurations>
   <Project Path="DirectX12.vcxproj" Id="38a2ba2e-51a6-4ab4-99c9-943f84ce34c0" />
   <Project Path="ImGui/ImGui.vcxproj" Id="76200ea9-6f73-49d3-9d5d-9ae9fcd35388" />
+  <Project Path="yaml-cpp/yaml-cpp.vcxproj" Id="1160a550-1277-485a-9893-ebecae3ca89a" />
 </Solution>
