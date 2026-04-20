@@ -54,6 +54,12 @@
     <ClCompile Include="Code\Component\Polygon\Renderer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Code\GameObject\GameObject.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Manager\ObjectManager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Render\D3DX12.h">
@@ -104,6 +110,12 @@
     <ClInclude Include="Code\Component\Polygon\Renderer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Code\GameObject\GameObject.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Manager\ObjectManager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc">
@@ -111,8 +123,10 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Code\Shader\Common.hlsl" />
-    <FxCompile Include="Code\Shader\UnlitPS.hlsl" />
     <FxCompile Include="Code\Shader\UnlitVS.hlsl" />
+    <FxCompile Include="Code\Shader\UnlitPS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Code\Shader\Common.hlsli" />
   </ItemGroup>
 </Project>

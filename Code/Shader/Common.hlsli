@@ -3,23 +3,23 @@
 
 cbuffer EnvConstantBuffer : register(b0)
 {
-    float4		LightDirection;
-    float4		LightColor;
+    float4 LightDirection;
+    float4 LightColor;
 };
 
 
 cbuffer CameraConstantBuffer : register(b1)
 {
-    float4x4    View;
-    float4x4    Projection;
-	float4      CameraPosition;
+    float4x4 View;
+    float4x4 Projection;
+    float4 CameraPosition;
 
 };
 
 
 cbuffer ObjectConstantBuffer : register(b2)
 {
-    float4x4    World;
+    float4x4 World;
 };
 
 
@@ -53,7 +53,7 @@ struct VS_INPUT
 struct PS_INPUT
 {
     float4 Position : SV_POSITION;
-	float4 WorldPosition : POSITION;
+    float4 WorldPosition : POSITION;
     float4 Normal : NORMAL;
     float2 TexCoord : TEXCOORD;
     float4 Color : COLOR;

@@ -142,11 +142,13 @@
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
+    <ClCompile Include="Code\GameObject\GameObject.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Code\Render\RenderManager.cpp" />
     <ClCompile Include="Code\Object.cpp" />
     <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
     <ClCompile Include="Code\Component\Polygon\Renderer.cpp" />
+    <ClCompile Include="Code\Manager\ObjectManager.cpp" />
     <ClCompile Include="YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
   </ItemGroup>
@@ -159,10 +161,12 @@
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
+    <ClInclude Include="Code\GameObject\GameObject.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Code\Render\RenderManager.h" />
     <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\Component\Polygon\Renderer.h" />
+    <ClInclude Include="Code\Manager\ObjectManager.h" />
     <ClInclude Include="Resource\resource.h" />
     <ClInclude Include="Code\Component\Polygon\SpriteRenderer.h" />
     <ClInclude Include="YamlConfigLoader.h" />
@@ -178,22 +182,25 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Code\Shader\Common.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </FxCompile>
     <FxCompile Include="Code\Shader\UnlitPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Code\Shader\UnlitVS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Code\Shader\Common.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

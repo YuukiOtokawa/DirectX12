@@ -1,4 +1,10 @@
-float4 main() : SV_TARGET
+#include "Common.hlsli"
+
+PS_OUTPUT main(PS_INPUT input)
 {
-	return float4(1.0f, 1.0f, 1.0f, 1.0f);
+    PS_OUTPUT output;
+    
+    output.Color = 1.0;
+    
+    return output;
 }
