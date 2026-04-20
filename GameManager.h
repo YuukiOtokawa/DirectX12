@@ -5,6 +5,9 @@
 #include "Code/GUIController/ImGuiController.h"
 #include "Code/GUIController/WindowManager.h"
 
+#include "Code/Component/Polygon/SpriteRenderer.h"
+using namespace EngineCore::Object::Component::Renderer;
+
 namespace EngineManager {
 
 	using namespace Render;
@@ -21,6 +24,8 @@ namespace EngineManager {
 		ImGuiController m_ImGuiController;
 
 		WindowManager  _WindowManager;
+
+		SpriteRenderer spriteRenderer;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }

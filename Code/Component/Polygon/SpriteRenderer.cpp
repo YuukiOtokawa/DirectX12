@@ -36,6 +36,8 @@ SpriteRenderer::SpriteRenderer() {
 	buffer[3].TexCoord = { 1.0f,1.0f };
 
 	_VertexBuffer->Resource->Unmap(0, nullptr);
+
+	_Texture = renderManager->LoadTexture("Assets/field004.dds");
 }
 
 void SpriteRenderer::Update() {
@@ -70,9 +72,12 @@ void SpriteRenderer::Draw() {
 	}
 
 	renderManager->SetVertexBuffer(_VertexBuffer.get());
+
+	renderManager->SetTexture(Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, _Texture.get());
+
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	renderManager->SetPipelineState("unlit");
+	renderManager->SetPipelineState("Unlit");
 
 	renderManager->GetGraphicsCommandList()->DrawInstanced(4, 1, 0, 0);
 }

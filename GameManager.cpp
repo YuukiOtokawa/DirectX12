@@ -49,6 +49,9 @@ namespace EngineManager {
 		static bool show = true;
 
 		m_RenderManger.DrawBegin();
+
+		spriteRenderer.Draw();
+
 		m_ImGuiController.BeginFrame();
 
 		if (show) {

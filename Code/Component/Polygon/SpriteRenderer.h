@@ -9,6 +9,7 @@ namespace EngineCore::Object::Component::Renderer {
         public Renderer {
 
 		std::unique_ptr<VERTEX_BUFFER> _VertexBuffer;
+		std::unique_ptr<TEXTURE> _Texture;
     public:
         SpriteRenderer();
 
