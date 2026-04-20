@@ -1,13 +1,11 @@
 #pragma once
 #include "ImGuiWindowController.h"
 
-namespace GUIController {
-    namespace EngineWindow {
-		using namespace ImGuiControl;
+namespace GUIController::Window {
 
-        class DefaultWindowController : public ImGuiWindowController {
+        class DefaultWindowController : public Gui::ImGuiWindowController {
         public:
-			DefaultWindowController() : ImGuiWindowController("Default Window") {}
+			DefaultWindowController() : Gui::ImGuiWindowController("Default Window") {}
 
             void Initialize() override;
             void Update() override;
@@ -16,6 +14,5 @@ namespace GUIController {
             void Finalize() override;
         };
 
-    }
 }
 

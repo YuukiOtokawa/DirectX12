@@ -1,7 +1,7 @@
 #pragma once
 #include "DefaultWindowController.h"
 
-namespace GUIController::EngineWindow::ImGuiControl {
+namespace GUIController::Window {
     class HierarchyWindowController :
         public DefaultWindowController {
 

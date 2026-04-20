@@ -2,7 +2,7 @@
 
 #include "Component.h"
 
-namespace EngineCore::Object::Component::Renderer {
+namespace EngineCore::Component {
     class Renderer :
         public Component {
             

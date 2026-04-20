@@ -11,8 +11,7 @@
 #include "RenderManager.h"
 
 using namespace EngineCore;
-using namespace GUIController;
-using namespace ImGuiControl;
+using namespace GUIController::Gui;
 
 void ImGuiController::Initialize() {
 

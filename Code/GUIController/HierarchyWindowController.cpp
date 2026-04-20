@@ -1,5 +1,7 @@
 #include "HierarchyWindowController.h"
 
-void GUIController::EngineWindow::ImGuiControl::HierarchyWindowController::Draw() {
+#include "../Manager/ObjectManager.h"
+
+void GUIController::Window::HierarchyWindowController::Draw() {
 	
 }

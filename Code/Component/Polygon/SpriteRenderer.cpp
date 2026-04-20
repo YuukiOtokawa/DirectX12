@@ -1,11 +1,9 @@
 #include "SpriteRenderer.h"
-#include <Windows.h>
+#include "Main.h"
 
-#include <d3d12.h>
-#include <DirectXMath.h>
+using namespace EngineCore::Component;
+using namespace Render::RenderStructure;
 using namespace DirectX;
-
-using namespace EngineCore::Object::Component::Renderer;
 
 SpriteRenderer::SpriteRenderer() {
 	auto renderManager = Render::RenderManager::GetInstance();

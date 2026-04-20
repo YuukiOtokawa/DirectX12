@@ -73,7 +73,7 @@ namespace EngineManager {
 	void GameManager::EngineManagerMenuBarCommand(WPARAM wParam) {
 		switch (LOWORD(wParam)) {
 		case ID_WINDOW_NEWWINDOW:
-			_WindowManager.NewWindow<GUIController::EngineWindow::DefaultWindowController>()->Initialize();
+			_WindowManager.NewWindow<GUIController::Window::DefaultWindowController>()->Initialize();
 			break;
 		default:
 			break;
@@ -82,6 +82,7 @@ namespace EngineManager {
 
 
 }
+
 
 
 

@@ -1,17 +1,17 @@
 #include "DefaultWindowController.h"
 
-using namespace GUIController::EngineWindow;
+using namespace GUIController::Window;
 
 void DefaultWindowController::Initialize() {}
 
 void DefaultWindowController::Update() {}
 
 void DefaultWindowController::Draw() {
-	ImGui::Text("This is Default Window");
+	::ImGui::Text("This is Default Window");
 }
 
-void GUIController::EngineWindow::DefaultWindowController::AfterDraw() {
-	ImGui::End();
+void GUIController::Window::DefaultWindowController::AfterDraw() {
+	::ImGui::End();
 }
 
 void DefaultWindowController::Finalize() {}

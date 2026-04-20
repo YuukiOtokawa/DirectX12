@@ -29,11 +29,13 @@
 #include <d3d12shader.h>
 #include <dxgi1_4.h>
 #include <wrl/client.h>
-using namespace Microsoft::WRL;
-
-
 #include <DirectXMath.h>
-using namespace DirectX;
+
+using Microsoft::WRL::ComPtr;
+using DirectX::XMFLOAT2;
+using DirectX::XMFLOAT3;
+using DirectX::XMFLOAT4;
+using DirectX::XMFLOAT4X4;
 
 
 #include <Xinput.h>

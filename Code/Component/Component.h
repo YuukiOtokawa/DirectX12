@@ -2,10 +2,10 @@
 
 #include "Object.h"
 
-namespace EngineCore::Object::Component {
+namespace EngineCore::Component {
 	class Component : public EngineCore::Object::Object {
 	public:
-		void Update() override;
+		virtual void Update();
 	};
 
 }

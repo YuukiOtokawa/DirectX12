@@ -5,8 +5,7 @@
 #include <cstdint>
 #include <string>
 
-namespace GUIController {
-	namespace ImGuiControl {
+namespace GUIController::Gui {
 
 		class ImGuiWindowController {
 			bool _isActive = true;
@@ -31,7 +30,6 @@ namespace GUIController {
 			std::string GetName() { return _WindowName; }
 			bool* GetIsActive() { return &_isActive; }
 		};
-	}
 }
 
 

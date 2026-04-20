@@ -5,10 +5,14 @@
 #include "ImGuiWindowController.h"
 #include <Windows.h>
 
-using namespace GUIController::EngineWindow::WindowManager;
-using namespace GUIController::ImGuiControl;
+#include "HierarchyWindowController.h"
 
-void WindowManager::Initialize() {}
+using namespace GUIController::Window;
+using namespace GUIController::Gui;
+
+void WindowManager::Initialize() {
+	NewWindow<HierarchyWindowController>();
+}
 
 void WindowManager::Draw() {
 	ImGui::Begin("WindowManager");
@@ -28,7 +32,7 @@ void WindowManager::Draw() {
 	ImGui::End();
 }
 
-void GUIController::EngineWindow::WindowManager::WindowManager::DrawWindows() {
+void GUIController::Window::WindowManager::DrawWindows() {
 	for (auto& window : _Windows) {
 		if (window && *window->GetIsActive()) {
 			window->DrawSystem();

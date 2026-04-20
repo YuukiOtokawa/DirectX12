@@ -4,7 +4,7 @@
 
 namespace Render {
 
-	namespace RenderStructure {
+	namespace Types {
 		struct VERTEX_3D
 		{
 			XMFLOAT3 Position;
@@ -26,7 +26,7 @@ namespace Render {
 
 
 
-		// 16*4ƒoƒCƒg‹«ŠE///////////////////////
+		// 16*4ãƒã‚¤ãƒˆå¢ƒç•Œ///////////////////////
 
 		struct ENV_CONSTANT
 		{
@@ -54,11 +54,6 @@ namespace Render {
 		{
 			MATERIAL Material;
 		};
-
-
-
-
-
 
 
 		struct TEXTURE
@@ -105,7 +100,19 @@ namespace Render {
 
 #pragma region RenderManager
 
-	using namespace RenderStructure;
+	namespace RenderStructure = Types;
+
+	using Types::VERTEX_3D;
+	using Types::MATERIAL;
+	using Types::ENV_CONSTANT;
+	using Types::CAMERA_CONSTANT;
+	using Types::OBJECT_CONSTANT;
+	using Types::SUBSET_CONSTANT;
+	using Types::TEXTURE;
+	using Types::CONSTANT_BUFFER;
+	using Types::RENDER_TARGET;
+	using Types::VERTEX_BUFFER;
+	using Types::INDEX_BUFFER;
 
 	class RenderManager
 	{
@@ -113,18 +120,11 @@ namespace Render {
 	private:
 		static RenderManager* m_Instance;
 
-
-
-
 		HWND								m_WindowHandle;
-
 
 		bool								m_WindowMode;
 		int									m_BackBufferWidth;
 		int									m_BackBufferHeight;
-
-
-
 
 		UINT64								m_Frame[2];
 		UINT								m_RTIndex;
@@ -140,9 +140,6 @@ namespace Render {
 
 		HANDLE								m_FenceEvent;
 
-
-
-
 		ComPtr<ID3D12Resource>				m_RenderTarget[2];
 		ComPtr<ID3D12DescriptorHeap>		m_RenderTargetDescriptorHeap;
 		D3D12_CPU_DESCRIPTOR_HANDLE			m_RenderTargetHandle[2];
@@ -151,14 +148,8 @@ namespace Render {
 		ComPtr<ID3D12DescriptorHeap>		m_DepthBufferDescriptorHeap;
 		D3D12_CPU_DESCRIPTOR_HANDLE			m_DepthBufferHandle;
 
-
-
-
-
 		D3D12_RECT							m_ScissorRect;
 		D3D12_VIEWPORT						m_Viewport;
-
-
 
 		ComPtr<ID3D12DescriptorHeap>		m_SRVDescriptorHeap;
 		std::list<unsigned int>				m_SRVDescriptorPool;
@@ -168,9 +159,6 @@ namespace Render {
 		std::list<unsigned int>				m_RTVDescriptorPool;
 		static const unsigned int			RTV_DESCRIPTOR_MAX = 1000;
 
-
-
-
 		static const unsigned int			CONSTANT_BUFFER_SIZE = 512;
 		static const unsigned int			CONSTANT_BUFFER_MAX = 1000;
 		ComPtr<ID3D12Resource>				m_ConstantBuffer[2];
@@ -178,25 +166,17 @@ namespace Render {
 		unsigned int						m_ConstantBufferView[2][CONSTANT_BUFFER_MAX];
 		unsigned int						m_ConstantBufferIndex[2];
 
-
-
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
-
 
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
 		ComPtr<ID3D12PipelineState> CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets);
 
-
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
-
 
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
 
-
 		void Init();
-
-
 
 	public:
 
@@ -220,30 +200,20 @@ namespace Render {
 		int GetBackBufferWidth() { return m_BackBufferWidth; }
 		int GetBackBufferHeight() { return m_BackBufferHeight; }
 
-
-
 		RenderManager();
 		~RenderManager();
-
 
 		void WaitGPU();
 
 		void DrawBegin();
 		void DrawEnd();
 
-
 		void DrawScreen();
-
-
 
 		void ReleaseShaderResourceView(unsigned int SRVIndex);
 		void ReleaseRenderTargetView(unsigned int SRVIndex);
 
-
-
-
-
-		//ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg
+		//ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
 		std::unique_ptr<RENDER_TARGET> CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, unsigned int MipLevel = 1);
 
 		void CreateRenderTarget();
@@ -251,8 +221,7 @@ namespace Render {
 		void CleanUpRenderTarget();
 		void Resize(unsigned int Width, unsigned int Height);
 
-
-		//’è”ƒoƒbƒtƒ@
+		//å®šæ•°ãƒãƒƒãƒ•ã‚¡
 		enum class CONSTANT_TYPE
 		{
 			ENV,
@@ -262,10 +231,7 @@ namespace Render {
 		};
 		void SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size);
 
-
-
-
-		//ƒeƒNƒXƒ`ƒƒ
+		//ãƒ†ã‚¯ã‚¹ãƒãƒ£
 		enum class TEXTURE_TYPE
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
@@ -274,24 +240,17 @@ namespace Render {
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
 		void SetTexture(TEXTURE_TYPE Type, const RENDER_TARGET* Texture);
 
-
-
-
-		//’¸“_ƒoƒbƒtƒ@
+		//é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡
 		std::unique_ptr<VERTEX_BUFFER> CreateVertexBuffer(unsigned int Stride, unsigned int Size);
 		void SetVertexBuffer(const VERTEX_BUFFER* VertexBuffer);
 
-
-		//ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@
+		//ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡
 		std::unique_ptr<INDEX_BUFFER> CreateIndexBuffer(unsigned int Size);
 		void SetIndexBuffer(const INDEX_BUFFER* IndexBuffer);
 
-
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
-
 		void SetPipelineState(const char* PiplineName);
-
 
 		ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return m_SRVDescriptorHeap.Get(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetSRVDescriptorCPUHandle() {
@@ -300,21 +259,8 @@ namespace Render {
 		}
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(); }
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
-
-
 	};
 
 #pragma endregion RenderManager
 
 }
-
-
-
-
-
-
-
-
-
-
-

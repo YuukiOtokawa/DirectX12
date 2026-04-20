@@ -1,4 +1,4 @@
 #include "Component.h"
 
-void EngineCore::Object::Component::Component::Update() {
+void EngineCore::Component::Component::Update() {
 }

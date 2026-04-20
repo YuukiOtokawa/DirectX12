@@ -4,23 +4,22 @@
 #include "RenderManager.h"
 #include "Code/GUIController/ImGuiController.h"
 #include "Code/GUIController/WindowManager.h"
+#include "Code/Manager/ObjectManager.h"
 
 namespace EngineManager {
-
-	using namespace Render;
-	using namespace GUIController::ImGuiControl;
-	using namespace GUIController::EngineWindow::WindowManager;
 
 	class GameManager {
 	private:
 
 		static GameManager* m_Instance;
 
-		RenderManager	m_RenderManger;
+		Render::RenderManager	m_RenderManger;
 
-		ImGuiController m_ImGuiController;
+		GUIController::Gui::ImGuiController m_ImGuiController;
 
-		WindowManager  _WindowManager;
+		GUIController::Window::WindowManager  _WindowManager;
+
+		EngineCore::Manager::ObjectManager   _ObjectManager;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }

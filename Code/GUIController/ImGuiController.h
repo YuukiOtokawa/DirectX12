@@ -3,8 +3,7 @@
 
 #include "../../ImGui/Code/imgui.h"
 
-namespace GUIController {
-	namespace ImGuiControl {
+namespace GUIController::Gui {
 
 
 		class ImGuiController {
@@ -25,6 +24,9 @@ namespace GUIController {
 			LRESULT WindowProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 		};
 
-	}
+}
+
+namespace GUIController {
+	namespace ImGuiControl = Gui;
 }
 

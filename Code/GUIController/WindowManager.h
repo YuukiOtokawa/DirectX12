@@ -6,14 +6,11 @@
 #include <utility>
 
 #include "ImGuiWindowController.h"
-using namespace GUIController::ImGuiControl;
 
-namespace GUIController {
-	namespace EngineWindow {
-		namespace WindowManager {
+namespace GUIController::Window {
 
 			class WindowManager {
-				std::vector<std::shared_ptr<ImGuiWindowController>> _Windows;
+				std::vector<std::shared_ptr<Gui::ImGuiWindowController>> _Windows;
 
 			public:
 				template<class T, class... Args>
@@ -28,15 +25,20 @@ namespace GUIController {
 
 			template<class T, class... Args>
 			inline T* WindowManager::NewWindow(Args&&... args) {
-				static_assert(std::is_base_of<ImGuiWindowController, T>::value,
-					"T must derive from ImGuiWindowController");
+				static_assert(std::is_base_of<Gui::ImGuiWindowController, T>::value,
+					"T must derive from GUIController::Gui::ImGuiWindowController");
 
 				auto newWindow = std::make_shared<T>(std::forward<Args>(args)...);
 				_Windows.push_back(newWindow);
 				return newWindow.get();
 			}
 
-		}
+}
+
+namespace GUIController {
+	namespace EngineWindow {
+		namespace ImGuiControl = ::GUIController::Gui;
+		namespace WindowManager = ::GUIController::Window;
 	}
 }
 

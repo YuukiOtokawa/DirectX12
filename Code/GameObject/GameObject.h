@@ -3,18 +3,22 @@
 
 #include <string>
 
-namespace EngineCore::Object::GameObject {
+namespace EngineCore::GameObject {
     class GameObject :
-        public Object {
+        public EngineCore::Object::Object {
 
         std::string _Name;
     
 	public:
         GameObject();
 
-		void Update() override;
+		virtual void Update();
         void Draw();
     };
 
+}
+
+namespace EngineCore::Object {
+	namespace GameObject = ::EngineCore::GameObject;
 }
 

@@ -3,6 +3,7 @@
 
 #include "D3DX12.h"
 #include "DDSTextureLoader12.h"
+using namespace DirectX;
 
 using namespace EngineCore;
 using namespace Render;

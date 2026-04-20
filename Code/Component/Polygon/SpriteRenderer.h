@@ -3,12 +3,11 @@
 #include "Renderer.h"
 #include "RenderManager.h"
 #include <memory>
-namespace EngineCore::Object::Component::Renderer {
-    using namespace Render::RenderStructure;
+namespace EngineCore::Component {
     class SpriteRenderer :
         public Renderer {
 
-		std::unique_ptr<VERTEX_BUFFER> _VertexBuffer;
+		std::unique_ptr<Render::Types::VERTEX_BUFFER> _VertexBuffer;
     public:
         SpriteRenderer();
 
