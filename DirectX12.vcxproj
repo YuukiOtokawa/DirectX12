@@ -143,6 +143,7 @@
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
     <ClCompile Include="Code\GameObject\GameObject.cpp" />
+    <ClCompile Include="Code\GUIController\HierarchyWindowController.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Code\Render\RenderManager.cpp" />
     <ClCompile Include="Code\Object.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
     <ClInclude Include="Code\GameObject\GameObject.h" />
+    <ClInclude Include="Code\GUIController\HierarchyWindowController.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Code\Render\RenderManager.h" />
     <ClInclude Include="Code\Object.h" />
