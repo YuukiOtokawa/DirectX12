@@ -5,7 +5,9 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
-EngineCore::Object::Component::Renderer::SpriteRenderer::SpriteRenderer() {
+using namespace EngineCore::Object::Component::Renderer;
+
+SpriteRenderer::SpriteRenderer() {
 	auto renderManager = Render::RenderManager::GetInstance();
 
 	_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX_3D), 4);
@@ -36,10 +38,10 @@ EngineCore::Object::Component::Renderer::SpriteRenderer::SpriteRenderer() {
 	_VertexBuffer->Resource->Unmap(0, nullptr);
 }
 
-void EngineCore::Object::Component::Renderer::SpriteRenderer::Update() {
+void SpriteRenderer::Update() {
 }
 
-void EngineCore::Object::Component::Renderer::SpriteRenderer::Draw() {
+void SpriteRenderer::Draw() {
 	auto renderManager = Render::RenderManager::GetInstance();
 	
 	//マトリクス設定

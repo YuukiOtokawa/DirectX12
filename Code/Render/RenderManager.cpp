@@ -524,6 +524,13 @@ void RenderManager::Init()
 		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
+	// パイプライン生成
+	{
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
+
+		m_PipelineState["Unlit"] = CreatePipeline("UnlitVS.cso", "UnlitPS.cso", RTVFormats, 1);
+	}
+
 }
 
 
