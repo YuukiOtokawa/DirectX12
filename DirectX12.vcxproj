@@ -102,11 +102,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>yaml-cpp\Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,10 +122,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>yaml-cpp\Code;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,26 +136,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Code\Component\Component.cpp" />
     <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="RenderManager.cpp" />
+    <ClCompile Include="Code\Render\RenderManager.cpp" />
+    <ClCompile Include="Code\Object.cpp" />
+    <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
+    <ClCompile Include="Code\Component\Polygon\Renderer.cpp" />
     <ClCompile Include="YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3DX12.h" />
+    <ClInclude Include="Code\Utility\VectorClass.h" />
+    <ClInclude Include="Code\Render\D3DX12.h" />
+    <ClInclude Include="Code\Component\Component.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
     <ClInclude Include="Main.h" />
-    <ClInclude Include="RenderManager.h" />
+    <ClInclude Include="Code\Render\RenderManager.h" />
+    <ClInclude Include="Code\Object.h" />
+    <ClInclude Include="Code\Component\Polygon\Renderer.h" />
     <ClInclude Include="Resource\resource.h" />
+    <ClInclude Include="Code\Component\Polygon\SpriteRenderer.h" />
     <ClInclude Include="YamlConfigLoader.h" />
     <ClInclude Include="Code\GUIController\WindowManager.h" />
   </ItemGroup>
@@ -165,6 +176,24 @@
       <Project>{1160a550-1277-485a-9893-ebecae3ca89a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Code\Shader\Common.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\UnlitPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\UnlitVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

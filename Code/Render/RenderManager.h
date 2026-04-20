@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Main.h"
+
 namespace Render {
+
 	namespace RenderStructure {
 		struct VERTEX_3D
 		{

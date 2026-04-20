@@ -8,7 +8,7 @@
 
 #pragma comment(lib, "x64/Debug/imgui.lib")
 
-#include "../../RenderManager.h"
+#include "RenderManager.h"
 
 using namespace EngineCore;
 using namespace GUIController;

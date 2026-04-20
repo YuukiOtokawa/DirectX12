@@ -4,7 +4,9 @@
 #include <stdint.h>
 
 #if defined(_WIN32)
-#if defined(yaml_cpp_EXPORTS)
+#if defined(YAML_CPP_STATIC_DEFINE)
+#define YAML_C_API
+#elif defined(yaml_cpp_EXPORTS)
 #define YAML_C_API __declspec(dllexport)
 #else
 #define YAML_C_API __declspec(dllimport)
@@ -44,4 +46,3 @@ YAML_C_API size_t yamlc_get_last_error(char* out_buffer, size_t out_buffer_size)
 #ifdef __cplusplus
 }
 #endif
-
