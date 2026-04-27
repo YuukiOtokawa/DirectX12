@@ -5,7 +5,9 @@
 #include "Code/GUIController/ImGuiController.h"
 #include "Code/GUIController/WindowManager.h"
 
+#include "Code/Component/Camera/Camera.h"
 #include "Code/Component/Polygon/SpriteRenderer.h"
+#include "Code/Component/Polygon/PolygonRenderer.h"
 using namespace EngineCore::Object::Component::Renderer;
 
 namespace EngineManager {
@@ -25,7 +27,9 @@ namespace EngineManager {
 
 		WindowManager  _WindowManager;
 
+		Camera _Camera;
 		SpriteRenderer spriteRenderer;
+		PolygonRenderer polygonRenderer;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }

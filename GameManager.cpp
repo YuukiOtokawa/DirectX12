@@ -50,6 +50,8 @@ namespace EngineManager {
 
 		m_RenderManger.DrawBegin();
 
+		_Camera.Draw();
+		polygonRenderer.Draw();
 		spriteRenderer.Draw();
 
 		m_ImGuiController.BeginFrame();
@@ -62,6 +64,16 @@ namespace EngineManager {
 
 		ImGui::Begin("Settings");
 		ImGui::Checkbox("Window Visible", &show);
+
+		XMFLOAT3 position = _Camera.GetPosition();
+		if (ImGui::DragFloat3("Camera Position", &position.x)) {
+			_Camera.SetPosition(position);
+		}
+		XMFLOAT3 target = _Camera.GetTarget();
+		if (ImGui::DragFloat3("Camera Target", &target.x)) {
+			_Camera.SetTarget(target);
+		}
+
 		ImGui::End();
 
 		_WindowManager.Draw();
