@@ -13,7 +13,7 @@ namespace EngineCore::Manager {
 
 		std::vector<std::unique_ptr<EngineCore::GameObject::GameObject>> _Objects;
 
-
+		EngineCore::GameObject::GameObject* _SelectedObject = nullptr;
 
 	public:
 		static ObjectManager& GetInstance() {
@@ -48,6 +48,14 @@ namespace EngineCore::Manager {
 				}
 			}
 			return false;
+		}
+
+		void SelectObject(EngineCore::GameObject::GameObject* object) {
+			_SelectedObject = object;
+		}
+
+		EngineCore::GameObject::GameObject* GetSelectedObject() const {
+			return _SelectedObject;
 		}
 	};
 

@@ -6,12 +6,14 @@
 #include <Windows.h>
 
 #include "HierarchyWindowController.h"
+#include "InspectorWindowController.h"
 
 using namespace GUIController::Window;
 using namespace GUIController::Gui;
 
 void WindowManager::Initialize() {
 	NewWindow<HierarchyWindowController>();
+	NewWindow<InspectorWindowController>();
 }
 
 void WindowManager::Draw() {

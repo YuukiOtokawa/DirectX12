@@ -12,6 +12,15 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 	auto& objects = ObjectManager::GetInstance().GetObjects();
 
 	for (auto& object : objects) {
-		ImGui::Text("%s", object->GetName().c_str());
+		if (object.get() == ObjectManager::GetInstance().GetSelectedObject()) {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
+		}
+		else {
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+		}
+		if (ImGui::Button(object->GetName().c_str())) {
+			ObjectManager::GetInstance().SelectObject(object.get());
+		}
+		ImGui::PopStyleColor();
 	}
 }

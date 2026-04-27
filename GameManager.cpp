@@ -52,15 +52,15 @@ namespace EngineManager {
 		m_RenderManger.DrawBegin();
 		m_ImGuiController.BeginFrame();
 
-		if (show) {
-			ImGui::Begin("Window", &show);
-			ImGui::Text("Hello, world!");
-			ImGui::End();
-		}
+		//if (show) {
+		//	ImGui::Begin("Window", &show);
+		//	ImGui::Text("Hello, world!");
+		//	ImGui::End();
+		//}
 
-		ImGui::Begin("Settings");
-		ImGui::Checkbox("Window Visible", &show);
-		ImGui::End();
+		//ImGui::Begin("Settings");
+		//ImGui::Checkbox("Window Visible", &show);
+		//ImGui::End();
 
 		_WindowManager.Draw();
 		_WindowManager.DrawWindows();

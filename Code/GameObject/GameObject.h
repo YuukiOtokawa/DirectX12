@@ -11,12 +11,14 @@ namespace EngineCore::GameObject {
         std::string _Name = "object";
     
 	public:
+
         GameObject();
 
 		virtual void Update();
         void Draw();
 
 		bool IsActive() const { return _IsActive; }
+		void SetActive(bool active) { _IsActive = active; }
 		std::string GetName() const { return _Name; }
 		void SetName(const std::string& name);	
     };
