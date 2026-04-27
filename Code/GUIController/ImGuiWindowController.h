@@ -8,10 +8,14 @@
 namespace GUIController::Gui {
 
 		class ImGuiWindowController {
+
+		protected:
 			bool _isActive = true;
 			std::string _WindowName;
 
 			uint32_t _WindowID = 0;
+
+		private:
 			static uint32_t _WindowIDCounter;
 		public:
 			ImGuiWindowController() : _WindowName("Window") {

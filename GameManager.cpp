@@ -32,6 +32,7 @@ namespace EngineManager {
 	void GameManager::Initialize() {
 		m_ImGuiController.Initialize();
 
+		_WindowManager.Initialize();
 	}
 
 

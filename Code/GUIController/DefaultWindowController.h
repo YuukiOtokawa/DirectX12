@@ -5,7 +5,9 @@ namespace GUIController::Window {
 
         class DefaultWindowController : public Gui::ImGuiWindowController {
         public:
-			DefaultWindowController() : Gui::ImGuiWindowController("Default Window") {}
+			DefaultWindowController() {
+				_WindowName = "Default Window";
+            }
 
             void Initialize() override;
             void Update() override;

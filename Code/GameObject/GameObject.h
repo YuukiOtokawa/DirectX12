@@ -7,13 +7,18 @@ namespace EngineCore::GameObject {
     class GameObject :
         public EngineCore::Object::Object {
 
-        std::string _Name;
+		bool _IsActive = true;
+        std::string _Name = "object";
     
 	public:
         GameObject();
 
 		virtual void Update();
         void Draw();
+
+		bool IsActive() const { return _IsActive; }
+		std::string GetName() const { return _Name; }
+		void SetName(const std::string& name);	
     };
 
 }
