@@ -1,0 +1,15 @@
+-Wall
+-Wextra
+-Wno-unknown-pragmas
+-Wno-unused
+-Wno-unused-parameter
+-Wno-sign-compare
+-std=gnu++17
+-Iatcoder-library/
+-IC:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include
+
+InlayHints:
+    Enabled: Yes
+    ParameterNames: Yes
+    DeducedTypes: Yes
+    Dessignators: Yes

@@ -12,6 +12,10 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 	auto& objects = ObjectManager::GetInstance().GetObjects();
 
 	for (auto& object : objects) {
+		auto isActive = object->IsActive();
+		ImGui::Checkbox(("###Active" + object->GetName()).c_str(), &isActive);
+		object->SetActive(isActive);
+		ImGui::SameLine();
 		if (object.get() == ObjectManager::GetInstance().GetSelectedObject()) {
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
 		}
