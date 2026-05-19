@@ -142,8 +142,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Code\Component\Camera\Camera.cpp" />
     <ClCompile Include="Code\Component\Component.cpp" />
+    <ClCompile Include="Code\Component\Transform\Transform.cpp" />
+    <ClCompile Include="Code\GUIController\GraphicsDebugWindowController.cpp" />
     <ClCompile Include="Code\GUIController\InspectorWindowController.cpp" />
+    <ClCompile Include="Code\Manager\ComponentFactory.cpp" />
     <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="GameManager.cpp" />
@@ -161,8 +165,13 @@
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Code\Component\Camera\Camera.h" />
+    <ClInclude Include="Code\Component\Polygon\MeshFilter.h" />
     <ClInclude Include="Code\Component\Transform\Transform.h" />
+    <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h" />
     <ClInclude Include="Code\GUIController\InspectorWindowController.h" />
+    <ClInclude Include="Code\Manager\ComponentFactory.h" />
+    <ClInclude Include="Code\Utility\ObjectIDManipulator.h" />
     <ClInclude Include="Code\Utility\VectorClass.h" />
     <ClInclude Include="Code\Render\D3DX12.h" />
     <ClInclude Include="Code\Component\Component.h" />
@@ -193,6 +202,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Code\Shader\DeferredPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="Code\Shader\UnlitPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
@@ -208,6 +223,12 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\DeferredVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

@@ -26,7 +26,7 @@ namespace Render {
 
 
 
-		// 16*4バイト境界///////////////////////
+		// 16*4�o�C�g���E///////////////////////
 
 		struct ENV_CONSTANT
 		{
@@ -173,6 +173,8 @@ namespace Render {
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
+		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
+
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
 
@@ -207,13 +209,14 @@ namespace Render {
 
 		void DrawBegin();
 		void DrawEnd();
+		void FrameEnd();
 
 		void DrawScreen();
 
 		void ReleaseShaderResourceView(unsigned int SRVIndex);
 		void ReleaseRenderTargetView(unsigned int SRVIndex);
 
-		//レンダーターゲット
+		//�����_�[�^�[�Q�b�g
 		std::unique_ptr<RENDER_TARGET> CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, unsigned int MipLevel = 1);
 
 		void CreateRenderTarget();
@@ -221,7 +224,7 @@ namespace Render {
 		void CleanUpRenderTarget();
 		void Resize(unsigned int Width, unsigned int Height);
 
-		//定数バッファ
+		//�萔�o�b�t�@
 		enum class CONSTANT_TYPE
 		{
 			ENV,
@@ -231,7 +234,7 @@ namespace Render {
 		};
 		void SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size);
 
-		//テクスチャ
+		//�e�N�X�`��
 		enum class TEXTURE_TYPE
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
@@ -240,11 +243,11 @@ namespace Render {
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
 		void SetTexture(TEXTURE_TYPE Type, const RENDER_TARGET* Texture);
 
-		//頂点バッファ
+		//���_�o�b�t�@
 		std::unique_ptr<VERTEX_BUFFER> CreateVertexBuffer(unsigned int Stride, unsigned int Size);
 		void SetVertexBuffer(const VERTEX_BUFFER* VertexBuffer);
 
-		//インデックスバッファ
+		//�C���f�b�N�X�o�b�t�@
 		std::unique_ptr<INDEX_BUFFER> CreateIndexBuffer(unsigned int Size);
 		void SetIndexBuffer(const INDEX_BUFFER* IndexBuffer);
 
@@ -259,6 +262,8 @@ namespace Render {
 		}
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(); }
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
+
+		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
 	};
 
 #pragma endregion RenderManager

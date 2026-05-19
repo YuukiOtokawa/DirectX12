@@ -7,6 +7,7 @@
 
 #include "HierarchyWindowController.h"
 #include "InspectorWindowController.h"
+#include "GraphicsDebugWindowController.h"
 
 using namespace GUIController::Window;
 using namespace GUIController::Gui;
@@ -14,6 +15,7 @@ using namespace GUIController::Gui;
 void WindowManager::Initialize() {
 	NewWindow<HierarchyWindowController>();
 	NewWindow<InspectorWindowController>();
+	NewWindow<GraphicsDebugWindowController>();
 }
 
 void WindowManager::Draw() {

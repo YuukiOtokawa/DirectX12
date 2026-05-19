@@ -19,7 +19,7 @@ namespace EngineManager {
 
 		GUIController::Window::WindowManager  _WindowManager;
 
-		EngineCore::Manager::ObjectManager   _ObjectManager;
+		EngineCore::Manager::ObjectManager* _ObjectManager;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }

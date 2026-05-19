@@ -1,60 +1,65 @@
 #pragma once
 
-#include "Object.h"
-#include "GameObject/GameObject.h"
 #include <vector>
 #include <memory>
+#include <string>
+
+#include "../Utility/ObjectIDManipulator.h"
+
+#include "../GameObject/GameObject.h"
+
+namespace EngineCore::General {
+	class GameObject;
+}
 
 namespace EngineCore::Manager {
-	
+	using namespace General;
 
 	class ObjectManager {
-		static ObjectManager _Instance;
+	public:
+		struct GameObjectEntry {
+			std::unique_ptr<General::GameObject> object;
+			uint32_t generation;
 
-		std::vector<std::unique_ptr<EngineCore::GameObject::GameObject>> _Objects;
+		};
 
-		EngineCore::GameObject::GameObject* _SelectedObject = nullptr;
+	private:
+
+		static ObjectManager* _Instance;
+
+		std::vector<GameObjectEntry> _Objects;
+		std::vector<Index> _FreeEntries;
+
+		General::GameObject* _SelectedObject = nullptr;
 
 	public:
-		static ObjectManager& GetInstance() {
+		
+		static ObjectManager* GetInstance() {
+			if (!_Instance) {
+				_Instance = new ObjectManager();
+			}
 			return _Instance;
 		}
 
-		EngineCore::GameObject::GameObject* CreateObject() {
-			std::unique_ptr<EngineCore::GameObject::GameObject> object = std::make_unique<EngineCore::GameObject::GameObject>();
-			auto raw = object.get();
-			AddObject(std::move(object));
-			return raw;
-		}
+		General::GameObject* CreateObject();
 
-		void AddObject(std::unique_ptr<EngineCore::GameObject::GameObject> object) {
-			if (!object) {
-				return;
-			}
+		void AddObject(std::unique_ptr<General::GameObject> object);
 
-			object->SetName(object->GetName());
+		void RemoveObject(const uint64_t id);
 
-			_Objects.push_back(std::move(object));
-		}
+		bool IsValid(const uint64_t id) const;
 
-		const std::vector<std::unique_ptr<EngineCore::GameObject::GameObject>>& GetObjects() const {
+		const std::vector<GameObjectEntry>& GetObjects() const {
 			return _Objects;
 		}
 
-		bool CheckObjectExists(const std::string& name) const {
-			for (const auto& object : _Objects) {
-				if (object->GetName() == name) {
-					return true;
-				}
-			}
-			return false;
-		}
+		bool CheckObjectExists(const std::string& name) const;
 
-		void SelectObject(EngineCore::GameObject::GameObject* object) {
+		void SelectObject(General::GameObject* object) {
 			_SelectedObject = object;
 		}
 
-		EngineCore::GameObject::GameObject* GetSelectedObject() const {
+		General::GameObject* GetSelectedObject() const {
 			return _SelectedObject;
 		}
 	};

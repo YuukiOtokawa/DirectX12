@@ -66,6 +66,18 @@
     <ClCompile Include="Code\GUIController\InspectorWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Component\Camera\Camera.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Component\Transform\Transform.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Manager\ComponentFactory.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\GUIController\GraphicsDebugWindowController.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Render\D3DX12.h">
@@ -131,6 +143,21 @@
     <ClInclude Include="Code\GUIController\InspectorWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Component\Camera\Camera.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Component\Polygon\MeshFilter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Utility\ObjectIDManipulator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Manager\ComponentFactory.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc">
@@ -140,6 +167,8 @@
   <ItemGroup>
     <FxCompile Include="Code\Shader\UnlitVS.hlsl" />
     <FxCompile Include="Code\Shader\UnlitPS.hlsl" />
+    <FxCompile Include="Code\Shader\DeferredVS.hlsl" />
+    <FxCompile Include="Code\Shader\DeferredPS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Code\Shader\Common.hlsli" />

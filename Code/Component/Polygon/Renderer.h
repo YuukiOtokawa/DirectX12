@@ -2,10 +2,9 @@
 
 #include "Component.h"
 
-namespace EngineCore::Component {
+namespace EngineCore::General {
     class Renderer :
         public Component {
-            
     public:
 		void Update() override;
         virtual void Draw() = 0;

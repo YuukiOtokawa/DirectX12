@@ -1,7 +1,7 @@
 #include "SpriteRenderer.h"
 #include "Main.h"
 
-using namespace EngineCore::Component;
+using namespace EngineCore::General;
 using namespace Render::RenderStructure;
 using namespace DirectX;
 
@@ -42,7 +42,7 @@ void SpriteRenderer::Update() {
 void SpriteRenderer::Draw() {
 	auto renderManager = Render::RenderManager::GetInstance();
 	
-	//ãƒãƒˆãƒªã‚¯ã‚¹è¨­å®š
+	//ƒ}ƒgƒŠƒNƒXİ’è
 	{
 		XMMATRIX world = XMMatrixIdentity();
 		OBJECT_CONSTANT objectConstant{};

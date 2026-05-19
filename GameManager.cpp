@@ -65,9 +65,9 @@ namespace EngineManager {
 		_WindowManager.Draw();
 		_WindowManager.DrawWindows();
 
-		m_ImGuiController.EndFrame();
-
 		m_RenderManger.DrawEnd();
+		m_ImGuiController.EndFrame();
+		m_RenderManger.FrameEnd();
 
 	}
 

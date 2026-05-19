@@ -1,6 +1,8 @@
 #pragma once
 
 #include <math.h>
+#include <DirectXMath.h>
+using namespace DirectX;
 
 struct Vector2 {
 	float x, y;
@@ -54,6 +56,10 @@ struct Vector3 {
 	Vector3() : x(0), y(0), z(0) {}
 	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 	Vector3(float value) : x(value), y(value), z(value) {}
+
+	XMFLOAT3* ToXMFloat3() { return new XMFLOAT3(x, y, z); }
+	XMFLOAT4* ToXMFloat4() { return new XMFLOAT4(x, y, z, 0.0f); }
+
 	Vector3 operator+(const Vector3& other) const {
 		return Vector3(x + other.x, y + other.y, z + other.z);
 	}
