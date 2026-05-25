@@ -2,22 +2,26 @@
 
 #include "Main.h"
 
+#include "../Utility/VectorClass.h"
+
 namespace Render {
 
 	namespace Types {
-		struct VERTEX_3D
+
+		// 頂点データ VertexDataクラスに移動
+		struct VERTEX
 		{
-			XMFLOAT3 Position;
-			XMFLOAT3 Normal;
-			XMFLOAT2 TexCoord;
-			XMFLOAT4 Color;
+			Vector3 Position;
+			Vector3 Normal;
+			Vector2 TexCoord;
+			Vector4 Color;
 		};
 
-
+		// マテリアルデータ Materialクラスに移動
 		struct MATERIAL
 		{
-			XMFLOAT4		BaseColor;
-			XMFLOAT4		EmissionColor;
+			Vector4		BaseColor;
+			Vector4		EmissionColor;
 
 			float		Metallic;
 			float		Specular;
@@ -27,35 +31,35 @@ namespace Render {
 
 
 		// 16*4�o�C�g���E///////////////////////
-
+		// 光源データ Lightクラスに移動
 		struct ENV_CONSTANT
 		{
-			XMFLOAT4		LightDirection;
-			XMFLOAT4		LightColor;
+			Vector4		LightDirection;
+			Vector4		LightColor;
 
 		};
 
-
+		// カメラデータ Cameraクラスに移動
 		struct CAMERA_CONSTANT
 		{
 			XMFLOAT4X4		View;
 			XMFLOAT4X4		Projection;
-			XMFLOAT4		Position;
+			Vector4		Position;
 		};
 
-
+		// World行列 Rendererクラスに移動
 		struct OBJECT_CONSTANT
 		{
 			XMFLOAT4X4 World;
 		};
 
-
+		// サブセットごとの定数 Rendererクラスに移動
 		struct SUBSET_CONSTANT
 		{
 			MATERIAL Material;
 		};
 
-
+		// テクスチャデータ Textureクラスに移動
 		struct TEXTURE
 		{
 			ComPtr<ID3D12Resource>	Resource;
@@ -83,7 +87,7 @@ namespace Render {
 		};
 
 
-
+		// 頂点バッファデータ MeshFilterクラスに移動
 		struct VERTEX_BUFFER
 		{
 			ComPtr<ID3D12Resource>		Resource;
@@ -91,6 +95,7 @@ namespace Render {
 			unsigned int				Size;
 		};
 
+		// インデックスバッファデータ MeshFilterクラスに移動
 		struct INDEX_BUFFER
 		{
 			ComPtr<ID3D12Resource>		Resource;
@@ -102,7 +107,7 @@ namespace Render {
 
 	namespace RenderStructure = Types;
 
-	using Types::VERTEX_3D;
+	using Types::VERTEX;
 	using Types::MATERIAL;
 	using Types::ENV_CONSTANT;
 	using Types::CAMERA_CONSTANT;
@@ -169,11 +174,12 @@ namespace Render {
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
 
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
-		ComPtr<ID3D12PipelineState> CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets);
+		ComPtr<ID3D12PipelineState> CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
 		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
+		std::unique_ptr<RENDER_TARGET>		m_NormalBuffer;
 
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
@@ -238,6 +244,7 @@ namespace Render {
 		enum class TEXTURE_TYPE
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
+			NORMAL,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -264,6 +271,7 @@ namespace Render {
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
 
 		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
+		RENDER_TARGET* GetNormalBuffer() { return m_NormalBuffer.get(); }
 	};
 
 #pragma endregion RenderManager

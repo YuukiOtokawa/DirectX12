@@ -14,6 +14,7 @@ namespace EngineCore::General {
 		Transform() : Position(0, 0, 0), Rotation(0, 0, 0), Scale(1, 1, 1), Quaternion(0, 0, 0, 1) {}
 
 		void Update() override;
+		void Inspector() override;
 
 		void SetPosition(const Vector3& position) { Position = position; }
 		void SetRotation(const Vector3& rotation) { Rotation = rotation; }

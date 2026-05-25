@@ -2,10 +2,8 @@
 
 #include "../Component/Component.h"
 
-using namespace EngineCore::Manager;
-using namespace EngineCore::General;
 
-std::unique_ptr<Component> EngineCore::Manager::ComponentFactory::CreateComponent(const std::string& name) {
+std::unique_ptr<EngineCore::General::Component> EngineCore::Manager::ComponentFactory::CreateComponent(const std::string& name) {
 	if (_creators.find(name) != _creators.end()) {
         return _creators[name]();
     }

@@ -9,17 +9,21 @@
 #include "Resource/resource.h"
 
 #include "Code/GUIController/DefaultWindowController.h"
+#include "TestOBJClass.h"
 
 namespace EngineManager {
 
 	GameManager* GameManager::m_Instance = nullptr;
 
 
-
+	TestOBJClass* testObj;
 
 	GameManager::GameManager() {
 		m_Instance = this;
 
+		_ObjectManager = EngineCore::Manager::ObjectManager::GetInstance();
+		m_ImGuiController = GUIController::Gui::ImGuiController();
+		testObj = new TestOBJClass();
 	}
 
 
@@ -40,9 +44,8 @@ namespace EngineManager {
 
 
 	void GameManager::Update() {
-
+		testObj->Update();
 	}
-
 
 
 
@@ -50,8 +53,14 @@ namespace EngineManager {
 		static bool show = true;
 
 		m_RenderManger.DrawBegin();
+
+		_ObjectManager->DrawObjects();
+
 		m_ImGuiController.BeginFrame();
 
+		Render::RenderManager::GetInstance()->SetPipelineState("Geometry");
+
+		testObj->Draw();
 		//if (show) {
 		//	ImGui::Begin("Window", &show);
 		//	ImGui::Text("Hello, world!");

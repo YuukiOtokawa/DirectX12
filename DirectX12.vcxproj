@@ -111,15 +111,15 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>yaml-cpp.lib;assimp-vc145-mtd.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)Code\assimp\lib;$(SolutionDir)Code\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -133,21 +133,25 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>yaml-cpp.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)Code\assimp\lib;$(SolutionDir)Code\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Code\Component\Camera\Camera.cpp" />
     <ClCompile Include="Code\Component\Component.cpp" />
+    <ClCompile Include="Code\Component\Polygon\MeshFilter.cpp" />
     <ClCompile Include="Code\Component\Transform\Transform.cpp" />
     <ClCompile Include="Code\GUIController\GraphicsDebugWindowController.cpp" />
     <ClCompile Include="Code\GUIController\InspectorWindowController.cpp" />
     <ClCompile Include="Code\Manager\ComponentFactory.cpp" />
+    <ClCompile Include="Code\Utility\FilePicker.cpp" />
+    <ClCompile Include="Code\Utility\ModelLoader.cpp" />
     <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="GameManager.cpp" />
@@ -161,6 +165,8 @@
     <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
     <ClCompile Include="Code\Component\Polygon\Renderer.cpp" />
     <ClCompile Include="Code\Manager\ObjectManager.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="TestOBJClass.cpp" />
     <ClCompile Include="YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
   </ItemGroup>
@@ -171,10 +177,13 @@
     <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h" />
     <ClInclude Include="Code\GUIController\InspectorWindowController.h" />
     <ClInclude Include="Code\Manager\ComponentFactory.h" />
+    <ClInclude Include="Code\Utility\FilePicker.h" />
+    <ClInclude Include="Code\Utility\ModelLoader.h" />
     <ClInclude Include="Code\Utility\ObjectIDManipulator.h" />
     <ClInclude Include="Code\Utility\VectorClass.h" />
     <ClInclude Include="Code\Render\D3DX12.h" />
     <ClInclude Include="Code\Component\Component.h" />
+    <ClInclude Include="Code\Utility\VertexData.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
     <ClInclude Include="GameManager.h" />
@@ -187,8 +196,10 @@
     <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\Component\Polygon\Renderer.h" />
     <ClInclude Include="Code\Manager\ObjectManager.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Resource\resource.h" />
     <ClInclude Include="Code\Component\Polygon\SpriteRenderer.h" />
+    <ClInclude Include="TestOBJClass.h" />
     <ClInclude Include="YamlConfigLoader.h" />
     <ClInclude Include="Code\GUIController\WindowManager.h" />
   </ItemGroup>
@@ -207,6 +218,32 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\GeometryPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\GeometryVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\ScreenPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\ScreenVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Code\Shader\UnlitPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

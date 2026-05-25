@@ -13,7 +13,7 @@ namespace EngineCore::General {
 private: \
 	static const char* GetClassName() { return #Type; } \
 	static inline bool registered = []() { \
-		EngineCore::Manager::ComponentFactory::GetInstance()->RegisterComponent( \
+		::EngineCore::Manager::ComponentFactory::GetInstance()->RegisterComponent( \
 			GetClassName(), \
 			[]() -> std::unique_ptr<Component> { return std::make_unique<Type>(); } \
 		); \
@@ -21,11 +21,15 @@ private: \
 	 }();
 
 	class Component : public Object {
-
+		REGISTER_COMPONENT(Component)
 		GameObject* _Owner = nullptr;
 	public:
 		virtual void Start();
 		virtual void Update();
+
+		virtual void Draw() {}
+
+		void SetOwner(GameObject* owner) { _Owner = owner; }
 
 		void DrawInspector() override;
 		virtual void Inspector();
@@ -33,11 +37,12 @@ private: \
 		template <typename T>
 		T* GetComponent();
 
-		static const char* GetClassName() { return "Component"; }
 	};
 
+}
+#include "../GameObject/GameObject.h"
+
 	template<typename T>
-	inline T* Component::GetComponent() {
+	inline T* EngineCore::General::Component::GetComponent() {
 		return _Owner ? _Owner->GetComponent<T>() : nullptr;
 	}
-}

@@ -65,4 +65,23 @@ namespace EngineCore::Manager {
 		return false;
 	}
 
+	void ObjectManager::UpdateObjects() {
+		for (const auto& object : _Objects) {
+			if (object.object) {
+				object.object->ExecUpdate();
+			}
+		}
+	}
+
+	void ObjectManager::DrawObjects() {
+		if (_Objects.empty()) {
+			return;
+		}
+		for (const auto& object : _Objects) {
+			if (object.object) {
+				object.object->Draw();
+			}
+		}
+	}
+
 }

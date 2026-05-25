@@ -9,36 +9,19 @@ using namespace EngineCore::General;
 void GUIController::Window::InspectorWindowController::Draw() {
 	auto selectedObject = ObjectManager::GetInstance()->GetSelectedObject();
 
+	// No object selected
 	if (!selectedObject) {
 		ImGui::Text("No object selected.");
 		return;
 	}
-
-
-	bool active = selectedObject->IsActive();
-	ImGui::Checkbox("###Active", &active);
-	selectedObject->SetActive(active);
-
-	std::string name = selectedObject->GetName();
-	ImGui::Text("Name: %s", name.c_str());
-
-
-	const char* label = "Add Component";
-
-	float windowWidth = ImGui::GetContentRegionAvail().x;
-	float textWidth = ImGui::CalcTextSize(label).x;
-
-	ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
-	if (ImGui::Button(label)) {
-		ImGui::OpenPopup("AddComponentPopup");
+	else {
+		// Object Inspector
+		selectedObject->DrawInspector();
 	}
 
-	if (ImGui::BeginPopup("AddComponentPopup")) {
-		if (ImGui::MenuItem("Sprite Renderer")) {
-			
-		}
-		ImGui::EndPopup();
-	}
+
+
+
 
 
 }

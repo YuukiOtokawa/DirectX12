@@ -53,3 +53,26 @@ namespace EngineCore::General {
 
 
 }
+
+template<typename T>
+inline void EngineCore::General::GameObject::AddComponent() {
+	// TがComponentの派生クラスであることを確認
+	static_assert(std::is_base_of<Component, T>::value, "T must be a subclass of Component");
+	std::unique_ptr<T> component = std::make_unique<T>();
+	component->_Owner = this;
+	m_Components.push_back(std::move(component));
+}
+
+
+template<typename T>
+inline T* EngineCore::General::GameObject::GetComponent() {
+	// TがComponentの派生クラスであることを確認
+	static_assert(std::is_base_of<Component, T>::value, "T must be a subclass of Component");
+
+	for (const auto& component : m_Components) {
+		if (auto casted = dynamic_cast<T*>(component.get())) {
+			return casted;
+		}
+	}
+	return nullptr;
+}

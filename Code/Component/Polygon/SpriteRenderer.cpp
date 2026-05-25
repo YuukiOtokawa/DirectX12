@@ -8,9 +8,9 @@ using namespace DirectX;
 SpriteRenderer::SpriteRenderer() {
 	auto renderManager = Render::RenderManager::GetInstance();
 
-	_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX_3D), 4);
+	_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), 4);
 
-	VERTEX_3D* buffer{};
+	VERTEX* buffer{};
 	HRESULT hr = _VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 
 	buffer[0].Position = { 0.0f,0.0f,0.0f };

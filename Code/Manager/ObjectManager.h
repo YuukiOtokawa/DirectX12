@@ -62,6 +62,9 @@ namespace EngineCore::Manager {
 		General::GameObject* GetSelectedObject() const {
 			return _SelectedObject;
 		}
+
+		void UpdateObjects();
+		void DrawObjects();
 	};
 
 }

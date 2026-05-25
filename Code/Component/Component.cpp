@@ -11,7 +11,8 @@ namespace EngineCore::General {
 	void Component::Update() {}
 
 	void Component::DrawInspector() {
-		//ImGui::PushID();
+		ImGui::Text("%s", GetClassName());
+		Inspector();
 	}
 
 	void Component::Inspector() {}

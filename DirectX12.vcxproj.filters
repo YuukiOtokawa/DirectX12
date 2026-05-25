@@ -78,6 +78,21 @@
     <ClCompile Include="Code\GUIController\GraphicsDebugWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Code\Utility\FilePicker.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Component\Polygon\MeshFilter.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Code\Utility\ModelLoader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="TestOBJClass.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Render\D3DX12.h">
@@ -158,6 +173,21 @@
     <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Code\Utility\FilePicker.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Utility\ModelLoader.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Code\Utility\VertexData.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="TestOBJClass.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc">
@@ -169,6 +199,10 @@
     <FxCompile Include="Code\Shader\UnlitPS.hlsl" />
     <FxCompile Include="Code\Shader\DeferredVS.hlsl" />
     <FxCompile Include="Code\Shader\DeferredPS.hlsl" />
+    <FxCompile Include="Code\Shader\ScreenPS.hlsl" />
+    <FxCompile Include="Code\Shader\ScreenVS.hlsl" />
+    <FxCompile Include="Code\Shader\GeometryPS.hlsl" />
+    <FxCompile Include="Code\Shader\GeometryVS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Code\Shader\Common.hlsli" />

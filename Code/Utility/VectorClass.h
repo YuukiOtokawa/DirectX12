@@ -10,6 +10,7 @@ struct Vector2 {
 	Vector2() : x(0), y(0) {}
 	Vector2(float x, float y) : x(x), y(y) {}
 	Vector2(float value) : x(value), y(value) {}
+	Vector2(XMFLOAT2 value) : x(value.x), y(value.y) {}
 
 	Vector2 operator+(const Vector2& other) const {
 		return Vector2(x + other.x, y + other.y);
@@ -31,6 +32,11 @@ struct Vector2 {
 	}
 	bool operator==(const Vector2& other) const {
 		return x == other.x && y == other.y;
+	}
+	Vector2 operator=(const XMFLOAT2& other) {
+		x = other.x;
+		y = other.y;
+		return *this;
 	}
 
 
@@ -75,6 +81,13 @@ struct Vector3 {
 	bool operator==(const Vector3& other) const {
 		return x == other.x && y == other.y && z == other.z;
 	}
+	Vector3 operator=(const XMFLOAT3& other) {
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		return *this;
+	}
+
 	float Length() const {
 		return sqrt(x * x + y * y + z * z);
 	}
@@ -117,6 +130,13 @@ struct Vector4 {
 	}
 	bool operator==(const Vector4& other) const {
 		return x == other.x && y == other.y && z == other.z && w == other.w;
+	}
+	Vector4 operator=(const XMFLOAT4& other) {
+		x = other.x;
+		y = other.y;
+		z = other.z;
+		w = other.w;
+		return *this;
 	}
 	float Length() const {
 		return sqrt(x * x + y * y + z * z + w * w);

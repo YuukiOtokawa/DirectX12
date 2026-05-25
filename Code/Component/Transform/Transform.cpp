@@ -1,7 +1,15 @@
 #include "Transform.h"
 
+#include "../../../ImGui/Code/imgui.h"
+
 void EngineCore::General::Transform::Update() {
 
+}
+
+void EngineCore::General::Transform::Inspector() {
+	ImGui::DragFloat3("Position", &Position.x, 0.1f);
+	ImGui::DragFloat3("Rotation", &Rotation.x, 0.1f);
+	ImGui::DragFloat3("Scale", &Scale.x, 0.1f);
 }
 
 Vector3 EngineCore::General::Transform::GetForward() const {

@@ -495,10 +495,10 @@ void RenderManager::Init()
 
 	//�X�v���C�g�|���S��
 	{
-		m_VertexBuffer = CreateVertexBuffer(sizeof(VERTEX_3D), 4);
+		m_VertexBuffer = CreateVertexBuffer(sizeof(VERTEX), 4);
 
 		//���_�f�[�^�̏�������
-		VERTEX_3D* buffer{};
+		VERTEX* buffer{};
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 		assert(SUCCEEDED(hr));
 
@@ -529,19 +529,38 @@ void RenderManager::Init()
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Unlit"] = CreatePipeline("UnlitVS.cso", "UnlitPS.cso", RTVFormats, 1);
+		m_PipelineState["Unlit"] = CreatePipeline("UnlitVS.cso", "UnlitPS.cso", RTVFormats, _countof(RTVFormats));
+
+	}
+
+	{
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
+
+		m_PipelineState["Screen"] = CreatePipeline("ScreenVS.cso", "ScreenPS.cso", RTVFormats, _countof(RTVFormats));
+
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
-		m_PipelineState["Deferred"] = CreatePipeline("DeferredVS.cso", "DeferredPS.cso", RTVFormats, 1);
+		m_PipelineState["Deferred"] = CreatePipeline("DeferredVS.cso", "DeferredPS.cso", RTVFormats, _countof(RTVFormats));
+	}
+
+	{
+		DXGI_FORMAT RTVFormats[] = {
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT
+		};
+		m_PipelineState["Geometry"] = CreatePipeline("GeometryVS.cso", "GeometryPS.cso", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
 		m_ColorBuffer = CreateRenderTarget(m_BackBufferWidth, m_BackBufferHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
 
 		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
+
+		m_NormalBuffer = CreateRenderTarget(m_BackBufferWidth, m_BackBufferHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 	}
 }
 
@@ -626,14 +645,23 @@ void RenderManager::DrawBegin()
 
 	m_GraphicsCommandList->ResourceBarrier(1, &trans);
 
+	trans = CD3DX12_RESOURCE_BARRIER::Transition(
+		m_NormalBuffer->Resource.Get(),
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+	m_GraphicsCommandList->ResourceBarrier(1, &trans);
+
 	D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] =
 	{
 		m_ColorBuffer->RTVHandle,
+		m_NormalBuffer->RTVHandle
 	};
 	m_GraphicsCommandList->OMSetRenderTargets(_countof(renderTargets), renderTargets, false, &m_DepthBufferHandle);
 
 	FLOAT clearColor[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
 	m_GraphicsCommandList->ClearRenderTargetView(m_ColorBuffer->RTVHandle, clearColor, 0, nullptr);
+	m_GraphicsCommandList->ClearRenderTargetView(m_NormalBuffer->RTVHandle, clearColor, 0, nullptr);
 	m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 }
 
@@ -643,49 +671,59 @@ void RenderManager::DrawBegin()
 
 void RenderManager::DrawEnd()
 {
-	HRESULT hr;
+   // 1) m_ColorBuffer: RT -> SRV
+	{
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_ColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+	}
 
+	{
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_NormalBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+	}
 
+	// 2) BackBuffer: PRESENT -> RT
+	{
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_RenderTarget[m_RTIndex].Get(),
+			D3D12_RESOURCE_STATE_PRESENT,
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+	}
 
-
-	//���\�[�X�o���A
-
-	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_ColorBuffer->Resource.Get(),
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
-
-	trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_RenderTarget[m_RTIndex].Get(),
-		D3D12_RESOURCE_STATE_PRESENT,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
-	
+	// 3) BackBuffer を描画先にしてクリア
 	m_GraphicsCommandList->OMSetRenderTargets(1, &m_RenderTargetHandle[m_RTIndex], TRUE, &m_DepthBufferHandle);
 
 	FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
 	m_GraphicsCommandList->ClearRenderTargetView(m_RenderTargetHandle[m_RTIndex], clearColor, 0, nullptr);
 	m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
+	// 4) フルスクリーン描画
+	SetPipelineState("Screen");
+	SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
+	SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
+	DrawScreen();
 
+	// 5) BackBuffer: RT -> PRESENT（Present前に戻す）
 	{
-		SetPipelineState("Deferred");
-		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR,
-				   m_ColorBuffer.get());
-		DrawScreen();
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_RenderTarget[m_RTIndex].Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PRESENT);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
 	}
 
 
 }
 
 void Render::RenderManager::FrameEnd() {
-	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_ColorBuffer->Resource.Get(),
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_PRESENT);
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
+
 
 	//�R�}���h���s
 	{
@@ -836,7 +874,7 @@ std::unique_ptr<TEXTURE> RenderManager::LoadTexture(const char* FileName)
 
 
 
-ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets)
+ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable)
 {
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
@@ -949,9 +987,9 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShad
 
 
 	//�f�v�X�E�X�e���V���X�e�[�g
-	pipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
+	pipelineStateDesc.DepthStencilState.DepthEnable = depthEnable;
 	pipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	pipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	pipelineStateDesc.DepthStencilState.DepthWriteMask = depthEnable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 	pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
 	pipelineStateDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
 	pipelineStateDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
