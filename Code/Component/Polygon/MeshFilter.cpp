@@ -2,7 +2,7 @@
 #include "../../../ImGui/Code/imgui.h"
 
 #include "../../Utility/FilePicker.h"
-#include "../../Utility/ModelLoader.h"
+#include "../../Utility/FBXLoader.h"
 
 #include "../Transform/Transform.h"
 
