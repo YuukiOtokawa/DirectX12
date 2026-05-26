@@ -7,6 +7,11 @@
 -std=gnu++17
 -Iatcoder-library/
 -IC:/Program Files (x86)/Microsoft DirectX SDK (June 2010)/Include
+-ICode\Component
+-ICode
+-Iyaml-cpp\Code
+-ICode\Render
+-I.
 
 InlayHints:
     Enabled: Yes
