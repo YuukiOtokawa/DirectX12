@@ -18,12 +18,16 @@ namespace EngineCore::General {
 
 		D3D12_PRIMITIVE_TOPOLOGY _PrimitiveTopology;
 
-		VertexData* _pVertexData;
+		VertexData* _pVertexData = nullptr;
 	public:
 		MeshFilter() = default;
+		~MeshFilter() override {
+			if (_pVertexData) {
+				delete _pVertexData;
+				_pVertexData = nullptr;
+			}
+		}
 		void Update() override;
-
-		void Draw() override;
 
 		void Inspector() override;
 
@@ -44,5 +48,6 @@ namespace EngineCore::General {
 		Render::Types::VERTEX_BUFFER* GetVertexBuffer() const { return _VertexBuffer.get(); }
 		Render::Types::INDEX_BUFFER* GetIndexBuffer() const { return _IndexBuffer.get(); }
 		VertexData* GetVertexData() const { return _pVertexData; }
+		D3D12_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return _PrimitiveTopology; }
 	};
 }

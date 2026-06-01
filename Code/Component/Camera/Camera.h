@@ -21,6 +21,8 @@ namespace EngineCore::General {
 
 		Vector3 _UpVector;
 
+		static Camera* s_ActiveCamera;
+
 		REGISTER_COMPONENT(Camera)
 	public:
 		const XMMATRIX& GetProjectionMatrix() const { return _ProjectionMatrix; }
@@ -28,8 +30,14 @@ namespace EngineCore::General {
 
 		Camera();
 
-		void RenderCamera();
-		void DrawInspector() override;
+		// Component のオーバーライド
+		void Draw() override;
+		DrawOrder GetDrawOrder() const override { return DrawOrder::Camera; }
+		void Inspector() override;
+
+		// アクティブカメラの管理
+		static void SetActiveCamera(Camera* camera) { s_ActiveCamera = camera; }
+		static Camera* GetActiveCamera() { return s_ActiveCamera; }
 	};
 }
 

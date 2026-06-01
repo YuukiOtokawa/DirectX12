@@ -14,12 +14,7 @@ EngineCore::General::GameObject::~GameObject() = default;
 void EngineCore::General::GameObject::Update() {}
 
 void EngineCore::General::GameObject::Draw() {
-	for (const auto& component : m_Components) {
-		if (component) {
-			component->Draw();
-		}
-	}
-
+	// グローバル描画順ソート（RenderSystem）に移行したため、ここでは何もしません
 }
 
 void EngineCore::General::GameObject::DrawInspector() {
@@ -83,6 +78,10 @@ void EngineCore::General::GameObject::SetName(const std::string& name) {
 		n += std::to_string(i);
 	}
 	_Name = n;
+}
+
+const std::vector<std::unique_ptr<EngineCore::General::Component>>& EngineCore::General::GameObject::GetComponents() const {
+	return m_Components;
 }
 
 

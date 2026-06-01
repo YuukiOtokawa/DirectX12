@@ -3,67 +3,13 @@
 
 #include "../../Utility/FilePicker.h"
 #include "../../Utility/FBXLoader.h"
+#include "../../Utility/OBJLoader.h"
+#include <algorithm>
 
+#include "../../GameObject/GameObject.h"
 #include "../Transform/Transform.h"
 
 void EngineCore::General::MeshFilter::Update() {}
-
-void EngineCore::General::MeshFilter::Draw() {
-	if (!_VertexBuffer)
-		return;
-
-	auto renderManager = Render::RenderManager::GetInstance();
-	
-	auto transform = GetComponent<Transform>();
-	if (!transform)
-		return;
-
-	{
-			//マトリクス設定
-		{
-			XMMATRIX world = XMMatrixIdentity();
-			world *= XMMatrixScaling(transform->GetScale().x, transform->GetScale().y, transform->GetScale().z);
-			world *= XMMatrixRotationRollPitchYaw(transform->GetRotation().x, transform->GetRotation().y, transform->GetRotation().z);
-			world *= XMMatrixTranslation(transform->GetPosition().x, transform->GetPosition().y, transform->GetPosition().z);
-			OBJECT_CONSTANT objectConstant{};
-			XMStoreFloat4x4(&objectConstant.World, XMMatrixTranspose(world));
-
-			renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
-		}
-
-		{
-			XMMATRIX view = XMMatrixLookAtLH(
-				XMVectorSet(0.0f, 0.0f, -5.0f, 1.0f),
-				XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f),
-				XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f)
-			);
-			XMMATRIX projection = XMMatrixOrthographicOffCenterLH(0.0f,
-																  renderManager->GetBackBufferWidth(),
-																  renderManager->GetBackBufferHeight(),
-																  0.0f,
-																  0.1f,
-																  100.0f);
-
-			CAMERA_CONSTANT cameraConstant{};
-			XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(view));
-			XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(projection));
-
-			renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
-		}
-
-		renderManager->SetVertexBuffer(_VertexBuffer.get());
-		renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-		renderManager->SetPipelineState("Deferred");
-
-		for (auto& texture : _pVertexData->GetTextures()) {
-			renderManager->SetTexture(Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, texture.get());
-		}
-
-		renderManager->GetGraphicsCommandList()->DrawInstanced(_pVertexData->GetVertices().size(), 1, 0, 0);
-
-	}
-}
 
 void EngineCore::General::MeshFilter::Inspector() {
 	if (ImGui::Button("Open Model")) {
@@ -71,12 +17,26 @@ void EngineCore::General::MeshFilter::Inspector() {
 		if (filePath.empty())
 			return;
 
+		if (!_pVertexData) {
+			_pVertexData = new VertexData();
+		}
 
-		auto fbxData = LoadFBX(filePath.c_str(), _pVertexData);
+		// Determine file extension
+		std::string pathStr(filePath);
+		std::string ext = pathStr.substr(pathStr.find_last_of(".") + 1);
+		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-		if (fbxData._Scene) {
-			SetVertexData(fbxData.vertexData[0]);
-			SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
+		if (ext == "fbx") {
+			auto fbxData = LoadFBX(filePath.c_str(), _pVertexData);
+			if (fbxData._Scene) {
+				SetVertexData(fbxData.vertexData[0]);
+				SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
+			}
+		}
+		else if (ext == "obj") {
+			LoadObjToVertexData(filePath.c_str(), _pVertexData);
+			SetVertexData(_pVertexData->GetFilePath().c_str(), _pVertexData->GetVertices(), _pVertexData->GetIndices());
+			SetPrimitiveTopology(_pVertexData->GetPrimitiveTopology());
 		}
 	}
 }

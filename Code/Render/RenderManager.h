@@ -121,6 +121,12 @@ namespace Render {
 
 	class RenderManager
 	{
+	public:
+		enum class RENDER_TARGET_TYPE {
+			BACK_BUFFER,
+			GAME_VIEW,
+			SCENE_VIEW
+		};
 
 	private:
 		static RenderManager* m_Instance;
@@ -132,6 +138,7 @@ namespace Render {
 		int									m_BackBufferHeight;
 
 		UINT64								m_Frame[2];
+		UINT64								m_FenceValue;
 		UINT								m_RTIndex;
 
 		ComPtr<IDXGIFactory4>				m_Factory;
@@ -180,6 +187,24 @@ namespace Render {
 
 		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
 		std::unique_ptr<RENDER_TARGET>		m_NormalBuffer;
+        std::unique_ptr<RENDER_TARGET>		m_PositionBuffer;
+
+		std::unique_ptr<RENDER_TARGET>		m_GameViewTarget;
+		std::unique_ptr<RENDER_TARGET>		m_SceneViewTarget;
+
+		RENDER_TARGET_TYPE                  _CurrentTargetType = RENDER_TARGET_TYPE::GAME_VIEW;
+
+		bool m_SwapChainResizePending = false;
+		unsigned int m_SwapChainPendingWidth = 0;
+		unsigned int m_SwapChainPendingHeight = 0;
+
+		bool m_GameViewResizePending = false;
+		unsigned int m_GameViewPendingWidth = 0;
+		unsigned int m_GameViewPendingHeight = 0;
+
+		bool m_SceneViewResizePending = false;
+		unsigned int m_SceneViewPendingWidth = 0;
+		unsigned int m_SceneViewPendingHeight = 0;
 
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
@@ -230,6 +255,34 @@ namespace Render {
 		void CleanUpRenderTarget();
 		void Resize(unsigned int Width, unsigned int Height);
 
+		void SetCurrentTarget(RENDER_TARGET_TYPE targetType) { _CurrentTargetType = targetType; }
+		RENDER_TARGET_TYPE GetCurrentTarget() const { return _CurrentTargetType; }
+
+		RENDER_TARGET* GetGameViewTarget() const { return m_GameViewTarget.get(); }
+		RENDER_TARGET* GetSceneViewTarget() const { return m_SceneViewTarget.get(); }
+
+		void GetActiveTargetSize(unsigned int& width, unsigned int& height) {
+			if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+				width = m_BackBufferWidth;
+				height = m_BackBufferHeight;
+			}
+			else {
+				RENDER_TARGET* target = (_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
+				if (target && target->Resource) {
+					D3D12_RESOURCE_DESC desc = target->Resource->GetDesc();
+					width = static_cast<unsigned int>(desc.Width);
+					height = static_cast<unsigned int>(desc.Height);
+				}
+				else {
+					width = m_BackBufferWidth;
+					height = m_BackBufferHeight;
+				}
+			}
+		}
+
+		void ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height);
+		void ApplyPendingResizes();
+
 		//�萔�o�b�t�@
 		enum class CONSTANT_TYPE
 		{
@@ -245,6 +298,7 @@ namespace Render {
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
 			NORMAL,
+			POSITION,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -272,6 +326,7 @@ namespace Render {
 
 		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
 		RENDER_TARGET* GetNormalBuffer() { return m_NormalBuffer.get(); }
+        RENDER_TARGET *GetPositionBuffer() { return m_PositionBuffer.get(); }
 	};
 
 #pragma endregion RenderManager

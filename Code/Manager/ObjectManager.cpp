@@ -2,6 +2,7 @@
 
 #include "Object.h"
 #include "GameObject/GameObject.h"
+#include "../Render/RenderSystem.h"
 
 EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::_Instance;
 
@@ -77,11 +78,7 @@ namespace EngineCore::Manager {
 		if (_Objects.empty()) {
 			return;
 		}
-		for (const auto& object : _Objects) {
-			if (object.object) {
-				object.object->Draw();
-			}
-		}
+		EngineCore::RenderSystem::RenderSystem::GetInstance()->Render(_Objects);
 	}
 
 }

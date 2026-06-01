@@ -23,6 +23,8 @@ namespace EngineCore::General {
 
         GameObject();
 		~GameObject();
+
+		const std::vector<std::unique_ptr<Component>>& GetComponents() const;
 		void ExecUpdate() {
 			if (!_IsStarted) {
 				//Start();
@@ -42,33 +44,28 @@ namespace EngineCore::General {
 		std::string GetName() const { return _Name; }
 		void SetName(const std::string& name);	
 
-		template<typename T>
+		template<typename T> 
 		void AddComponent();
 
-		// 指定した型のコンポーネントを取得
 		template<typename T>
 		T* GetComponent();
     };
 
-
-
 }
+
+// ==========================================
+// Template Inline Implementations
+// ==========================================
 
 template<typename T>
 inline void EngineCore::General::GameObject::AddComponent() {
-	// TがComponentの派生クラスであることを確認
-	static_assert(std::is_base_of<Component, T>::value, "T must be a subclass of Component");
 	std::unique_ptr<T> component = std::make_unique<T>();
-	component->_Owner = this;
+	component->SetOwner(this);
 	m_Components.push_back(std::move(component));
 }
 
-
 template<typename T>
 inline T* EngineCore::General::GameObject::GetComponent() {
-	// TがComponentの派生クラスであることを確認
-	static_assert(std::is_base_of<Component, T>::value, "T must be a subclass of Component");
-
 	for (const auto& component : m_Components) {
 		if (auto casted = dynamic_cast<T*>(component.get())) {
 			return casted;
@@ -76,3 +73,4 @@ inline T* EngineCore::General::GameObject::GetComponent() {
 	}
 	return nullptr;
 }
+

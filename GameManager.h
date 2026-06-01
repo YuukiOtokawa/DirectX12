@@ -6,6 +6,10 @@
 #include "Code/GUIController/WindowManager.h"
 #include "Code/Manager/ObjectManager.h"
 
+namespace EngineCore::General {
+	class Camera;
+}
+
 namespace EngineManager {
 
 	class GameManager {
@@ -31,6 +35,8 @@ namespace EngineManager {
 
 		void Update();
 		void Draw();
+		EngineCore::General::Camera* FindGameCamera();
+		EngineCore::General::Camera* FindEditorCamera();
 
 		LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			if (m_ImGuiController.WindowProcHandler(hWnd, message, wParam, lParam))

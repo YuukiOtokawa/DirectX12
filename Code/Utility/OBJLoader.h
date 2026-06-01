@@ -1,6 +1,7 @@
 #pragma once
 
 #include "RenderManager.h"
+#include "VertexData.h"
 
 // 描画サブセットマテリアル構造体
 struct SUBSET_MATERIAL {
@@ -46,4 +47,8 @@ struct MODEL {
   unsigned int SubsetNum;
 };
 
-void LoadObj(const char *);
+class VertexData;
+
+void LoadObj(const char *, VertexData*);
+
+void LoadObjToVertexData(const char *FileName, VertexData *vertexData);

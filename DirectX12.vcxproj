@@ -114,6 +114,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -134,6 +135,7 @@
       <AdditionalIncludeDirectories>Code\Component;Code;$(SolutionDir);yaml-cpp\Code;Code\Render</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +148,9 @@
     <ClCompile Include="Code\Component\Camera\Camera.cpp" />
     <ClCompile Include="Code\Component\Component.cpp" />
     <ClCompile Include="Code\Component\Polygon\MeshFilter.cpp" />
+    <ClCompile Include="Code\Component\Polygon\MeshRenderer.cpp" />
+    <ClCompile Include="Code\Component\Polygon\Light.cpp" />
+    <ClCompile Include="Code\Component\Polygon\EditorCameraController.cpp" />
     <ClCompile Include="Code\Component\Transform\Transform.cpp" />
     <ClCompile Include="Code\GUIController\GraphicsDebugWindowController.cpp" />
     <ClCompile Include="Code\GUIController\InspectorWindowController.cpp" />
@@ -155,6 +160,8 @@
     <ClCompile Include="Code\Utility\OBJLoader.cpp" />
     <ClCompile Include="DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
+    <ClCompile Include="Code\GUIController\GameViewWindowController.cpp" />
+    <ClCompile Include="Code\GUIController\SceneViewWindowController.cpp" />
     <ClCompile Include="GameManager.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
@@ -168,10 +175,14 @@
     <ClCompile Include="Code\Manager\ObjectManager.cpp" />
     <ClCompile Include="YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
+    <ClCompile Include="Code\Render\RenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Component\Camera\Camera.h" />
     <ClInclude Include="Code\Component\Polygon\MeshFilter.h" />
+    <ClInclude Include="Code\Component\Polygon\MeshRenderer.h" />
+    <ClInclude Include="Code\Component\Polygon\Light.h" />
+    <ClInclude Include="Code\Component\Polygon\EditorCameraController.h" />
     <ClInclude Include="Code\Component\Transform\Transform.h" />
     <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h" />
     <ClInclude Include="Code\GUIController\InspectorWindowController.h" />
@@ -186,6 +197,8 @@
     <ClInclude Include="Code\Utility\VertexData.h" />
     <ClInclude Include="DDSTextureLoader12.h" />
     <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
+    <ClInclude Include="Code\GUIController\GameViewWindowController.h" />
+    <ClInclude Include="Code\GUIController\SceneViewWindowController.h" />
     <ClInclude Include="GameManager.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
@@ -200,6 +213,7 @@
     <ClInclude Include="Code\Component\Polygon\SpriteRenderer.h" />
     <ClInclude Include="YamlConfigLoader.h" />
     <ClInclude Include="Code\GUIController\WindowManager.h" />
+    <ClInclude Include="Code\Render\RenderSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc" />

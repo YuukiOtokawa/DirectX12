@@ -1,4 +1,4 @@
-﻿#include "Main.h"
+#include "Main.h"
 #include "RenderManager.h"
 
 #include "D3DX12.h"
@@ -56,8 +56,9 @@ void RenderManager::Init()
 
 
 	m_WindowHandle = GetWindow();
-	m_Frame[0] = 1;
+	m_Frame[0] = 0;
 	m_Frame[1] = 0;
+	m_FenceValue = 0;
 	m_RTIndex = 0;
 
 
@@ -542,8 +543,8 @@ void RenderManager::Init()
 
 
 	{
-		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
-		m_PipelineState["Deferred"] = CreatePipeline("DeferredVS.cso", "DeferredPS.cso", RTVFormats, _countof(RTVFormats));
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+		m_PipelineState["Deferred"] = CreatePipeline("ScreenVS.cso", "DeferredPS.cso", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
@@ -555,12 +556,14 @@ void RenderManager::Init()
 	}
 
 	{
-		m_ColorBuffer = CreateRenderTarget(m_BackBufferWidth, m_BackBufferHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
-
+		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
 
-		m_NormalBuffer = CreateRenderTarget(m_BackBufferWidth, m_BackBufferHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
+
+		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
 	}
 }
 
@@ -572,15 +575,12 @@ void RenderManager::Init()
 
 void RenderManager::WaitGPU()
 {
+	m_FenceValue++;
 
-	//���s�����R�}���h�̏I���҂�
-	m_CommandQueue->Signal(m_Fence.Get(), m_Frame[m_RTIndex]);
+	m_CommandQueue->Signal(m_Fence.Get(), m_FenceValue);
 
-	m_Fence->SetEventOnCompletion(m_Frame[m_RTIndex], m_FenceEvent);
+	m_Fence->SetEventOnCompletion(m_FenceValue, m_FenceEvent);
 	WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
-
-	m_Frame[m_RTIndex]++;
-
 }
 
 
@@ -593,124 +593,170 @@ void RenderManager::WaitGPU()
 
 void RenderManager::DrawBegin()
 {
-
-	//デスクリプタヒープ
+	// Descriptor heaps
 	ID3D12DescriptorHeap* dh[] = { m_SRVDescriptorHeap.Get() };
 	m_GraphicsCommandList->SetDescriptorHeaps(_countof(dh), dh);
 
-
-	//ルートシグネチャ
+	// Root signature
 	m_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
 
-
-
-	//定数バッファ
+	// Constant buffer index reset
 	m_ConstantBufferIndex[m_RTIndex] = 0;
 
+	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		m_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
+		m_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
 
+		// Transition back buffer: PRESENT -> RENDER_TARGET
+		{
+			auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_RenderTarget[m_RTIndex].Get(),
+				D3D12_RESOURCE_STATE_PRESENT,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(1, &trans);
+		}
 
-	//ビューポートとシザー矩形の設定
-	m_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
-	m_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
+		m_GraphicsCommandList->OMSetRenderTargets(1, &m_RenderTargetHandle[m_RTIndex], TRUE, &m_DepthBufferHandle);
 
+		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		m_GraphicsCommandList->ClearRenderTargetView(m_RenderTargetHandle[m_RTIndex], clearColor, 0, nullptr);
+		m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	}
+	else {
+		// Set G-Buffer pass viewports and scissors to fixed 1920x1080 size
+		D3D12_VIEWPORT gbufferViewport{};
+		gbufferViewport.TopLeftX = 0.0f;
+		gbufferViewport.TopLeftY = 0.0f;
+		gbufferViewport.Width = 1920.0f;
+		gbufferViewport.Height = 1080.0f;
+		gbufferViewport.MinDepth = 0.0f;
+		gbufferViewport.MaxDepth = 1.0f;
 
+		D3D12_RECT gbufferScissor{};
+		gbufferScissor.left = 0;
+		gbufferScissor.top = 0;
+		gbufferScissor.right = 1920;
+		gbufferScissor.bottom = 1080;
 
+		m_GraphicsCommandList->RSSetViewports(1, &gbufferViewport);
+		m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
 
+		// Transition G-Buffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
+		{
+			D3D12_RESOURCE_BARRIER barriers[3];
+			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_ColorBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_NormalBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_PositionBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(3, barriers);
+		}
 
-	/*
-	//リソースバリアの設定
-	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_RenderTarget[m_RTIndex].Get(),
-		D3D12_RESOURCE_STATE_PRESENT,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
+		D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] =
+		{
+			m_ColorBuffer->RTVHandle,
+			m_NormalBuffer->RTVHandle,
+			m_PositionBuffer->RTVHandle
+		};
+		m_GraphicsCommandList->OMSetRenderTargets(_countof(renderTargets), renderTargets, false, &m_DepthBufferHandle);
 
-
-	//レンダーターゲットと深度バッファの設定
-	m_GraphicsCommandList->OMSetRenderTargets(1, &m_RenderTargetHandle[m_RTIndex], TRUE, &m_DepthBufferHandle);
-
-
-
-
-	//レンダーターゲットと深度バッファのクリア
-	FLOAT clearColor[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-	m_GraphicsCommandList->ClearRenderTargetView(m_RenderTargetHandle[m_RTIndex], clearColor, 0, nullptr);
-	m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-	*/
-
-	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_ColorBuffer->Resource.Get(),
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
-
-	trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		m_NormalBuffer->Resource.Get(),
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
-
-	D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] =
-	{
-		m_ColorBuffer->RTVHandle,
-		m_NormalBuffer->RTVHandle
-	};
-	m_GraphicsCommandList->OMSetRenderTargets(_countof(renderTargets), renderTargets, false, &m_DepthBufferHandle);
-
-	FLOAT clearColor[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-	m_GraphicsCommandList->ClearRenderTargetView(m_ColorBuffer->RTVHandle, clearColor, 0, nullptr);
-	m_GraphicsCommandList->ClearRenderTargetView(m_NormalBuffer->RTVHandle, clearColor, 0, nullptr);
-	m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+		FLOAT clearColor[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+		FLOAT clearNormal[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+		m_GraphicsCommandList->ClearRenderTargetView(m_ColorBuffer->RTVHandle, clearColor, 0, nullptr);
+		m_GraphicsCommandList->ClearRenderTargetView(m_NormalBuffer->RTVHandle, clearNormal, 0, nullptr);
+        m_GraphicsCommandList->ClearRenderTargetView(
+            m_PositionBuffer->RTVHandle, clearNormal, 0, nullptr);
+		m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+	}
 }
-
-
-
-
 
 void RenderManager::DrawEnd()
 {
-   // 1) m_ColorBuffer: RT -> SRV
-	{
-		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-			m_ColorBuffer->Resource.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		// BackBuffer path: ImGui will render onto it, so we do nothing here.
+		// Barrier and clearing are already handled in DrawBegin().
 	}
+	else {
+		// GameView or SceneView path:
 
-	{
-		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-			m_NormalBuffer->Resource.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+		// 1) Transit G-Buffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+		{
+			D3D12_RESOURCE_BARRIER barriers[3];
+			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_ColorBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_NormalBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_PositionBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_GraphicsCommandList->ResourceBarrier(3, barriers);
+		}
+
+		// 2) Render post-process to corresponding target buffer
+		RENDER_TARGET* target = (_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
+		if (target) {
+			// Transit SRV -> RTV
+			{
+				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+					target->Resource.Get(),
+					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+					D3D12_RESOURCE_STATE_RENDER_TARGET);
+				m_GraphicsCommandList->ResourceBarrier(1, &trans);
+			}
+
+			m_GraphicsCommandList->OMSetRenderTargets(1, &target->RTVHandle, TRUE, &m_DepthBufferHandle);
+
+			FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_GraphicsCommandList->ClearRenderTargetView(target->RTVHandle, clearColor, 0, nullptr);
+			m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+			// Set target-specific dynamic viewport and scissor for post-processing scale
+			D3D12_VIEWPORT targetViewport = m_Viewport;
+			D3D12_RECT targetScissorRect = m_ScissorRect;
+			if (target->Resource) {
+				D3D12_RESOURCE_DESC desc = target->Resource->GetDesc();
+				targetViewport.Width = static_cast<FLOAT>(desc.Width);
+				targetViewport.Height = static_cast<FLOAT>(desc.Height);
+				targetScissorRect.right = static_cast<LONG>(desc.Width);
+				targetScissorRect.bottom = static_cast<LONG>(desc.Height);
+			}
+			m_GraphicsCommandList->RSSetViewports(1, &targetViewport);
+			m_GraphicsCommandList->RSSetScissorRects(1, &targetScissorRect);
+
+			// Post process (Deferred Shading / Lighting)
+			SetPipelineState("Deferred");
+			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
+			SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
+            SetTexture(RenderManager::TEXTURE_TYPE::POSITION,
+                       m_PositionBuffer.get());
+			DrawScreen();
+
+			// Transit RTV -> SRV (so ImGui can read it as texture)
+			{
+				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+					target->Resource.Get(),
+					D3D12_RESOURCE_STATE_RENDER_TARGET,
+					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				m_GraphicsCommandList->ResourceBarrier(1, &trans);
+			}
+		}
 	}
+}
 
-	// 2) BackBuffer: PRESENT -> RT
-	{
-		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-			m_RenderTarget[m_RTIndex].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET);
-		m_GraphicsCommandList->ResourceBarrier(1, &trans);
-	}
-
-	// 3) BackBuffer を描画先にしてクリア
-	m_GraphicsCommandList->OMSetRenderTargets(1, &m_RenderTargetHandle[m_RTIndex], TRUE, &m_DepthBufferHandle);
-
-	FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	m_GraphicsCommandList->ClearRenderTargetView(m_RenderTargetHandle[m_RTIndex], clearColor, 0, nullptr);
-	m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-
-	// 4) フルスクリーン描画
-	SetPipelineState("Screen");
-	SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
-	SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
-	DrawScreen();
-
-	// 5) BackBuffer: RT -> PRESENT（Present前に戻す）
+void RenderManager::FrameEnd() {
+	// Transition back buffer: RENDER_TARGET -> PRESENT
 	{
 		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
 			m_RenderTarget[m_RTIndex].Get(),
@@ -719,13 +765,7 @@ void RenderManager::DrawEnd()
 		m_GraphicsCommandList->ResourceBarrier(1, &trans);
 	}
 
-
-}
-
-void Render::RenderManager::FrameEnd() {
-
-
-	//�R�}���h���s
+	// Execute command lists
 	{
 		HRESULT hr = m_GraphicsCommandList->Close();
 		assert(SUCCEEDED(hr));
@@ -733,18 +773,14 @@ void Render::RenderManager::FrameEnd() {
 		ID3D12CommandList* const command_lists[1] = { m_GraphicsCommandList.Get() };
 		m_CommandQueue->ExecuteCommandLists(1, command_lists);
 
-		m_CommandQueue->Signal(m_Fence.Get(), m_Frame[m_RTIndex]);
+		// Increment global fence value and signal it for the current back buffer
+		m_FenceValue++;
+		m_CommandQueue->Signal(m_Fence.Get(), m_FenceValue);
+		m_Frame[m_RTIndex] = m_FenceValue;
 	}
 
-
-
-
-
-
-	//�O�t���[���҂�
+	// Swap buffers and wait for the target back buffer's GPU completion
 	{
-		UINT64 frame = m_Frame[m_RTIndex];
-
 		HRESULT hr = m_SwapChain->Present(1, 0);
 		assert(SUCCEEDED(hr));
 
@@ -756,7 +792,7 @@ void Render::RenderManager::FrameEnd() {
 			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 		}
 
-		m_Frame[m_RTIndex] = frame + 1;
+
 	}
 
 
@@ -1329,79 +1365,166 @@ void RenderManager::CleanUpRenderTarget() {
 }
 
 void RenderManager::Resize(unsigned int Width, unsigned int Height) {
-    if (Width == 0 || Height == 0) {
-        return;
-    }
+	if (Width == 0 || Height == 0) {
+		return;
+	}
+	m_SwapChainResizePending = true;
+	m_SwapChainPendingWidth = Width;
+	m_SwapChainPendingHeight = Height;
+}
 
-    WaitGPU();
+void Render::RenderManager::ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height) {
+	if (width == 0 || height == 0) return;
 
-    m_RenderTarget[0].Reset();
-    m_RenderTarget[1].Reset();
-    m_DepthBuffer.Reset();
+	if (type == RENDER_TARGET_TYPE::GAME_VIEW) {
+		m_GameViewResizePending = true;
+		m_GameViewPendingWidth = width;
+		m_GameViewPendingHeight = height;
+	}
+	else if (type == RENDER_TARGET_TYPE::SCENE_VIEW) {
+		m_SceneViewResizePending = true;
+		m_SceneViewPendingWidth = width;
+		m_SceneViewPendingHeight = height;
+	}
+}
 
-    DXGI_SWAP_CHAIN_DESC1 desc = {};
-    HRESULT hr = m_SwapChain->GetDesc1(&desc);
-    assert(SUCCEEDED(hr));
+void Render::RenderManager::ApplyPendingResizes() {
+	if (!m_SwapChainResizePending && !m_GameViewResizePending && !m_SceneViewResizePending) return;
 
-    hr = m_SwapChain->ResizeBuffers(0, Width, Height, desc.Format, desc.Flags);
-    assert(SUCCEEDED(hr));
+	if (m_SwapChainResizePending) {
+		// 1. Close command list first to release all state cache references
+		m_GraphicsCommandList->Close();
 
-    m_BackBufferWidth = static_cast<int>(Width);
-    m_BackBufferHeight = static_cast<int>(Height);
-    m_RTIndex = m_SwapChain->GetCurrentBackBufferIndex();
+		// 2. Wait for GPU to ensure we can safely reset and recreate swap chain resources
+		WaitGPU();
 
-    m_Viewport.TopLeftX = 0.0f;
-    m_Viewport.TopLeftY = 0.0f;
-    m_Viewport.Width = static_cast<FLOAT>(Width);
-    m_Viewport.Height = static_cast<FLOAT>(Height);
-    m_Viewport.MinDepth = 0.0f;
-    m_Viewport.MaxDepth = 1.0f;
+		// 3. Reset existing render targets to completely release old back buffer references
+		m_RenderTarget[0].Reset();
+		m_RenderTarget[1].Reset();
+		m_DepthBuffer.Reset();
 
-    m_ScissorRect.left = 0;
-    m_ScissorRect.top = 0;
-    m_ScissorRect.right = static_cast<LONG>(Width);
-    m_ScissorRect.bottom = static_cast<LONG>(Height);
+		DXGI_SWAP_CHAIN_DESC1 desc = {};
+		HRESULT hr = m_SwapChain->GetDesc1(&desc);
+		assert(SUCCEEDED(hr));
 
-    CreateRenderTarget();
+		hr = m_SwapChain->ResizeBuffers(0, m_SwapChainPendingWidth, m_SwapChainPendingHeight, desc.Format, desc.Flags);
+		assert(SUCCEEDED(hr));
 
-    D3D12_RESOURCE_DESC resourceDesc{};
-    resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-    resourceDesc.Width = Width;
-    resourceDesc.Height = Height;
-    resourceDesc.DepthOrArraySize = 1;
-    resourceDesc.MipLevels = 1;
-    resourceDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-    resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-    resourceDesc.SampleDesc.Count = 1;
-    resourceDesc.SampleDesc.Quality = 0;
-    resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		m_BackBufferWidth = static_cast<int>(m_SwapChainPendingWidth);
+		m_BackBufferHeight = static_cast<int>(m_SwapChainPendingHeight);
+		m_RTIndex = m_SwapChain->GetCurrentBackBufferIndex();
 
-    D3D12_CLEAR_VALUE clearValue{};
-    clearValue.Format = DXGI_FORMAT_D32_FLOAT;
-    clearValue.DepthStencil.Depth = 1.0f;
-    clearValue.DepthStencil.Stencil = 0;
+		m_Viewport.TopLeftX = 0.0f;
+		m_Viewport.TopLeftY = 0.0f;
+		m_Viewport.Width = static_cast<FLOAT>(m_SwapChainPendingWidth);
+		m_Viewport.Height = static_cast<FLOAT>(m_SwapChainPendingHeight);
+		m_Viewport.MinDepth = 0.0f;
+		m_Viewport.MaxDepth = 1.0f;
 
-    auto prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    hr = m_Device->CreateCommittedResource(&prop,
-                                           D3D12_HEAP_FLAG_NONE,
-                                           &resourceDesc,
-                                           D3D12_RESOURCE_STATE_DEPTH_WRITE,
-                                           &clearValue,
-                                           IID_PPV_ARGS(&m_DepthBuffer));
-    assert(SUCCEEDED(hr));
+		m_ScissorRect.left = 0;
+		m_ScissorRect.top = 0;
+		m_ScissorRect.right = static_cast<LONG>(m_SwapChainPendingWidth);
+		m_ScissorRect.bottom = static_cast<LONG>(m_SwapChainPendingHeight);
 
-    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
-    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    dsvDesc.Texture2D.MipSlice = 0;
-    dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+		CreateRenderTarget();
 
-    m_DepthBufferHandle = m_DepthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-    m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsvDesc, m_DepthBufferHandle);
+		D3D12_RESOURCE_DESC resourceDesc{};
+		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		resourceDesc.Width = 1920; // Fixed 1920 width for G-Buffer depth buffer
+		resourceDesc.Height = 1080; // Fixed 1080 height for G-Buffer depth buffer
+		resourceDesc.DepthOrArraySize = 1;
+		resourceDesc.MipLevels = 1;
+		resourceDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		resourceDesc.SampleDesc.Count = 1;
+		resourceDesc.SampleDesc.Quality = 0;
+		resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
 
-	m_ColorBuffer.reset();
-	m_ColorBuffer = CreateRenderTarget(Width, Height, DXGI_FORMAT_R16G16B16A16_FLOAT);
-	m_ColorBuffer->Resource->SetName(L"ColorBuffer");
+		D3D12_CLEAR_VALUE clearValue{};
+		clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		clearValue.DepthStencil.Depth = 1.0f;
+		clearValue.DepthStencil.Stencil = 0;
+
+		auto prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		hr = m_Device->CreateCommittedResource(&prop,
+											   D3D12_HEAP_FLAG_NONE,
+											   &resourceDesc,
+											   D3D12_RESOURCE_STATE_DEPTH_WRITE,
+											   &clearValue,
+											   IID_PPV_ARGS(&m_DepthBuffer));
+		assert(SUCCEEDED(hr));
+
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		dsvDesc.Texture2D.MipSlice = 0;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+		m_DepthBufferHandle = m_DepthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsvDesc, m_DepthBufferHandle);
+
+		// Also resize G-Buffers to fixed 1920x1080 resolution
+		m_ColorBuffer.reset();
+		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
+
+		m_NormalBuffer.reset();
+		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
+
+		m_PositionBuffer.reset();
+		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
+
+		m_GameViewTarget.reset();
+		m_GameViewTarget = CreateRenderTarget(m_SwapChainPendingWidth, m_SwapChainPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_GameViewTarget->Resource->SetName(L"GameViewTarget");
+
+		m_SceneViewTarget.reset();
+		m_SceneViewTarget = CreateRenderTarget(m_SwapChainPendingWidth, m_SwapChainPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_SceneViewTarget->Resource->SetName(L"SceneViewTarget");
+
+		// 4. Force reset all command allocators to ensure they are 100% clean and free of pending graphics commands
+		for (int i = 0; i < 2; i++) {
+			m_GraphicsCommandAllocator[i]->Reset();
+			m_Frame[i] = 0; // Clear recorded GPU fence targets
+		}
+
+		// 5. Re-reset the command list under the new back buffer index with clean allocator
+		hr = m_GraphicsCommandList->Reset(m_GraphicsCommandAllocator[m_RTIndex].Get(), m_PipelineState["Deferred"].Get());
+		assert(SUCCEEDED(hr));
+
+		m_SwapChainResizePending = false;
+		m_GameViewResizePending = false;
+		m_SceneViewResizePending = false;
+	}
+	else {
+		// Individual view resizing
+		// 1. Close command list first to clear active bindings in pipeline cache
+		m_GraphicsCommandList->Close();
+
+		// 2. Wait for GPU completion
+		WaitGPU();
+
+		if (m_GameViewResizePending) {
+			m_GameViewTarget.reset();
+			m_GameViewTarget = CreateRenderTarget(m_GameViewPendingWidth, m_GameViewPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+			m_GameViewTarget->Resource->SetName(L"GameViewTarget");
+			m_GameViewResizePending = false;
+		}
+
+		if (m_SceneViewResizePending) {
+			m_SceneViewTarget.reset();
+			m_SceneViewTarget = CreateRenderTarget(m_SceneViewPendingWidth, m_SceneViewPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
+			m_SceneViewTarget->Resource->SetName(L"SceneViewTarget");
+			m_SceneViewResizePending = false;
+		}
+
+		// 3. Reset command allocator and command list under current RT index to start recording cleanly
+		m_GraphicsCommandAllocator[m_RTIndex]->Reset();
+		HRESULT hr = m_GraphicsCommandList->Reset(m_GraphicsCommandAllocator[m_RTIndex].Get(), m_PipelineState["Deferred"].Get());
+		assert(SUCCEEDED(hr));
+	}
 }
 
 

@@ -8,6 +8,8 @@
 #include "HierarchyWindowController.h"
 #include "InspectorWindowController.h"
 #include "GraphicsDebugWindowController.h"
+#include "GameViewWindowController.h"
+#include "SceneViewWindowController.h"
 
 using namespace GUIController::Window;
 using namespace GUIController::Gui;
@@ -16,6 +18,8 @@ void WindowManager::Initialize() {
 	NewWindow<HierarchyWindowController>();
 	NewWindow<InspectorWindowController>();
 	NewWindow<GraphicsDebugWindowController>();
+	NewWindow<GameViewWindowController>();
+	NewWindow<SceneViewWindowController>();
 }
 
 void WindowManager::Draw() {

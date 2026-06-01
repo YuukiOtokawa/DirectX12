@@ -9,6 +9,11 @@ namespace EngineCore::General {
 
 namespace EngineCore::General {
 
+	enum class DrawOrder {
+		Camera = 0,
+		Default = 1,
+	};
+
 #define REGISTER_COMPONENT(Type) \
 private: \
 	static const char* GetClassName() { return #Type; } \
@@ -22,27 +27,24 @@ private: \
 
 	class Component : public Object {
 		REGISTER_COMPONENT(Component)
+
+	protected:
 		GameObject* _Owner = nullptr;
 	public:
+		virtual ~Component() = default;
 		virtual void Start();
 		virtual void Update();
 
 		virtual void Draw() {}
+		virtual DrawOrder GetDrawOrder() const { return DrawOrder::Default; }
 
 		void SetOwner(GameObject* owner) { _Owner = owner; }
+		GameObject* GetOwner() const { return _Owner; }
 
 		void DrawInspector() override;
 		virtual void Inspector();
-	protected:
-		template <typename T>
-		T* GetComponent();
 
 	};
 
 }
-#include "../GameObject/GameObject.h"
 
-	template<typename T>
-	inline T* EngineCore::General::Component::GetComponent() {
-		return _Owner ? _Owner->GetComponent<T>() : nullptr;
-	}

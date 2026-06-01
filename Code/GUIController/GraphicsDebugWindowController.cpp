@@ -9,4 +9,7 @@ void GUIController::Window::GraphicsDebugWindowController::Draw() {
 	ImGui::Text("Normal Buffer");
 	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetNormalBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
+    ImGui::Text("Position Buffer");
+    ImGui::Image((void *)Render::RenderManager::GetInstance()->GetPositionBuffer()->SRVHandle.ptr,
+                 ImVec2(300.0f, 200.0f));
 }

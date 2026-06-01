@@ -7,6 +7,7 @@ PS_OUTPUT_GEOMETRY main(PS_INPUT input)
     output.Color = TextureBaseColor.Sample(Sampler, input.TexCoord);
     output.Normal = input.Normal;
     output.Normal.a = 1.0f;
+    output.Position = input.WorldPosition; // Output world position to G-Buffer SV_TARGET2
     
     return output;
 }

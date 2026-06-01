@@ -1,5 +1,6 @@
 
 #include "OBJLoader.h"
+#include "VertexData.h"
 #include "Utility/VectorClass.h"
 #include <shlwapi.h>
 #include <stdio.h>
@@ -48,7 +49,7 @@ void SaveObjBin(const char *FileName, MODEL *Model) {
     fclose(file);
 }
 
-void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL *MaterialArray,
+void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL **MaterialArray,
                   UINT *MaterialNum) {
   char str[256];
 
@@ -69,7 +70,7 @@ void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL *MaterialArray,
     }
   }
 
-  MaterialArray = new MODEL_SUBSET_MATERIAL[materialNum];
+  materialArray = new MODEL_SUBSET_MATERIAL[materialNum];
 
   int mc = -1;
 
@@ -121,7 +122,7 @@ void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL *MaterialArray,
 
   fclose(file);
 
-  MaterialArray = materialArray;
+  MaterialArray = &materialArray;
   *MaterialNum = materialNum;
 }
 
@@ -238,7 +239,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
             strcat(path, "\\");
             strcat(path, str);
 
-        LoadMaterial(path, matArray, &matNum);
+        LoadMaterial(path, &matArray, &matNum);
       } else if (strcmp(str, "o") == 0) {
         // objectName
         fscanf(file, "%s", objName);
@@ -451,6 +452,77 @@ void LoadObj(const char *FileName) {
   assert(model.IndexArray);
   assert(model.SubsetArray);
 
+  delete[] model.VertexArray;
+  delete[] model.IndexArray;
+  delete[] model.SubsetArray;
+}
+
+void LoadObjToVertexData(const char* FileName, VertexData* pOutVertexData) {
+  if (!pOutVertexData) return;
+
+  std::string dir(FileName);
+  dir = dir.substr(0, dir.find_last_of("\\"));
+  dir += "\\";
+
+  std::string path(FileName);
+  path = path.substr(0, path.find_last_of("."));
+  path += ".objbin";
+
+  MODEL model{};
+
+  // Load from binary cache or parse OBJ
+  {
+    bool findBin = false;
+    HANDLE hBin = CreateFile(path.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING,
+                             FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hBin != INVALID_HANDLE_VALUE) {
+      HANDLE hObj = CreateFile(FileName, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+      if (hObj == INVALID_HANDLE_VALUE)
+        assert(false);
+
+      FILETIME tBin, tObj;
+      GetFileTime(hBin, NULL, NULL, &tBin);
+      GetFileTime(hObj, NULL, NULL, &tObj);
+
+      if (CompareFileTime(&tBin, &tObj) >= 0)
+        findBin = true;
+
+      CloseHandle(hObj);
+    }
+    CloseHandle(hBin);
+
+    if (findBin) {
+      LoadObjBin(path.c_str(), &model);
+    } else {
+      LoadModel(FileName, &model);
+      SaveObjBin(path.c_str(), &model);
+    }
+  }
+
+  // Transfer vertices and indices to VertexData
+  std::vector<Render::Types::VERTEX> vertices(model.VertexArray, model.VertexArray + model.VertexNum);
+  std::vector<unsigned int> indices(model.IndexArray, model.IndexArray + model.IndexNum);
+
+  pOutVertexData->SetVertices(vertices);
+  pOutVertexData->SetIndices(indices);
+  pOutVertexData->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  pOutVertexData->SetFilePath(FileName);
+
+  // Load textures
+  std::vector<std::unique_ptr<Render::Types::TEXTURE>> textures;
+  for (unsigned int i = 0; i < model.SubsetNum; i++) {
+    if (strlen(model.SubsetArray[i].Material.TextureNameBaseColor) != 0) {
+      auto tex = RenderManager::GetInstance()->LoadTexture(
+          (dir + model.SubsetArray[i].Material.TextureNameBaseColor).c_str());
+      if (tex) {
+        textures.push_back(std::move(tex));
+      }
+    }
+  }
+  pOutVertexData->SetTextures(std::move(textures));
+
+  // Memory cleanup
   delete[] model.VertexArray;
   delete[] model.IndexArray;
   delete[] model.SubsetArray;

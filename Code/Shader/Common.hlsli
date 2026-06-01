@@ -63,6 +63,7 @@ struct PS_OUTPUT_GEOMETRY
 {
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
+    float4 Position : SV_TARGET2;
 };
 
 struct PS_OUTPUT
@@ -73,6 +74,8 @@ struct PS_OUTPUT
 
 Texture2D<float4> TextureBaseColor : register(t0);
 Texture2D<float4> TextureNormal : register(t1);
+Texture2D<float4> TexturePosition : register(t2);
 
 SamplerState Sampler : register(s0);
 
+static float PI = 3.14159265359f;
