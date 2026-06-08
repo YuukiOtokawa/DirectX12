@@ -1,23 +1,24 @@
 #pragma once
 
 #include "RenderManager.h"
+#include "Code/Render/Material.h"
 
 
 
 
 
 
-// •`‰æƒTƒuƒZƒbƒgƒ}ƒeƒŠƒAƒ‹\‘¢‘Ì
+// æç”»ã‚µãƒ–ã‚»ãƒƒãƒˆãƒãƒ†ãƒªã‚¢ãƒ«æ§‹é€ ä½“
 struct SUBSET_MATERIAL
 {
 	char						Name[256];
-	Render::Types::MATERIAL					Material;
+	Render::Material			Material;
 
 	std::unique_ptr<Render::Types::TEXTURE>	TextureBaseColor;
 
 };
 
-// •`‰æƒTƒuƒZƒbƒg\‘¢‘Ì
+// æç”»ã‚µãƒ–ã‚»ãƒƒãƒˆæ§‹é€ ä½“
 struct SUBSET
 {
 	char			Name[256];
@@ -29,7 +30,7 @@ struct SUBSET
 
 
 
-// ƒ‚ƒfƒ‹ƒTƒuƒZƒbƒgƒ}ƒeƒŠƒAƒ‹\‘¢‘Ì
+// ãƒ¢ãƒ‡ãƒ«ã‚µãƒ–ã‚»ãƒƒãƒˆãƒãƒ†ãƒªã‚¢ãƒ«æ§‹é€ ä½“
 struct MODEL_SUBSET_MATERIAL
 {
 	char						Name[256];
@@ -40,7 +41,7 @@ struct MODEL_SUBSET_MATERIAL
 
 
 
-// ƒ‚ƒfƒ‹ƒTƒuƒZƒbƒg\‘¢‘Ì
+// ãƒ¢ãƒ‡ãƒ«ã‚µãƒ–ã‚»ãƒƒãƒˆæ§‹é€ ä½“
 struct MODEL_SUBSET
 {
 	char					Name[256];
@@ -51,7 +52,7 @@ struct MODEL_SUBSET
 
 
 
-// ƒ‚ƒfƒ‹\‘¢‘Ì
+// ãƒ¢ãƒ‡ãƒ«æ§‹é€ ä½“
 struct MODEL
 {
 	Render::Types::VERTEX		*VertexArray;

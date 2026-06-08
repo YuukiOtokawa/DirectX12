@@ -31,7 +31,7 @@ void Model::Load(const char* FileName)
 	
 
 
-	//ƒtƒ@ƒCƒ‹“Ç‚İ‚İ
+	//ãƒ•ã‚¡ã‚¤ãƒ«èª­ã¿è¾¼ã¿
 	MODEL model{};
 	{
 		bool findBin = false;
@@ -74,14 +74,14 @@ void Model::Load(const char* FileName)
 
 
 
-	//ƒoƒbƒtƒ@¶¬
+	//ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	{
 
 		ComPtr<ID3D12Device> device = RenderManager::GetInstance()->GetDevice();
 
 
 
-		//’¸“_ƒoƒbƒtƒ@‚Ìì¬
+		//é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 		m_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), model.VertexNum);
 
 		VERTEX* vertex;
@@ -94,7 +94,7 @@ void Model::Load(const char* FileName)
 
 
 
-		//ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@‚Ìì¬
+		//ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡ã®ä½œæˆ
 		m_IndexBuffer = renderManager->CreateIndexBuffer(model.IndexNum);
 
 		unsigned int* index;
@@ -112,7 +112,7 @@ void Model::Load(const char* FileName)
 
 
 
-	//ƒTƒuƒZƒbƒgİ’è
+	//ã‚µãƒ–ã‚»ãƒƒãƒˆè¨­å®š
 	{
 		m_SubsetArray.resize(model.SubsetNum);
 
@@ -122,7 +122,7 @@ void Model::Load(const char* FileName)
 
 			m_SubsetArray[i].StartIndex = model.SubsetArray[i].StartIndex;
 			m_SubsetArray[i].IndexNum = model.SubsetArray[i].IndexNum;
-			m_SubsetArray[i].Material.Material = model.SubsetArray[i].Material.Material;
+			m_SubsetArray[i].Material.Material.SetFromConstant(model.SubsetArray[i].Material.Material);
 
 			strcpy(m_SubsetArray[i].Material.Name, model.SubsetArray[i].Material.Name);
 
@@ -136,13 +136,13 @@ void Model::Load(const char* FileName)
 
 
 
-	//ƒAƒ‹ƒtƒ@’l‚Åƒ\[ƒg
+	//ã‚¢ãƒ«ãƒ•ã‚¡å€¤ã§ã‚½ãƒ¼ãƒˆ
 	std::sort(
 		m_SubsetArray.begin(),
 		m_SubsetArray.end(),
 		[](const SUBSET& subset1, const SUBSET& subset2)
 		{
-			return subset1.Material.Material.BaseColor.w > subset2.Material.Material.BaseColor.w;
+			return subset1.Material.Material.GetBaseColor().w > subset2.Material.Material.GetBaseColor().w;
 		}
 	);
 
@@ -172,13 +172,13 @@ void Model::Draw(bool UseMaterial)
 	ID3D12GraphicsCommandList* CommandList = renderManager->GetGraphicsCommandList();
 
 
-	//’¸“_ƒoƒbƒtƒ@İ’è
+	//é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	renderManager->SetVertexBuffer(m_VertexBuffer.get());
 
-	//ƒCƒ“ƒfƒbƒNƒXƒoƒbƒtƒ@İ’è
+	//ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	renderManager->SetIndexBuffer(m_IndexBuffer.get());
 
-	//ƒgƒ|ƒƒWİ’è
+	//ãƒˆãƒãƒ­ã‚¸è¨­å®š
 	CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
@@ -187,7 +187,8 @@ void Model::Draw(bool UseMaterial)
 	{
 		if (UseMaterial)
 		{
-			renderManager->SetConstant(RenderManager::CONSTANT_TYPE::SUBSET, &subset.Material.Material, sizeof(MATERIAL));
+			MaterialConstant constData = subset.Material.Material.GetConstantData();
+			renderManager->SetConstant(RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(MaterialConstant));
 
 			if (subset.Material.TextureBaseColor.get() != nullptr)
 				renderManager->SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, subset.Material.TextureBaseColor.get());
@@ -309,7 +310,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 
 
-	//—v‘f”ƒJƒEƒ“ƒg
+	//è¦ç´ æ•°ã‚«ã‚¦ãƒ³ãƒˆ
 	while( true )
 	{
 		fscanf( file, "%s", str );
@@ -350,7 +351,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 			}
 			while( c != '\n' && c!= '\r' );
 
-			//lŠp‚ÍOŠp‚É•ªŠ„
+			//å››è§’ã¯ä¸‰è§’ã«åˆ†å‰²
 			if( in == 4 )
 				in = 6;
 
@@ -359,7 +360,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 	}
 
 
-	//ƒƒ‚ƒŠŠm•Û
+	//ãƒ¡ãƒ¢ãƒªç¢ºä¿
 	positionArray = new XMFLOAT3[ positionNum ];
 	normalArray = new XMFLOAT3[ normalNum ];
 	texcoordArray = new XMFLOAT2[ texcoordNum ];
@@ -378,7 +379,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 
 
-	//—v‘f“Ç
+	//è¦ç´ èª­è¾¼
 	XMFLOAT3* position = positionArray;
 	XMFLOAT3* normal = normalArray;
 	XMFLOAT2* texcoord = texcoordArray;
@@ -402,7 +403,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 		if( strcmp( str, "mtllib" ) == 0 )
 		{
-			//ƒ}ƒeƒŠƒAƒ‹ƒtƒ@ƒCƒ‹
+			//ãƒãƒ†ãƒªã‚¢ãƒ«ãƒ•ã‚¡ã‚¤ãƒ«
 			fscanf( file, "%s", str );
 
 			char path[256];
@@ -414,12 +415,12 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 		}
 		else if( strcmp( str, "o" ) == 0 )
 		{
-			//ƒIƒuƒWƒFƒNƒg–¼
+			//ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆå
 			fscanf( file, "%s", objectName);
 		}
 		else if( strcmp( str, "v" ) == 0 )
 		{
-			//’¸“_À•W
+			//é ‚ç‚¹åº§æ¨™
 			fscanf( file, "%f", &position->x );
 			fscanf( file, "%f", &position->y );
 			fscanf( file, "%f", &position->z );
@@ -429,7 +430,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 		}
 		else if( strcmp( str, "vn" ) == 0 )
 		{
-			//–@ü
+			//æ³•ç·š
 			fscanf( file, "%f", &normal->x );
 			fscanf( file, "%f", &normal->y );
 			fscanf( file, "%f", &normal->z );
@@ -438,7 +439,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 		}
 		else if (strcmp(str, "vc") == 0)
 		{
-			//’¸“_F
+			//é ‚ç‚¹è‰²
 			fscanf(file, "%f", &color->x);
 			fscanf(file, "%f", &color->y);
 			fscanf(file, "%f", &color->z);
@@ -448,7 +449,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 		else if( strcmp( str, "vt" ) == 0 )
 		{
-			//ƒeƒNƒXƒ`ƒƒÀ•W
+			//ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 			fscanf( file, "%f", &texcoord->x );
 			fscanf( file, "%f", &texcoord->y );
 			texcoord->y = 1.0f - texcoord->y;
@@ -456,7 +457,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 		}
 		else if( strcmp( str, "usemtl" ) == 0 )
 		{
-			//ƒ}ƒeƒŠƒAƒ‹
+			//ãƒãƒ†ãƒªã‚¢ãƒ«
 			fscanf( file, "%s", str );
 
 			strcpy(Model->SubsetArray[sc].Name, objectName);
@@ -481,7 +482,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 		}
 		else if( strcmp( str, "f" ) == 0 )
 		{
-			//–Ê
+			//é¢
 			in = 0;
 
 			do
@@ -493,7 +494,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 				if( s[ strlen( s ) + 1 ] != '/' )
 				{
-					//ƒeƒNƒXƒ`ƒƒÀ•W‚ª‘¶İ‚µ‚È‚¢ê‡‚à‚ ‚é
+					//ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ãŒå­˜åœ¨ã—ãªã„å ´åˆã‚‚ã‚ã‚‹
 					s = strtok( NULL, "/" );
 					Model->VertexArray[vc].TexCoord = texcoordArray[ atoi( s ) - 1 ];
 				}
@@ -519,7 +520,7 @@ void Model::LoadObj( const char *FileName, MODEL *Model )
 
 			std::swap(Model->IndexArray[ic - in], Model->IndexArray[ic - in + 1]);
 
-			//lŠp‚ÍOŠp‚É•ªŠ„
+			//å››è§’ã¯ä¸‰è§’ã«åˆ†å‰²
 			if( in == 4 )
 			{
 				Model->IndexArray[ic] = vc - 2;
@@ -572,7 +573,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 	MODEL_SUBSET_MATERIAL* materialArray;
 	unsigned int materialNum = 0;
 
-	//—v‘f”ƒJƒEƒ“ƒg
+	//è¦ç´ æ•°ã‚«ã‚¦ãƒ³ãƒˆ
 	while( true )
 	{
 		fscanf( file, "%s", str );
@@ -588,11 +589,11 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 	}
 
 
-	//ƒƒ‚ƒŠŠm•Û
+	//ãƒ¡ãƒ¢ãƒªç¢ºä¿
 	materialArray = new MODEL_SUBSET_MATERIAL[ materialNum ];
 
 
-	//—v‘f“Ç
+	//è¦ç´ èª­è¾¼
 	int mc = -1;
 
 	fseek( file, 0, SEEK_SET );
@@ -607,7 +608,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 
 		if( strcmp( str, "newmtl" ) == 0 )
 		{
-			//ƒ}ƒeƒŠƒAƒ‹–¼
+			//ãƒãƒ†ãƒªã‚¢ãƒ«å
 			mc++;
 			fscanf( file, "%s", materialArray[ mc ].Name );
 
@@ -615,7 +616,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 		}
 		else if( strcmp( str, "Ka" ) == 0 )
 		{
-			//ƒAƒ“ƒrƒGƒ“ƒg
+			//ã‚¢ãƒ³ãƒ“ã‚¨ãƒ³ãƒˆ
 			float ambient;
 			fscanf(file, "%f", &ambient);
 			fscanf(file, "%f", &ambient);
@@ -623,7 +624,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 		}
 		else if( strcmp( str, "Kd" ) == 0 )
 		{
-			//ƒfƒBƒtƒ…[ƒY
+			//ãƒ‡ã‚£ãƒ•ãƒ¥ãƒ¼ã‚º
 			fscanf( file, "%f", &materialArray[ mc ].Material.BaseColor.x );
 			fscanf( file, "%f", &materialArray[ mc ].Material.BaseColor.y );
 			fscanf( file, "%f", &materialArray[ mc ].Material.BaseColor.z );
@@ -631,7 +632,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 		}
 		else if (strcmp(str, "Ke") == 0)
 		{
-			//ƒGƒ~ƒbƒVƒ‡ƒ“
+			//ã‚¨ãƒŸãƒƒã‚·ãƒ§ãƒ³
 			fscanf(file, "%f", &materialArray[mc].Material.EmissionColor.x);
 			fscanf(file, "%f", &materialArray[mc].Material.EmissionColor.y);
 			fscanf(file, "%f", &materialArray[mc].Material.EmissionColor.z);
@@ -639,7 +640,7 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 		}
 		else if( strcmp( str, "Ks" ) == 0 )
 		{
-			//ƒXƒyƒLƒ…ƒ‰
+			//ã‚¹ãƒšã‚­ãƒ¥ãƒ©
 			float specular;
 			fscanf( file, "%f", &specular );
 			fscanf( file, "%f", &specular );
@@ -649,28 +650,28 @@ void Model::LoadMaterial( const char *FileName, MODEL_SUBSET_MATERIAL **Material
 		}
 		else if( strcmp( str, "Ns" ) == 0 )
 		{
-			//ƒXƒyƒLƒ…ƒ‰‹­“x
+			//ã‚¹ãƒšã‚­ãƒ¥ãƒ©å¼·åº¦
 			float shininess;
 			fscanf( file, "%f", &shininess);
 		}
 		else if( strcmp( str, "d" ) == 0 )
 		{
-			//ƒAƒ‹ƒtƒ@
+			//ã‚¢ãƒ«ãƒ•ã‚¡
 			fscanf( file, "%f", &materialArray[ mc ].Material.BaseColor.w );
 		}
 		else if (strcmp(str, "Metallic") == 0)
 		{
-			//ƒƒ^ƒŠƒbƒN
+			//ãƒ¡ã‚¿ãƒªãƒƒã‚¯
 			fscanf(file, "%f", &materialArray[mc].Material.Metallic);
 		}
 		else if (strcmp(str, "Roughness") == 0)
 		{
-			//ƒ‰ƒtƒlƒX
+			//ãƒ©ãƒ•ãƒã‚¹
 			fscanf(file, "%f", &materialArray[mc].Material.Roughness);
 		}
 		else if( strcmp( str, "map_Kd" ) == 0 )
 		{
-			//ƒeƒNƒXƒ`ƒƒ
+			//ãƒ†ã‚¯ã‚¹ãƒãƒ£
 			fscanf( file, "%s", str );
 			strcat( materialArray[ mc ].TextureNameBaseColor, str);
 		}

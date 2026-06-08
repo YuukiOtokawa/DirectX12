@@ -49,7 +49,7 @@ void SaveObjBin(const char *FileName, MODEL *Model) {
     fclose(file);
 }
 
-void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL **MaterialArray,
+void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL *&MaterialArray,
                   UINT *MaterialNum) {
   char str[256];
 
@@ -122,7 +122,7 @@ void LoadMaterial(const char *FileName, MODEL_SUBSET_MATERIAL **MaterialArray,
 
   fclose(file);
 
-  MaterialArray = &materialArray;
+  MaterialArray = materialArray;
   *MaterialNum = materialNum;
 }
 
@@ -239,7 +239,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
             strcat(path, "\\");
             strcat(path, str);
 
-        LoadMaterial(path, &matArray, &matNum);
+        LoadMaterial(path, matArray, &matNum);
       } else if (strcmp(str, "o") == 0) {
         // objectName
         fscanf(file, "%s", objName);
@@ -355,9 +355,9 @@ void LoadModel(const char *FileName, MODEL *Model) {
   delete[] texArray;
   delete[] colArray;
 
-  assert(matArray);
-
-  delete[] matArray;
+  if (matArray) {
+    delete[] matArray;
+  }
 }
 
 void LoadObj(const char *FileName) {
@@ -430,7 +430,7 @@ void LoadObj(const char *FileName) {
 
       subsetArray[i].StartIndex = model.SubsetArray[i].StartIndex;
       subsetArray[i].IndexNum = model.SubsetArray[i].IndexNum;
-      subsetArray[i].Material.Material = model.SubsetArray[i].Material.Material;
+      subsetArray[i].Material.Material.SetFromConstant(model.SubsetArray[i].Material.Material);
 
       strcpy(subsetArray[i].Material.Name, model.SubsetArray[i].Material.Name);
 
@@ -444,8 +444,8 @@ void LoadObj(const char *FileName) {
 
   std::sort(subsetArray.begin(), subsetArray.end(),
             [](const SUBSET &a, const SUBSET &b) {
-              return a.Material.Material.BaseColor.w >
-                     b.Material.Material.BaseColor.w;
+              return a.Material.Material.GetBaseColor().w >
+                     b.Material.Material.GetBaseColor().w;
             });
 
   assert(model.VertexArray);

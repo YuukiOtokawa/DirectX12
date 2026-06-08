@@ -2,11 +2,12 @@
 
 #include "RenderManager.h"
 #include "VertexData.h"
+#include "Code/Render/Material.h"
 
 // 描画サブセットマテリアル構造体
 struct SUBSET_MATERIAL {
   char Name[256];
-  Render::Types::MATERIAL Material;
+  Render::Material Material;
 
   std::unique_ptr<Render::Types::TEXTURE> TextureBaseColor;
 };

@@ -47,8 +47,8 @@ PS_OUTPUT pix(PS_INPUT input)
     float NoL = saturate(dot(norm, lightDirection));
     float VoH = saturate(dot(eye, halfv));
 
-    float roughness = 0.5f;
-    float metallic = 0.0f;
+    float roughness = max(0.01f, Material.Roughness);
+    float metallic = Material.Metallic;
 
     float3 diffuse = 0.0f;
     {
@@ -74,10 +74,10 @@ PS_OUTPUT pix(PS_INPUT input)
         float g1L = NoL / (NoL * (1.0f - k) + k);
         g = g1V * g1L;
 
-        float3 F0 = float3(0.5f, 0.5f, 0.5f);
+        float3 F0 = lerp(0.04f, baseColor.xyz, metallic);
         float3 F;
         float power = (-5.55473f * VoH - 6.98316f) * VoH;
-        F = F0 + (1.0f - F0) * exp2(power);
+        F = F0 + (1.0f - F0) * pow(2.0f, power);
         
         specular = F * g * d / (4.0f * NoV * NoL + 0.001f);
         

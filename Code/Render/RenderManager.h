@@ -3,6 +3,7 @@
 #include "Main.h"
 
 #include "../Utility/VectorClass.h"
+#include "Material.h"
 
 namespace Render {
 
@@ -18,15 +19,8 @@ namespace Render {
 		};
 
 		// マテリアルデータ Materialクラスに移動
-		struct MATERIAL
-		{
-			Vector4		BaseColor;
-			Vector4		EmissionColor;
+		using MATERIAL = Render::MaterialConstant;
 
-			float		Metallic;
-			float		Specular;
-			float		Roughness;
-		};
 
 
 
