@@ -64,6 +64,8 @@ struct PS_OUTPUT_GEOMETRY
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
     float4 Position : SV_TARGET2;
+    float4 Material : SV_TARGET3;
+    float4 Emission : SV_TARGET4;
 };
 
 struct PS_OUTPUT
@@ -75,6 +77,8 @@ struct PS_OUTPUT
 Texture2D<float4> TextureBaseColor : register(t0);
 Texture2D<float4> TextureNormal : register(t1);
 Texture2D<float4> TexturePosition : register(t2);
+Texture2D<float4> TextureMaterial : register(t3);
+Texture2D<float4> TextureEmission : register(t4);
 
 SamplerState Sampler : register(s0);
 

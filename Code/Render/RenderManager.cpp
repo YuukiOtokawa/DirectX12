@@ -548,6 +548,8 @@ void RenderManager::Init()
 		DXGI_FORMAT RTVFormats[] = {
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT
 		};
 		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/Geometry.hlsl", RTVFormats, _countof(RTVFormats));
@@ -562,6 +564,12 @@ void RenderManager::Init()
 
 		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
+
+		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
+
+		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 	}
 }
 
@@ -641,7 +649,7 @@ void RenderManager::DrawBegin()
 
 		// Transition G-Buffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
 		{
-			D3D12_RESOURCE_BARRIER barriers[3];
+			D3D12_RESOURCE_BARRIER barriers[5];
 			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
 				m_ColorBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
@@ -654,14 +662,24 @@ void RenderManager::DrawBegin()
 				m_PositionBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_GraphicsCommandList->ResourceBarrier(3, barriers);
+			barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_MaterialBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			barriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_EmissionBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(5, barriers);
 		}
 
 		D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] =
 		{
 			m_ColorBuffer->RTVHandle,
 			m_NormalBuffer->RTVHandle,
-			m_PositionBuffer->RTVHandle
+			m_PositionBuffer->RTVHandle,
+			m_MaterialBuffer->RTVHandle,
+			m_EmissionBuffer->RTVHandle
 		};
 		m_GraphicsCommandList->OMSetRenderTargets(_countof(renderTargets), renderTargets, false, &m_DepthBufferHandle);
 
@@ -671,6 +689,8 @@ void RenderManager::DrawBegin()
 		m_GraphicsCommandList->ClearRenderTargetView(m_NormalBuffer->RTVHandle, clearNormal, 0, nullptr);
         m_GraphicsCommandList->ClearRenderTargetView(
             m_PositionBuffer->RTVHandle, clearNormal, 0, nullptr);
+		m_GraphicsCommandList->ClearRenderTargetView(m_MaterialBuffer->RTVHandle, clearNormal, 0, nullptr);
+		m_GraphicsCommandList->ClearRenderTargetView(m_EmissionBuffer->RTVHandle, clearNormal, 0, nullptr);
 		m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 	}
 }
@@ -686,7 +706,7 @@ void RenderManager::DrawEnd()
 
 		// 1) Transit G-Buffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
 		{
-			D3D12_RESOURCE_BARRIER barriers[3];
+			D3D12_RESOURCE_BARRIER barriers[5];
 			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
 				m_ColorBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
@@ -699,7 +719,15 @@ void RenderManager::DrawEnd()
 				m_PositionBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			m_GraphicsCommandList->ResourceBarrier(3, barriers);
+			barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_MaterialBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			barriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_EmissionBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_GraphicsCommandList->ResourceBarrier(5, barriers);
 		}
 
 		// 2) Render post-process to corresponding target buffer
@@ -739,6 +767,8 @@ void RenderManager::DrawEnd()
 			SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
             SetTexture(RenderManager::TEXTURE_TYPE::POSITION,
                        m_PositionBuffer.get());
+			SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, m_MaterialBuffer.get());
+			SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, m_EmissionBuffer.get());
 			DrawScreen();
 
 			// Transit RTV -> SRV (so ImGui can read it as texture)
@@ -1478,6 +1508,14 @@ void Render::RenderManager::ApplyPendingResizes() {
 		m_PositionBuffer.reset();
 		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
+
+		m_MaterialBuffer.reset();
+		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
+
+		m_EmissionBuffer.reset();
+		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 
 		m_GameViewTarget.reset();
 		m_GameViewTarget = CreateRenderTarget(m_SwapChainPendingWidth, m_SwapChainPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);

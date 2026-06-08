@@ -20,6 +20,8 @@ PS_OUTPUT pix(PS_INPUT input)
     float4 baseColor = TextureBaseColor.Sample(Sampler, input.TexCoord);
     float4 normal = TextureNormal.Sample(Sampler, input.TexCoord);
     float4 position = TexturePosition.Sample(Sampler, input.TexCoord);
+    float4 matParams = TextureMaterial.Sample(Sampler, input.TexCoord);
+    float4 emission = TextureEmission.Sample(Sampler, input.TexCoord);
 
     // Calculate normal length to identify background and silhouette edges
     float normalLength = length(normal.xyz);
@@ -47,8 +49,8 @@ PS_OUTPUT pix(PS_INPUT input)
     float NoL = saturate(dot(norm, lightDirection));
     float VoH = saturate(dot(eye, halfv));
 
-    float roughness = max(0.01f, Material.Roughness);
-    float metallic = Material.Metallic;
+    float roughness = max(0.01f, matParams.b); // b: Roughness
+    float metallic = matParams.r;              // r: Metallic
 
     float3 diffuse = 0.0f;
     {
@@ -90,7 +92,7 @@ PS_OUTPUT pix(PS_INPUT input)
 
     }
     
-    output.Color.xyz = diffuse + specular + ambient;
+    output.Color.xyz = diffuse + specular + ambient + emission.xyz;
     output.Color.a = 1.0f;
 
     return output;

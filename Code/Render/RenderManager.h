@@ -182,6 +182,8 @@ namespace Render {
 		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
 		std::unique_ptr<RENDER_TARGET>		m_NormalBuffer;
         std::unique_ptr<RENDER_TARGET>		m_PositionBuffer;
+		std::unique_ptr<RENDER_TARGET>		m_MaterialBuffer;
+		std::unique_ptr<RENDER_TARGET>		m_EmissionBuffer;
 
 		std::unique_ptr<RENDER_TARGET>		m_GameViewTarget;
 		std::unique_ptr<RENDER_TARGET>		m_SceneViewTarget;
@@ -293,6 +295,8 @@ namespace Render {
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
 			NORMAL,
 			POSITION,
+			MATERIAL,
+			EMISSION,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -321,6 +325,8 @@ namespace Render {
 		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
 		RENDER_TARGET* GetNormalBuffer() { return m_NormalBuffer.get(); }
         RENDER_TARGET *GetPositionBuffer() { return m_PositionBuffer.get(); }
+		RENDER_TARGET* GetMaterialBuffer() { return m_MaterialBuffer.get(); }
+		RENDER_TARGET* GetEmissionBuffer() { return m_EmissionBuffer.get(); }
 	};
 
 #pragma endregion RenderManager

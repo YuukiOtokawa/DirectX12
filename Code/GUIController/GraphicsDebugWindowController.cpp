@@ -12,4 +12,10 @@ void GUIController::Window::GraphicsDebugWindowController::Draw() {
     ImGui::Text("Position Buffer");
     ImGui::Image((void *)Render::RenderManager::GetInstance()->GetPositionBuffer()->SRVHandle.ptr,
                  ImVec2(300.0f, 200.0f));
+	ImGui::Text("Material Buffer");
+	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetMaterialBuffer()->SRVHandle.ptr,
+				 ImVec2(300.0f, 200.0f));
+	ImGui::Text("Emission Buffer");
+	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetEmissionBuffer()->SRVHandle.ptr,
+				 ImVec2(300.0f, 200.0f));
 }

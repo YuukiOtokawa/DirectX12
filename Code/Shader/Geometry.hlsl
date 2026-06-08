@@ -25,5 +25,9 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     output.Normal.a = 1.0f;
     output.Position = input.WorldPosition;
     
+    // G-Bufferにマテリアル属性を書き込む
+    output.Material = float4(Material.Metallic, Material.Specular, Material.Roughness, Material.NormalWeight);
+    output.Emission = Material.EmissionColor;
+    
     return output;
 }
