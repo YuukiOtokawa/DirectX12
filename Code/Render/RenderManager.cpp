@@ -3,6 +3,8 @@
 
 #include "D3DX12.h"
 #include "DDSTextureLoader12.h"
+#include <d3dcompiler.h>
+#pragma comment(lib, "d3dcompiler.lib")
 using namespace DirectX;
 
 using namespace EngineCore;
@@ -503,48 +505,48 @@ void RenderManager::Init()
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 		assert(SUCCEEDED(hr));
 
-		buffer[0].Position = { -1.0f,  1.0f,  0.0f };
-		buffer[1].Position = { 1.0f,  1.0f, 0.0f };
-		buffer[2].Position = { -1.0f,  -1.0f, 0.0f };
-		buffer[3].Position = { 1.0f,  -1.0f, 0.0f };
+		buffer[0].Position = Vector3(-1.0f,  1.0f,  0.0f);
+		buffer[1].Position = Vector3(1.0f,  1.0f, 0.0f);
+		buffer[2].Position = Vector3(-1.0f,  -1.0f, 0.0f);
+		buffer[3].Position = Vector3(1.0f,  -1.0f, 0.0f);
 
-		buffer[0].Color = { 1.0f,  1.0f,  1.0f, 1.0f };
-		buffer[1].Color = { 1.0f,  1.0f,  1.0f, 1.0f };
-		buffer[2].Color = { 1.0f,  1.0f,  1.0f, 1.0f };
-		buffer[3].Color = { 1.0f,  1.0f,  1.0f, 1.0f };
+		buffer[0].Color = Vector4(1.0f,  1.0f,  1.0f, 1.0f);
+		buffer[1].Color = Vector4(1.0f,  1.0f,  1.0f, 1.0f);
+		buffer[2].Color = Vector4(1.0f,  1.0f,  1.0f, 1.0f);
+		buffer[3].Color = Vector4(1.0f,  1.0f,  1.0f, 1.0f);
 
-		buffer[0].Normal = { 0.0f, 1.0f, 0.0f };
-		buffer[1].Normal = { 0.0f, 1.0f, 0.0f };
-		buffer[2].Normal = { 0.0f, 1.0f, 0.0f };
-		buffer[3].Normal = { 0.0f, 1.0f, 0.0f };
+		buffer[0].Normal = Vector3(0.0f, 1.0f, 0.0f);
+		buffer[1].Normal = Vector3(0.0f, 1.0f, 0.0f);
+		buffer[2].Normal = Vector3(0.0f, 1.0f, 0.0f);
+		buffer[3].Normal = Vector3(0.0f, 1.0f, 0.0f);
 
-		buffer[0].TexCoord = { 0.0f, 0.0f };
-		buffer[1].TexCoord = { 1.0f, 0.0f };
-		buffer[2].TexCoord = { 0.0f, 1.0f };
-		buffer[3].TexCoord = { 1.0f, 1.0f };
+		buffer[0].TexCoord = Vector2(0.0f, 0.0f);
+		buffer[1].TexCoord = Vector2(1.0f, 0.0f);
+		buffer[2].TexCoord = Vector2(0.0f, 1.0f);
+		buffer[3].TexCoord = Vector2(1.0f, 1.0f);
 
 		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
-	// �p�C�v���C������
+	// pCvC
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Unlit"] = CreatePipeline("UnlitVS.cso", "UnlitPS.cso", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/UnlitVS.hlsl", "Code/Shader/UnlitPS.hlsl", RTVFormats, _countof(RTVFormats));
 
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Screen"] = CreatePipeline("ScreenVS.cso", "ScreenPS.cso", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/ScreenVS.hlsl", "Code/Shader/ScreenPS.hlsl", RTVFormats, _countof(RTVFormats));
 
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["Deferred"] = CreatePipeline("ScreenVS.cso", "DeferredPS.cso", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/DeferredVS.hlsl", "Code/Shader/DeferredPS.hlsl", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
@@ -552,7 +554,7 @@ void RenderManager::Init()
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT
 		};
-		m_PipelineState["Geometry"] = CreatePipeline("GeometryVS.cso", "GeometryPS.cso", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/GeometryVS.hlsl", "Code/Shader/GeometryPS.hlsl", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
@@ -811,15 +813,15 @@ void RenderManager::DrawScreen()
 
 
 
-	//���_�o�b�t�@�ݒ�
+	//_obt@ݒ
 	SetVertexBuffer(m_VertexBuffer.get());
 
 
-	//�g�|���W�ݒ�
+	//g|Wݒ
 	m_GraphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 
-	//�`��
+	//`
 	m_GraphicsCommandList->DrawInstanced(4, 1, 0, 0);
 
 
@@ -915,49 +917,54 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShad
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
 
+	auto compileShader = [](const char* filename, const char* target, ID3DBlob** blob) -> bool {
+		wchar_t wFileName[MAX_PATH];
+		size_t size;
+		mbstowcs_s(&size, wFileName, filename, MAX_PATH);
 
+		UINT compileFlags = 0;
+#if defined(_DEBUG)
+		compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#else
+		compileFlags = D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
 
+		ComPtr<ID3DBlob> errorBlob;
+		HRESULT hr = D3DCompileFromFile(
+			wFileName,
+			nullptr,
+			D3D_COMPILE_STANDARD_FILE_INCLUDE,
+			"main",
+			target,
+			compileFlags,
+			0,
+			blob,
+			&errorBlob
+		);
 
-	//���_�V�F�[�_�[�ǂݍ���
-	std::vector<char> vertexShader;
-	{
-		std::ifstream file(VertexShaderFile, std::ios_base::in | std::ios_base::binary);
-		assert(file);
+		if (FAILED(hr)) {
+			if (errorBlob) {
+				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Shader Compilation Error", MB_OK | MB_ICONERROR);
+			}
+			return false;
+		}
+		return true;
+	};
 
-		file.seekg(0, std::ios_base::end);
-		int filesize = (int)file.tellg();
-		file.seekg(0, std::ios_base::beg);
+	ComPtr<ID3DBlob> vsBlob;
+	ComPtr<ID3DBlob> psBlob;
 
-		vertexShader.resize(filesize);
-		file.read(&vertexShader[0], filesize);
+	bool vsSuccess = compileShader(VertexShaderFile, "vs_5_0", &vsBlob);
+	assert(vsSuccess);
+	bool psSuccess = compileShader(PixelShaderFile, "ps_5_0", &psBlob);
+	assert(psSuccess);
 
-		file.close();
+	pipelineStateDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();
+	pipelineStateDesc.VS.BytecodeLength = vsBlob->GetBufferSize();
 
-
-		pipelineStateDesc.VS.pShaderBytecode = &vertexShader[0];
-		pipelineStateDesc.VS.BytecodeLength = filesize;
-	}
-
-
-	//�s�N�Z���V�F�[�_�[�ǂݍ���
-	std::vector<char> pixelShader;
-	{
-		std::ifstream file(PixelShaderFile, std::ios_base::in | std::ios_base::binary);
-		assert(file);
-
-		file.seekg(0, std::ios_base::end);
-		int filesize = (int)file.tellg();
-		file.seekg(0, std::ios_base::beg);
-
-		pixelShader.resize(filesize);
-		file.read(&pixelShader[0], filesize);
-
-		file.close();
-
-
-		pipelineStateDesc.PS.pShaderBytecode = &pixelShader[0];
-		pipelineStateDesc.PS.BytecodeLength = filesize;
-	}
+	pipelineStateDesc.PS.pShaderBytecode = psBlob->GetBufferPointer();
+	pipelineStateDesc.PS.BytecodeLength = psBlob->GetBufferSize();
 
 
 	//�C���v�b�g���C�A�E�g
