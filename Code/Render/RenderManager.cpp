@@ -547,6 +547,7 @@ void RenderManager::Init()
 	{
 		DXGI_FORMAT RTVFormats[] = {
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT
 		};
 		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/Geometry.hlsl", RTVFormats, _countof(RTVFormats));

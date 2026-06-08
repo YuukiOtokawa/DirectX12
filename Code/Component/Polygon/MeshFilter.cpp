@@ -62,4 +62,13 @@ void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::v
 		memcpy(buffer, indices.data(), sizeof(unsigned int) * indices.size());
 		_IndexBuffer->Resource->Unmap(0, nullptr);
 	}
+
+	// 描画システムが _pVertexData を必要とするため、設定されていない場合は生成・設定する
+	if (!_pVertexData) {
+		_pVertexData = new VertexData(FilePath, vertices, indices);
+	} else {
+		_pVertexData->SetFilePath(FilePath);
+		_pVertexData->SetVertices(vertices);
+		_pVertexData->SetIndices(indices);
+	}
 }

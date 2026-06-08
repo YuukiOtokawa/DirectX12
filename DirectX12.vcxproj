@@ -169,6 +169,7 @@
     <ClCompile Include="Code\GUIController\HierarchyWindowController.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Code\Render\RenderManager.cpp" />
+    <ClCompile Include="Code\Render\Material.cpp" />
     <ClCompile Include="Code\Object.cpp" />
     <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
     <ClCompile Include="Code\Component\Polygon\Renderer.cpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
     <ClCompile Include="Code\Render\RenderSystem.cpp" />
+    <ClCompile Include="Code\Utility\WorldInitializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Component\Camera\Camera.h" />
@@ -206,6 +208,7 @@
     <ClInclude Include="Code\GUIController\HierarchyWindowController.h" />
     <ClInclude Include="Main.h" />
     <ClInclude Include="Code\Render\RenderManager.h" />
+    <ClInclude Include="Code\Render\Material.h" />
     <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\Component\Polygon\Renderer.h" />
     <ClInclude Include="Code\Manager\ObjectManager.h" />
@@ -214,6 +217,7 @@
     <ClInclude Include="YamlConfigLoader.h" />
     <ClInclude Include="Code\GUIController\WindowManager.h" />
     <ClInclude Include="Code\Render\RenderSystem.h" />
+    <ClInclude Include="Code\Utility\WorldInitializer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc" />

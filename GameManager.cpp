@@ -8,6 +8,7 @@
 #include "Code/Component/Camera/Camera.h"
 #include "Code/Component/Transform/Transform.h"
 #include "Code/Component/Polygon/EditorCameraController.h"
+#include "Code/Utility/WorldInitializer.h"
 
 namespace EngineManager {
 
@@ -29,6 +30,7 @@ namespace EngineManager {
 		// Create EditorCamera automatically at startup
 		auto editorCameraObj = _ObjectManager->CreateObject();
 		editorCameraObj->SetName("EditorCamera");
+		editorCameraObj->AddComponent<EngineCore::General::Transform>();
 		editorCameraObj->AddComponent<EngineCore::General::Camera>();
 		editorCameraObj->AddComponent<EngineCore::General::EditorCameraController>();
 
@@ -38,6 +40,9 @@ namespace EngineManager {
 			transform->SetPosition(Vector3(0.0f, 3.0f, -8.0f));
 			transform->SetRotation(Vector3(0.2f, 0.0f, 0.0f)); // Look down slightly
 		}
+
+		// Initialize default world objects (plane, light, camera)
+		EngineCore::Utility::InitializeWorld(_ObjectManager);
 	}
 
 	void GameManager::Update() {
