@@ -72,7 +72,7 @@ void RenderManager::Init()
 	m_Viewport.MaxDepth = 1.f;
 
 
-	// �J�����O�͈� �ق�ViewPort�Ɠ���
+	// ScissorRect
 	m_ScissorRect.top = 0;
 	m_ScissorRect.left = 0;
 	m_ScissorRect.right = m_BackBufferWidth;
@@ -89,8 +89,7 @@ void RenderManager::Init()
 
 #if defined(_DEBUG)
 
-	// �f�o�b�O�@�\ DX12�̓f�o�b�O�����
-	//�f�o�b�O���C���[�L��
+	// DebugLayer
 	{
 		ComPtr<ID3D12Debug1>	debugController;
 		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -116,7 +115,7 @@ void RenderManager::Init()
 #endif
 
 
-	//�f�o�C�X����
+	// DXGI Factory
 	{
 		UINT flag{};
 		hr = CreateDXGIFactory2(flag, IID_PPV_ARGS(&m_Factory));
@@ -132,7 +131,7 @@ void RenderManager::Init()
 
 
 
-	//�R�}���h�L���[����
+	// CommandQueue
 	{
 		D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
 
@@ -153,7 +152,7 @@ void RenderManager::Init()
 
 
 
-	//�R�}���h�A���P�[�^�E���X�g����
+	// CommandAllocator
 	{
 		hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_GraphicsCommandAllocator[0]));
 		assert(SUCCEEDED(hr));
@@ -173,7 +172,7 @@ void RenderManager::Init()
 
 
 
-	//�X���b�v�`�F�[������
+	// SwapChain
 	{
 		DXGI_SWAP_CHAIN_DESC swapChainDesc{};
 		ComPtr<IDXGISwapChain> swapChain{};
@@ -208,7 +207,7 @@ void RenderManager::Init()
 
 
 
-	//�����_�[�^�[�Q�b�g����
+	// RenderTargetDescriptorHeap
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
 		heapDesc.NumDescriptors = 2;
@@ -239,8 +238,7 @@ void RenderManager::Init()
 
 
 
-	// �V�F�[�_�[�̃o�b�t�@��F������z
-	//�f�v�X�o�b�t�@�p�f�X�N���v�^�q�[�v
+	// DepthBufferDescriptorHeap
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
 		descriptorHeapDesc.NumDescriptors = 1;///////////////////////////////////
@@ -255,7 +253,7 @@ void RenderManager::Init()
 
 
 
-	//�f�v�X�o�b�t�@����
+	// DepthBuffer
 	{
 		D3D12_RESOURCE_DESC resourceDesc{};
 		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -305,8 +303,7 @@ void RenderManager::Init()
 
 
 
-	// �V�F�[�_�[���烊�\�[�X��F������z
-	//�ėp�f�X�N���v�^�q�[�v
+	// ShaderVisibleDescriptorHeap
 	{
 		D3D12_DESCRIPTOR_HEAP_DESC desc;
 		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -336,8 +333,7 @@ void RenderManager::Init()
 
 
 
-	// DX11�͎����ł���Ă���Ă����
-	//�ėp�萔�o�b�t�@
+	// ConstantBuffer
 	for (int i = 0; i < 2; i++)
 	{
 		{
@@ -404,15 +400,14 @@ void RenderManager::Init()
 
 
 
-	// �萔�o�b�t�@��e�N�X�`������\�[�X�o�C���h
-	//���[�g�V�O�l�`������
+	// RootSignature
 	{
 
 		D3D12_ROOT_PARAMETER		rootParameters[12]{};
 		D3D12_DESCRIPTOR_RANGE		range[12]{};
 
 
-		//�萔�o�b�t�@
+		// ConstantBuffer
 		for (unsigned int i = 0; i < 4; i++)
 		{
 			range[i].NumDescriptors = 1;
@@ -427,7 +422,7 @@ void RenderManager::Init()
 		}
 
 
-		//�e�N�X�`��
+		// SRV
 		for (unsigned int i = 4; i < 12; i++)
 		{
 			range[i].NumDescriptors = 1;
@@ -442,7 +437,7 @@ void RenderManager::Init()
 		}
 
 
-		//�T���v���[
+		// StaticSampler
 		D3D12_STATIC_SAMPLER_DESC	samplerDesc[2]{};
 		//samplerDesc[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		samplerDesc[0].Filter = D3D12_FILTER_ANISOTROPIC;
@@ -496,11 +491,11 @@ void RenderManager::Init()
 
 
 
-	//�X�v���C�g�|���S��
+	// VertexBuffer
 	{
 		m_VertexBuffer = CreateVertexBuffer(sizeof(VERTEX), 4);
 
-		//���_�f�[�^�̏�������
+		// Map
 		VERTEX* buffer{};
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 		assert(SUCCEEDED(hr));
@@ -528,25 +523,25 @@ void RenderManager::Init()
 		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
-	// pCvC
+	// PipelineState
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/UnlitVS.hlsl", "Code/Shader/UnlitPS.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/Unlit.hlsl", RTVFormats, _countof(RTVFormats));
 
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/ScreenVS.hlsl", "Code/Shader/ScreenPS.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/Screen.hlsl", RTVFormats, _countof(RTVFormats));
 
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/DeferredVS.hlsl", "Code/Shader/DeferredPS.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/Deferred.hlsl", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
@@ -554,7 +549,7 @@ void RenderManager::Init()
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT
 		};
-		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/GeometryVS.hlsl", "Code/Shader/GeometryPS.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/Geometry.hlsl", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
@@ -912,12 +907,12 @@ std::unique_ptr<TEXTURE> RenderManager::LoadTexture(const char* FileName)
 
 
 
-ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable)
+ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable)
 {
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
 
-	auto compileShader = [](const char* filename, const char* target, ID3DBlob** blob) -> bool {
+	auto compileShader = [](const char* filename, const char* entrypoint, const char* target, ID3DBlob** blob) -> bool {
 		wchar_t wFileName[MAX_PATH];
 		size_t size;
 		mbstowcs_s(&size, wFileName, filename, MAX_PATH);
@@ -934,7 +929,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShad
 			wFileName,
 			nullptr,
 			D3D_COMPILE_STANDARD_FILE_INCLUDE,
-			"main",
+			entrypoint,
 			target,
 			compileFlags,
 			0,
@@ -955,9 +950,9 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* VertexShad
 	ComPtr<ID3DBlob> vsBlob;
 	ComPtr<ID3DBlob> psBlob;
 
-	bool vsSuccess = compileShader(VertexShaderFile, "vs_5_0", &vsBlob);
+	bool vsSuccess = compileShader(ShaderFile, "vtx", "vs_5_0", &vsBlob);
 	assert(vsSuccess);
-	bool psSuccess = compileShader(PixelShaderFile, "ps_5_0", &psBlob);
+	bool psSuccess = compileShader(ShaderFile, "pix", "ps_5_0", &psBlob);
 	assert(psSuccess);
 
 	pipelineStateDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();

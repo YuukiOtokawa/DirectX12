@@ -225,16 +225,10 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Code\Shader\UnlitVS.hlsl" />
-    <FxCompile Include="Code\Shader\UnlitPS.hlsl" />
-    <FxCompile Include="Code\Shader\DeferredVS.hlsl" />
-    <FxCompile Include="Code\Shader\DeferredPS.hlsl" />
-    <FxCompile Include="Code\Shader\ScreenPS.hlsl" />
-    <FxCompile Include="Code\Shader\ScreenVS.hlsl" />
-    <FxCompile Include="Code\Shader\GeometryPS.hlsl" />
-    <FxCompile Include="Code\Shader\GeometryVS.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Code\Shader\Common.hlsli" />
+    <None Include="Code\Shader\Deferred.hlsl" />
+    <None Include="Code\Shader\Geometry.hlsl" />
+    <None Include="Code\Shader\Screen.hlsl" />
+    <None Include="Code\Shader\Unlit.hlsl" />
   </ItemGroup>
 </Project>

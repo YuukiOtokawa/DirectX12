@@ -181,7 +181,7 @@ namespace Render {
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
 
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
-		ComPtr<ID3D12PipelineState> CreatePipeline(const char* VertexShaderFile, const char* PixelShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
+		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
