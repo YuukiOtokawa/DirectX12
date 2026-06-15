@@ -4,6 +4,7 @@
 #include "D3DX12.h"
 #include "DDSTextureLoader12.h"
 #include <d3dcompiler.h>
+#include <algorithm>
 #pragma comment(lib, "d3dcompiler.lib")
 using namespace DirectX;
 
@@ -820,7 +821,15 @@ void RenderManager::FrameEnd() {
 			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 		}
 
-
+		// GPU側で実行が完了したPSOを解放する
+		UINT64 completedValue = m_Fence->GetCompletedValue();
+		m_PendingReleasePSOs.erase(
+			std::remove_if(m_PendingReleasePSOs.begin(), m_PendingReleasePSOs.end(),
+				[completedValue](const PendingReleasePSO& pending) {
+					return completedValue >= pending.fenceValue;
+				}),
+			m_PendingReleasePSOs.end()
+		);
 	}
 
 
@@ -1082,6 +1091,11 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	HRESULT hr = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState));
 	assert(SUCCEEDED(hr));
 
+	// 自動的にHLSLのメタデータをパースして登録する
+	if (pipelineState) {
+		ShaderMetadata meta = ParseShaderMetadata(ShaderFile);
+		m_ShaderMetadataMap[meta.shaderName] = meta;
+	}
 
 	return pipelineState;
 }
@@ -1384,6 +1398,15 @@ void RenderManager::SetPipelineState(const char* PiplineName)
 	assert(pipeline);
 
 	m_GraphicsCommandList->SetPipelineState(pipeline);
+}
+
+void RenderManager::RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState) {
+	auto it = m_PipelineState.find(name);
+	if (it != m_PipelineState.end()) {
+		// 次に提出される予定のフェンス値を紐付けて退避させる
+		m_PendingReleasePSOs.push_back({ it->second, m_FenceValue + 1 });
+	}
+	m_PipelineState[name] = pipelineState;
 }
 
 void RenderManager::CleanUpRenderTarget() {

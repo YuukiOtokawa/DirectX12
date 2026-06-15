@@ -178,6 +178,7 @@
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
     <ClCompile Include="Code\Render\RenderSystem.cpp" />
     <ClCompile Include="Code\Utility\WorldInitializer.cpp" />
+    <ClCompile Include="Code\Render\ShaderMetadata.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Component\Camera\Camera.h" />
@@ -218,6 +219,7 @@
     <ClInclude Include="Code\GUIController\WindowManager.h" />
     <ClInclude Include="Code\Render\RenderSystem.h" />
     <ClInclude Include="Code\Utility\WorldInitializer.h" />
+    <ClInclude Include="Code\Render\ShaderMetadata.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource\Resource.rc" />

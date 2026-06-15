@@ -4,6 +4,7 @@
 
 #include "../Utility/VectorClass.h"
 #include "Material.h"
+#include "ShaderMetadata.h"
 
 namespace Render {
 
@@ -175,7 +176,13 @@ namespace Render {
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
 
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
-		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
+		std::unordered_map<std::string, ShaderMetadata>					m_ShaderMetadataMap;
+
+		struct PendingReleasePSO {
+			ComPtr<ID3D12PipelineState> pso;
+			UINT64 fenceValue;
+		};
+		std::vector<PendingReleasePSO>									m_PendingReleasePSOs;
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
@@ -313,6 +320,15 @@ namespace Render {
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
 		void SetPipelineState(const char* PiplineName);
+		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
+		void RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState);
+		const ShaderMetadata* GetShaderMetadata(const std::string& name) const {
+			auto it = m_ShaderMetadataMap.find(name);
+			if (it != m_ShaderMetadataMap.end()) {
+				return &it->second;
+			}
+			return nullptr;
+		}
 
 		ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return m_SRVDescriptorHeap.Get(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetSRVDescriptorCPUHandle() {

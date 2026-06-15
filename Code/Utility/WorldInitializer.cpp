@@ -9,6 +9,11 @@
 #include "../Component/Camera/Camera.h"
 #include "../Render/RenderManager.h"
 
+#include "FilePicker.h"
+#include "FBXLoader.h"
+#include "OBJLoader.h"
+
+
 namespace EngineCore::Utility {
 
     void InitializeWorld(EngineCore::Manager::ObjectManager* objectManager) {
@@ -66,6 +71,36 @@ namespace EngineCore::Utility {
             meshFilter->SetVertexData(vertexData);
         }
         planeObj->AddComponent<General::MeshRenderer>();
+
+        {
+            // 1. 水平な正方形の上向き板ポリゴン
+            // Pos(0.0,0.0,0.0) Scale(5,5,5) Rot(0,0,0)
+            auto skyObj = objectManager->CreateObject();
+            skyObj->SetName("SkyDome");
+
+            // Transform追加
+            skyObj->AddComponent<General::Transform>();
+            auto skyTransform = skyObj->GetComponent<General::Transform>();
+            if (skyTransform) {
+                skyTransform->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
+                skyTransform->SetScale(Vector3(5.0f, 5.0f, 5.0f));
+                skyTransform->SetRotation(Vector3(0.0f, 0.0f, 0.0f));
+            }
+
+            auto skyVertexData = new VertexData();
+            LoadObjToVertexData("Assets\\sky.obj", skyVertexData);
+
+
+            // MeshFilter と MeshRenderer の追加
+            skyObj->AddComponent<General::MeshFilter>();
+            skyObj->AddComponent<General::MeshRenderer>();
+            auto meshFilter = skyObj->GetComponent<General::MeshFilter>();
+            if (meshFilter) {
+                meshFilter->SetVertexData(skyVertexData);
+                meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
+            }
+
+        }
 
         // 2. ライトオブジェクト
         auto lightObj = objectManager->CreateObject();
