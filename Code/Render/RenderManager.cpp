@@ -30,6 +30,7 @@ RenderManager::RenderManager()
 
 RenderManager::~RenderManager()
 {
+	WaitGPU();
 /*
 #if defined(_DEBUG)
 	//ReportLiveDeviceObjects
@@ -534,7 +535,7 @@ void RenderManager::Init()
 	}
 
 	{
-		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
 		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/Screen.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 
@@ -558,19 +559,32 @@ void RenderManager::Init()
 	}
 
 	{
-		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+		m_PipelineState["PostProcess"] = CreatePipeline("Code/Shader/PostProcess.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+	}
+
+	{
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+		m_PipelineState["InvertColor"] = CreatePipeline("Code/Shader/InvertColor.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+	}
+
+	{
+		FLOAT colorClear[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+		FLOAT zeroClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, colorClear);
 		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
 
-		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 
-		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
 
-		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
 
-		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 
 		m_LightedColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
@@ -808,12 +822,21 @@ void RenderManager::ResolveDeferredLighting()
 		m_GraphicsCommandList->ResourceBarrier(5, barriers);
 	}
 
-	// 2) Render deferred lighting to 1920x1080 m_LightedColorBuffer
+	// 2) Render deferred lighting to 1920x1080 m_PostProcessBuffer1
 	{
-		m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
+		// Transition m_PostProcessBuffer1: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_PostProcessBuffer1->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+		}
+
+		m_GraphicsCommandList->OMSetRenderTargets(1, &m_PostProcessBuffer1->RTVHandle, TRUE, nullptr);
 
 		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
+		m_GraphicsCommandList->ClearRenderTargetView(m_PostProcessBuffer1->RTVHandle, clearColor, 0, nullptr);
 
 		// Set G-Buffer pass viewports and scissors to fixed 1920x1080 size
 		D3D12_VIEWPORT gbufferViewport{};
@@ -842,6 +865,95 @@ void RenderManager::ResolveDeferredLighting()
 		SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, m_EmissionBuffer.get());
 		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture.get());
 		DrawScreen();
+	}
+
+	// 3) Apply Post-Process passes (Ping-pong buffers)
+	{
+		RENDER_TARGET* currentInput = m_PostProcessBuffer1.get();
+		RENDER_TARGET* currentOutput = m_LightedColorBuffer.get();
+
+		// Transition m_PostProcessBuffer1: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_PostProcessBuffer1->Resource.Get(),
+				D3D12_RESOURCE_STATE_RENDER_TARGET,
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+		}
+
+		if (m_ActivePostProcessPasses.empty()) {
+			// No post-process passes registered. Just do a pass-through copy using "PostProcess".
+			m_GraphicsCommandList->OMSetRenderTargets(1, &currentOutput->RTVHandle, TRUE, nullptr);
+			FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
+
+			SetPipelineState("PostProcess");
+			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+			DrawScreen();
+		}
+		else {
+			for (size_t i = 0; i < m_ActivePostProcessPasses.size(); ++i) {
+				const auto& passName = m_ActivePostProcessPasses[i];
+
+				// If we are writing to currentOutput, make sure it is in RENDER_TARGET state
+				if (i > 0) {
+					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+						currentOutput->Resource.Get(),
+						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+						D3D12_RESOURCE_STATE_RENDER_TARGET);
+					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+				}
+
+				m_GraphicsCommandList->OMSetRenderTargets(1, &currentOutput->RTVHandle, TRUE, nullptr);
+				FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+				m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
+
+				SetPipelineState(passName.c_str());
+				SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+				DrawScreen();
+
+				// Transition the output of this pass to PIXEL_SHADER_RESOURCE to be used as input for the next pass
+				{
+					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+						currentOutput->Resource.Get(),
+						D3D12_RESOURCE_STATE_RENDER_TARGET,
+						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+				}
+
+				std::swap(currentInput, currentOutput);
+			}
+
+			// After the loop, the latest result is in currentInput (which is now in PIXEL_SHADER_RESOURCE state).
+			// If the latest result is NOT in m_LightedColorBuffer, copy it there.
+			if (currentInput != m_LightedColorBuffer.get()) {
+				// Transition m_LightedColorBuffer to RENDER_TARGET
+				{
+					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+						m_LightedColorBuffer->Resource.Get(),
+						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+						D3D12_RESOURCE_STATE_RENDER_TARGET);
+					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+				}
+
+				m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
+				FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+				m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
+
+				SetPipelineState("PostProcess");
+				SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+				DrawScreen();
+			}
+			else {
+				// The latest result is already in m_LightedColorBuffer, but it is currently in PIXEL_SHADER_RESOURCE state.
+				// We must transition it back to RENDER_TARGET so that forward pass can render onto it.
+				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+					m_LightedColorBuffer->Resource.Get(),
+					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+					D3D12_RESOURCE_STATE_RENDER_TARGET);
+				m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+			}
+		}
 	}
 }
 
@@ -1080,9 +1192,9 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	ComPtr<ID3DBlob> psBlob;
 
 	bool vsSuccess = compileShader(ShaderFile, "vtx", "vs_5_0", &vsBlob);
-	assert(vsSuccess);
+	if (!vsSuccess) return nullptr;
 	bool psSuccess = compileShader(ShaderFile, "pix", "ps_5_0", &psBlob);
-	assert(psSuccess);
+	if (!psSuccess) return nullptr;
 
 	pipelineStateDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();
 	pipelineStateDesc.VS.BytecodeLength = vsBlob->GetBufferSize();
@@ -1303,7 +1415,7 @@ void RenderManager::ReleaseRenderTargetView(unsigned int SRVIndex)
 
 
 
-std::unique_ptr<RENDER_TARGET> RenderManager::CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, unsigned int MipLeve)
+std::unique_ptr<RENDER_TARGET> RenderManager::CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, const FLOAT* ClearColor, unsigned int MipLeve)
 {
 
 	D3D12_HEAP_PROPERTIES properties{};
@@ -1326,10 +1438,17 @@ std::unique_ptr<RENDER_TARGET> RenderManager::CreateRenderTarget(unsigned int Wi
 	desc.Format = Format;
 
 	D3D12_CLEAR_VALUE clearValue{};
-	clearValue.Color[0] = 0.0f;
-	clearValue.Color[1] = 0.0f;
-	clearValue.Color[2] = 0.0f;
-	clearValue.Color[3] = 1.0f;
+	if (ClearColor) {
+		clearValue.Color[0] = ClearColor[0];
+		clearValue.Color[1] = ClearColor[1];
+		clearValue.Color[2] = ClearColor[2];
+		clearValue.Color[3] = ClearColor[3];
+	} else {
+		clearValue.Color[0] = 0.0f;
+		clearValue.Color[1] = 0.0f;
+		clearValue.Color[2] = 0.0f;
+		clearValue.Color[3] = 1.0f;
+	}
 	clearValue.Format = Format;
 
 
@@ -1624,24 +1743,27 @@ void Render::RenderManager::ApplyPendingResizes() {
 		m_Device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsvDesc, m_DepthBufferHandle);
 
 		// Also resize G-Buffers to fixed 1920x1080 resolution
+		FLOAT colorClear[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+		FLOAT zeroClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
 		m_ColorBuffer.reset();
-		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_ColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, colorClear);
 		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
 
 		m_NormalBuffer.reset();
-		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_NormalBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 
 		m_PositionBuffer.reset();
-		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PositionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
 
 		m_MaterialBuffer.reset();
-		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_MaterialBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
 
 		m_EmissionBuffer.reset();
-		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 
 		m_LightedColorBuffer.reset();
@@ -1721,6 +1843,17 @@ RENDER_TARGET::~RENDER_TARGET()
 {
 	RenderManager::GetInstance()->ReleaseShaderResourceView(SRVIndex);
 	RenderManager::GetInstance()->ReleaseRenderTargetView(RTVIndex);
+}
+
+bool Render::RenderManager::RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile)
+{
+	DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+	ComPtr<ID3D12PipelineState> pipeline = CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+	if (!pipeline) {
+		return false;
+	}
+	m_PipelineState[name] = pipeline;
+	return true;
 }
 
 

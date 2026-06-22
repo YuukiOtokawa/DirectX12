@@ -20,8 +20,8 @@ namespace Render {
     // シェーダー定数バッファ用およびファイルIO用のPOD構造体
     struct MaterialConstant
     {
-        Vector4     BaseColor;
-        Vector4     EmissionColor;
+        Vector4     BaseColor = {1, 1, 1, 1};
+        Vector4     EmissionColor = {0, 0, 0, 1};
         float       Metallic;
         float       Specular;
         float       Roughness;

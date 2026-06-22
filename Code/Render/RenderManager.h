@@ -257,7 +257,7 @@ namespace Render {
 		void ReleaseRenderTargetView(unsigned int SRVIndex);
 
 		//�����_�[�^�[�Q�b�g
-		std::unique_ptr<RENDER_TARGET> CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, unsigned int MipLevel = 1);
+		std::unique_ptr<RENDER_TARGET> CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, const FLOAT* ClearColor = nullptr, unsigned int MipLevel = 1);
 
 		void CreateRenderTarget();
 
@@ -330,6 +330,9 @@ namespace Render {
 		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque);
 		void ResolveDeferredLighting();
 		void BeginForwardPass();
+		void AddPostProcessPass(const std::string& psoName) { m_ActivePostProcessPasses.push_back(psoName); }
+		void ClearPostProcessPasses() { m_ActivePostProcessPasses.clear(); }
+		bool RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile);
 		void RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState);
 		const ShaderMetadata* GetShaderMetadata(const std::string& name) const {
 			auto it = m_ShaderMetadataMap.find(name);
@@ -352,7 +355,10 @@ namespace Render {
         RENDER_TARGET *GetPositionBuffer() { return m_PositionBuffer.get(); }
 		RENDER_TARGET* GetMaterialBuffer() { return m_MaterialBuffer.get(); }
 		RENDER_TARGET* GetEmissionBuffer() { return m_EmissionBuffer.get(); }
+		RENDER_TARGET* GetPostProcessBuffer() { return m_PostProcessBuffer1.get(); }
 		RENDER_TARGET* GetLightedColorBuffer() { return m_LightedColorBuffer.get(); }
+	private:
+		std::vector<std::string> m_ActivePostProcessPasses;
 	};
 
 #pragma endregion RenderManager

@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Code\Component\Camera\Camera.cpp" />
+    <ClCompile Include="Code\Component\PostProcessComponent.cpp" />
     <ClCompile Include="Code\Component\Component.cpp" />
     <ClCompile Include="Code\Component\Polygon\MeshFilter.cpp" />
     <ClCompile Include="Code\Component\Polygon\MeshRenderer.cpp" />
@@ -182,6 +183,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Code\Component\Camera\Camera.h" />
+    <ClInclude Include="Code\Component\PostProcessComponent.h" />
     <ClInclude Include="Code\Component\Polygon\MeshFilter.h" />
     <ClInclude Include="Code\Component\Polygon\MeshRenderer.h" />
     <ClInclude Include="Code\Component\Polygon\Light.h" />

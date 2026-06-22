@@ -9,6 +9,7 @@
 #include "Code/Component/Transform/Transform.h"
 #include "Code/Component/Polygon/EditorCameraController.h"
 #include "Code/Utility/WorldInitializer.h"
+#include "Code/Component/PostProcessComponent.h"
 
 namespace EngineManager {
 
@@ -43,6 +44,12 @@ namespace EngineManager {
 
 		// Initialize default world objects (plane, light, camera)
 		EngineCore::Utility::InitializeWorld(_ObjectManager);
+
+		// Create PostProcessManager GameObject automatically
+		auto postProcessObj = _ObjectManager->CreateObject();
+		postProcessObj->SetName("PostProcessManager");
+		postProcessObj->AddComponent<EngineCore::General::Transform>();
+		postProcessObj->AddComponent<EngineCore::General::PostProcessComponent>();
 	}
 
 	void GameManager::Update() {
