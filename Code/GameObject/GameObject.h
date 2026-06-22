@@ -45,7 +45,7 @@ namespace EngineCore::General {
 		void SetName(const std::string& name);	
 
 		template<typename T> 
-		void AddComponent();
+		T* AddComponent();
 
 		template<typename T>
 		T* GetComponent();
@@ -58,10 +58,11 @@ namespace EngineCore::General {
 // ==========================================
 
 template<typename T>
-inline void EngineCore::General::GameObject::AddComponent() {
+inline T* EngineCore::General::GameObject::AddComponent() {
 	std::unique_ptr<T> component = std::make_unique<T>();
 	component->SetOwner(this);
 	m_Components.push_back(std::move(component));
+    return dynamic_cast<T *>(m_Components.back().get());
 }
 
 template<typename T>

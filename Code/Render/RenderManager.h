@@ -5,6 +5,7 @@
 #include "../Utility/VectorClass.h"
 #include "Material.h"
 #include "ShaderMetadata.h"
+#include <memory>
 
 namespace Render {
 
@@ -191,6 +192,9 @@ namespace Render {
         std::unique_ptr<RENDER_TARGET>		m_PositionBuffer;
 		std::unique_ptr<RENDER_TARGET>		m_MaterialBuffer;
 		std::unique_ptr<RENDER_TARGET>		m_EmissionBuffer;
+		std::unique_ptr<RENDER_TARGET>		m_LightedColorBuffer;
+
+		std::unique_ptr<RENDER_TARGET>		m_PostProcessBuffer1;
 
 		std::unique_ptr<RENDER_TARGET>		m_GameViewTarget;
 		std::unique_ptr<RENDER_TARGET>		m_SceneViewTarget;
@@ -211,6 +215,8 @@ namespace Render {
 
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
+
+		std::unique_ptr<TEXTURE> m_EnvTexture;
 
 		void Init();
 
@@ -304,6 +310,7 @@ namespace Render {
 			POSITION,
 			MATERIAL,
 			EMISSION,
+			ENVIRONMENT,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -320,7 +327,9 @@ namespace Render {
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
 		void SetPipelineState(const char* PiplineName);
-		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable = true);
+		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque);
+		void ResolveDeferredLighting();
+		void BeginForwardPass();
 		void RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState);
 		const ShaderMetadata* GetShaderMetadata(const std::string& name) const {
 			auto it = m_ShaderMetadataMap.find(name);
@@ -343,6 +352,7 @@ namespace Render {
         RENDER_TARGET *GetPositionBuffer() { return m_PositionBuffer.get(); }
 		RENDER_TARGET* GetMaterialBuffer() { return m_MaterialBuffer.get(); }
 		RENDER_TARGET* GetEmissionBuffer() { return m_EmissionBuffer.get(); }
+		RENDER_TARGET* GetLightedColorBuffer() { return m_LightedColorBuffer.get(); }
 	};
 
 #pragma endregion RenderManager

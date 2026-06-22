@@ -6,6 +6,13 @@
 
 namespace Render {
 
+    enum class RenderPassType {
+        DeferredOpaque,      // G-Buffer pass
+        ForwardOpaque,       // Forward pass, opaque (depth write on)
+        ForwardTransparent,  // Forward pass, transparent (depth write off, blend on)
+        PostProcess          // Post-process pass (depth test/write off, blend off)
+    };
+
     namespace Types {
         struct TEXTURE;
     }
@@ -26,6 +33,8 @@ namespace Render {
     private:
         std::string m_Name;
         std::string m_ShaderName;
+        std::string m_ShaderFilePath;
+        RenderPassType m_RenderPassType;
 
         // 互換用メンバ（同期される）
         Vector4     m_BaseColor;
@@ -67,8 +76,14 @@ namespace Render {
         void SetNormalWeight(float weight);
 
         // 新規追加 API
+        RenderPassType GetRenderPassType() const { return m_RenderPassType; }
+        void SetRenderPassType(RenderPassType type) { m_RenderPassType = type; }
+
         void SetShader(const std::string& shaderName);
         const std::string& GetShaderName() const { return m_ShaderName; }
+        
+        void SetShaderFilePath(const std::string& path) { m_ShaderFilePath = path; }
+        const std::string& GetShaderFilePath() const { return m_ShaderFilePath; }
 
         const void* GetBufferData() const { return m_PropertyBuffer.data(); }
         size_t GetBufferSize() const { return m_PropertyBuffer.size(); }

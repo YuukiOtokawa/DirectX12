@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include <cmath>
 
 #include "../Component.h"
 #include "RenderManager.h"
@@ -24,6 +25,12 @@ Camera::Camera() {
 	_Far = 1000.0f;
 	_UpVector = Vector3(0.0f, 1.0f, 0.0f);
 	_TargetPosition = Vector3(0.0f, 0.0f, 0.0f);
+
+	_LastPosition = Vector3(0.0f, 0.0f, 0.0f);
+	_LastRotation = Vector3(0.0f, 0.0f, 0.0f);
+	_LastTargetPosition = Vector3(0.0f, 0.0f, 0.0f);
+	_TargetDistance = 10.0f;
+	_IsInitialized = false;
 
 	if (s_ActiveCamera == nullptr) {
 		s_ActiveCamera = this;
@@ -54,15 +61,66 @@ void Camera::Draw() {
 
 	auto transform = GetOwner()->GetComponent<Transform>();
 	if (transform) {
-		// Only offset TargetPosition when it completely matches Camera Position to prevent division by zero
-		if (transform->Position == _TargetPosition) {
+		if (!_IsInitialized) {
+			_LastPosition = transform->Position;
+			_LastRotation = transform->Rotation;
+
+			Vector3 toTarget = _TargetPosition - transform->Position;
+			float len = toTarget.Length();
+			if (len > 0.001f) {
+				_TargetDistance = len;
+			}
+			else {
+				_TargetDistance = 10.0f;
+			}
+
 			Vector3 forward = transform->GetForward();
-			_TargetPosition = transform->Position + forward * 1.0f;
+			_TargetPosition = transform->Position + forward * _TargetDistance;
+			_LastTargetPosition = _TargetPosition;
+			_IsInitialized = true;
+		}
+		else {
+			bool posChanged = !(transform->Position == _LastPosition);
+			bool rotChanged = !(transform->Rotation == _LastRotation);
+			bool targetChanged = !(_TargetPosition == _LastTargetPosition);
+
+			if (posChanged || rotChanged) {
+				Vector3 forward = transform->GetForward();
+				_TargetPosition = transform->Position + forward * _TargetDistance;
+			}
+			else if (targetChanged) {
+				Vector3 toTarget = _TargetPosition - transform->Position;
+				float len = toTarget.Length();
+				if (len > 0.001f) {
+					_TargetDistance = len;
+					Vector3 dir = toTarget.Normalize();
+					float pitch = std::asin(dir.y);
+					float yaw = std::atan2(dir.z, dir.x);
+					transform->Rotation = Vector3(pitch, yaw, 0.0f);
+				}
+				else {
+					_TargetDistance = 1.0f;
+				}
+			}
+			else {
+				if (transform->Position == _TargetPosition) {
+					Vector3 forward = transform->GetForward();
+					_TargetPosition = transform->Position + forward * _TargetDistance;
+				}
+			}
 		}
 
-		XMVECTOR pos = XMLoadFloat3(transform->Position.ToXMFloat3());
-		XMVECTOR eyev = XMLoadFloat3(_TargetPosition.ToXMFloat3());
-		XMVECTOR up = XMLoadFloat3(_UpVector.ToXMFloat3());
+		_LastPosition = transform->Position;
+		_LastRotation = transform->Rotation;
+		_LastTargetPosition = _TargetPosition;
+
+		XMFLOAT3 posF3 = { transform->Position.x, transform->Position.y, transform->Position.z };
+		XMFLOAT3 targetF3 = { _TargetPosition.x, _TargetPosition.y, _TargetPosition.z };
+		XMFLOAT3 upF3 = { _UpVector.x, _UpVector.y, _UpVector.z };
+
+		XMVECTOR pos = XMLoadFloat3(&posF3);
+		XMVECTOR eyev = XMLoadFloat3(&targetF3);
+		XMVECTOR up = XMLoadFloat3(&upF3);
 		_ViewMatrix = XMMatrixLookAtLH(pos, eyev, up);
 	}
 

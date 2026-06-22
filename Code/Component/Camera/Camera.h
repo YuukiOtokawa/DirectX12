@@ -21,6 +21,12 @@ namespace EngineCore::General {
 
 		Vector3 _UpVector;
 
+		Vector3 _LastPosition;
+		Vector3 _LastRotation;
+		Vector3 _LastTargetPosition;
+		float _TargetDistance;
+		bool _IsInitialized;
+
 		static Camera* s_ActiveCamera;
 
 		REGISTER_COMPONENT(Camera)

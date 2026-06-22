@@ -22,9 +22,9 @@ Vector3 EngineCore::General::Transform::GetForward() const {
 
 Vector3 EngineCore::General::Transform::GetRight() const {
 	Vector3 right;
-	right.x = cos(Rotation.y - XM_PIDIV2) * cos(Rotation.x);
-	right.y = sin(Rotation.x);
-	right.z = sin(Rotation.y - XM_PIDIV2) * cos(Rotation.x);
+	right.x = sin(Rotation.y);
+	right.y = 0.0f;
+	right.z = -cos(Rotation.y);
 	return right.Normalize();
 }
 

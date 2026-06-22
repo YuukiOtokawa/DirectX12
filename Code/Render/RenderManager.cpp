@@ -3,6 +3,7 @@
 
 #include "D3DX12.h"
 #include "DDSTextureLoader12.h"
+#include "dxgiformat.h"
 #include <d3dcompiler.h>
 #include <algorithm>
 #pragma comment(lib, "d3dcompiler.lib")
@@ -526,23 +527,23 @@ void RenderManager::Init()
 
 	// PipelineState
 	{
-		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
-		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/Unlit.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/Unlit.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::ForwardOpaque);
 
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
 
-		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/Screen.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/Screen.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/Deferred.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/Deferred.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	{
@@ -571,7 +572,15 @@ void RenderManager::Init()
 
 		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
+
+		m_LightedColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_LightedColorBuffer->Resource->SetName(L"LightedColorBuffer");
+
+		m_PostProcessBuffer1 = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_PostProcessBuffer1->Resource->SetName(L"PostProcessBuffer1");
 	}
+
+	m_EnvTexture = LoadTexture("Assets\\charolettenbrunn_park_2k.dds");
 }
 
 
@@ -700,41 +709,20 @@ void RenderManager::DrawEnd()
 {
 	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		// BackBuffer path: ImGui will render onto it, so we do nothing here.
-		// Barrier and clearing are already handled in DrawBegin().
 	}
 	else {
-		// GameView or SceneView path:
-
-		// 1) Transit G-Buffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
-		{
-			D3D12_RESOURCE_BARRIER barriers[5];
-			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_ColorBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_NormalBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_PositionBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_MaterialBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			barriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_EmissionBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_RENDER_TARGET,
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-			m_GraphicsCommandList->ResourceBarrier(5, barriers);
-		}
-
-		// 2) Render post-process to corresponding target buffer
 		RENDER_TARGET* target = (_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
 		if (target) {
-			// Transit SRV -> RTV
+			// 1) Transition m_LightedColorBuffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+			{
+				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+					m_LightedColorBuffer->Resource.Get(),
+					D3D12_RESOURCE_STATE_RENDER_TARGET,
+					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+				m_GraphicsCommandList->ResourceBarrier(1, &trans);
+			}
+
+			// 2) Transition target: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
 			{
 				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
 					target->Resource.Get(),
@@ -743,13 +731,13 @@ void RenderManager::DrawEnd()
 				m_GraphicsCommandList->ResourceBarrier(1, &trans);
 			}
 
-			m_GraphicsCommandList->OMSetRenderTargets(1, &target->RTVHandle, TRUE, &m_DepthBufferHandle);
+			// 3) Set target RTV and clear it
+			m_GraphicsCommandList->OMSetRenderTargets(1, &target->RTVHandle, TRUE, nullptr);
 
 			FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 			m_GraphicsCommandList->ClearRenderTargetView(target->RTVHandle, clearColor, 0, nullptr);
-			m_GraphicsCommandList->ClearDepthStencilView(m_DepthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-			// Set target-specific dynamic viewport and scissor for post-processing scale
+			// 4) Set dynamic viewport for aspect ratio / scale copy
 			D3D12_VIEWPORT targetViewport = m_Viewport;
 			D3D12_RECT targetScissorRect = m_ScissorRect;
 			if (target->Resource) {
@@ -762,17 +750,12 @@ void RenderManager::DrawEnd()
 			m_GraphicsCommandList->RSSetViewports(1, &targetViewport);
 			m_GraphicsCommandList->RSSetScissorRects(1, &targetScissorRect);
 
-			// Post process (Deferred Shading / Lighting)
-			SetPipelineState("Deferred");
-			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
-			SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
-            SetTexture(RenderManager::TEXTURE_TYPE::POSITION,
-                       m_PositionBuffer.get());
-			SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, m_MaterialBuffer.get());
-			SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, m_EmissionBuffer.get());
+			// 5) Render screen copy with scaling (1920x1080 lighted buffer -> target resolution)
+			SetPipelineState("Screen");
+			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_LightedColorBuffer.get());
 			DrawScreen();
 
-			// Transit RTV -> SRV (so ImGui can read it as texture)
+			// 6) Transition target: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
 			{
 				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
 					target->Resource.Get(),
@@ -780,8 +763,114 @@ void RenderManager::DrawEnd()
 					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 				m_GraphicsCommandList->ResourceBarrier(1, &trans);
 			}
+
+			// 7) Transition m_LightedColorBuffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
+			{
+				auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+					m_LightedColorBuffer->Resource.Get(),
+					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+					D3D12_RESOURCE_STATE_RENDER_TARGET);
+				m_GraphicsCommandList->ResourceBarrier(1, &trans);
+			}
 		}
 	}
+}
+
+void RenderManager::ResolveDeferredLighting()
+{
+	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		return;
+	}
+
+	// 1) Transit G-Buffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+	{
+		D3D12_RESOURCE_BARRIER barriers[5];
+		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_ColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_NormalBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_PositionBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_MaterialBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_EmissionBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(5, barriers);
+	}
+
+	// 2) Render deferred lighting to 1920x1080 m_LightedColorBuffer
+	{
+		m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
+
+		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
+
+		// Set G-Buffer pass viewports and scissors to fixed 1920x1080 size
+		D3D12_VIEWPORT gbufferViewport{};
+		gbufferViewport.TopLeftX = 0.0f;
+		gbufferViewport.TopLeftY = 0.0f;
+		gbufferViewport.Width = 1920.0f;
+		gbufferViewport.Height = 1080.0f;
+		gbufferViewport.MinDepth = 0.0f;
+		gbufferViewport.MaxDepth = 1.0f;
+
+		D3D12_RECT gbufferScissor{};
+		gbufferScissor.left = 0;
+		gbufferScissor.top = 0;
+		gbufferScissor.right = 1920;
+		gbufferScissor.bottom = 1080;
+
+		m_GraphicsCommandList->RSSetViewports(1, &gbufferViewport);
+		m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
+
+		// Post process (Deferred Shading / Lighting)
+		SetPipelineState("Deferred");
+		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::POSITION, m_PositionBuffer.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, m_MaterialBuffer.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, m_EmissionBuffer.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture.get());
+		DrawScreen();
+	}
+}
+
+void RenderManager::BeginForwardPass()
+{
+	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		return;
+	}
+
+	// Set m_LightedColorBuffer RTV and preserve existing 1920x1080 depth buffer (DSV)
+	m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, &m_DepthBufferHandle);
+
+	// Set G-Buffer pass viewports and scissors to fixed 1920x1080 size
+	D3D12_VIEWPORT gbufferViewport{};
+	gbufferViewport.TopLeftX = 0.0f;
+	gbufferViewport.TopLeftY = 0.0f;
+	gbufferViewport.Width = 1920.0f;
+	gbufferViewport.Height = 1080.0f;
+	gbufferViewport.MinDepth = 0.0f;
+	gbufferViewport.MaxDepth = 1.0f;
+
+	D3D12_RECT gbufferScissor{};
+	gbufferScissor.left = 0;
+	gbufferScissor.top = 0;
+	gbufferScissor.right = 1920;
+	gbufferScissor.bottom = 1080;
+
+	m_GraphicsCommandList->RSSetViewports(1, &gbufferViewport);
+	m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
 }
 
 void RenderManager::FrameEnd() {
@@ -947,7 +1036,7 @@ std::unique_ptr<TEXTURE> RenderManager::LoadTexture(const char* FileName)
 
 
 
-ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, bool depthEnable)
+ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType)
 {
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
@@ -1045,16 +1134,26 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.RasterizerState.MultisampleEnable = FALSE;
 
 
-	//�u�����h�X�e�[�g
+	//uhXe[g
 	for (int i = 0; i < _countof(pipelineStateDesc.BlendState.RenderTarget); ++i)
 	{	
-		pipelineStateDesc.BlendState.RenderTarget[i].BlendEnable = TRUE;
-		pipelineStateDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
-		pipelineStateDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
-		pipelineStateDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
-		pipelineStateDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
-		pipelineStateDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
-		pipelineStateDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		if (passType == RenderPassType::ForwardTransparent) {
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendEnable = TRUE;
+			pipelineStateDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+			pipelineStateDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+			pipelineStateDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
+			pipelineStateDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		} else {
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendEnable = TRUE;
+			pipelineStateDesc.BlendState.RenderTarget[i].SrcBlend = D3D12_BLEND_ONE;
+			pipelineStateDesc.BlendState.RenderTarget[i].DestBlend = D3D12_BLEND_ZERO;
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendOp = D3D12_BLEND_OP_ADD;
+			pipelineStateDesc.BlendState.RenderTarget[i].SrcBlendAlpha = D3D12_BLEND_ONE;
+			pipelineStateDesc.BlendState.RenderTarget[i].DestBlendAlpha = D3D12_BLEND_ZERO;
+			pipelineStateDesc.BlendState.RenderTarget[i].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		}
 		pipelineStateDesc.BlendState.RenderTarget[i].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		pipelineStateDesc.BlendState.RenderTarget[i].LogicOpEnable = FALSE;
 		pipelineStateDesc.BlendState.RenderTarget[i].LogicOp = D3D12_LOGIC_OP_CLEAR;
@@ -1064,10 +1163,15 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.BlendState.IndependentBlendEnable = FALSE;
 
 
-	//�f�v�X�E�X�e���V���X�e�[�g
-	pipelineStateDesc.DepthStencilState.DepthEnable = depthEnable;
-	pipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-	pipelineStateDesc.DepthStencilState.DepthWriteMask = depthEnable ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+	//fvXEXeVXe[g
+	if (passType == RenderPassType::PostProcess) {
+		pipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
+		pipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+	} else {
+		pipelineStateDesc.DepthStencilState.DepthEnable = TRUE;
+		pipelineStateDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+		pipelineStateDesc.DepthStencilState.DepthWriteMask = (passType == RenderPassType::ForwardTransparent) ? D3D12_DEPTH_WRITE_MASK_ZERO : D3D12_DEPTH_WRITE_MASK_ALL;
+	}
 	pipelineStateDesc.DepthStencilState.StencilEnable = FALSE;
 	pipelineStateDesc.DepthStencilState.StencilReadMask = D3D12_DEFAULT_STENCIL_READ_MASK;
 	pipelineStateDesc.DepthStencilState.StencilWriteMask = D3D12_DEFAULT_STENCIL_WRITE_MASK;
@@ -1539,6 +1643,10 @@ void Render::RenderManager::ApplyPendingResizes() {
 		m_EmissionBuffer.reset();
 		m_EmissionBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
+
+		m_LightedColorBuffer.reset();
+		m_LightedColorBuffer = CreateRenderTarget(1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		m_LightedColorBuffer->Resource->SetName(L"LightedColorBuffer");
 
 		m_GameViewTarget.reset();
 		m_GameViewTarget = CreateRenderTarget(m_SwapChainPendingWidth, m_SwapChainPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);

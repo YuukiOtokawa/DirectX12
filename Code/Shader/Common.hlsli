@@ -79,6 +79,7 @@ Texture2D<float4> TextureNormal : register(t1);
 Texture2D<float4> TexturePosition : register(t2);
 Texture2D<float4> TextureMaterial : register(t3);
 Texture2D<float4> TextureEmission : register(t4);
+Texture2D<float4> TextureEnviroment : register(t5);
 
 SamplerState Sampler : register(s0);
 

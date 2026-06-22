@@ -55,12 +55,14 @@ PS_OUTPUT pix(PS_INPUT input)
     float3 diffuse = 0.0f;
     {
         float4 light = LightColor * saturate(dot(lightDirection, norm));
-        float4 kD = baseColor;
-        kD.a = 0.0f;
-        diffuse = kD.xyz * light.xyz / PI;
         
-        // Smoothly fade diffuse lighting at silhouette edges to match G-Buffer coverage
-        diffuse = diffuse * smoothstep(0.1f, 0.9f, normalLength);
+        //IBL
+        float2 iblTexcoord;
+        iblTexcoord.x = -atan2(normal.x, normal.z) / (PI * 2);
+        iblTexcoord.y = acos(normal.y) / PI;
+        light += TextureEnviroment.SampleLevel(Sampler, iblTexcoord, 9) * (1 - metallic) * 10;
+
+        diffuse = light * baseColor.xyz / PI;
     }
 
     float3 specular = 0.0f;
@@ -87,12 +89,7 @@ PS_OUTPUT pix(PS_INPUT input)
         specular = specular * smoothstep(0.1f, 0.9f, normalLength);
     }
 
-    float3 ambient = 0.0f;
-    {
-
-    }
-    
-    output.Color.xyz = diffuse + specular + ambient + emission.xyz;
+    output.Color.xyz = diffuse + specular + emission.xyz;
     output.Color.a = 1.0f;
 
     return output;

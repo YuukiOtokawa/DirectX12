@@ -70,10 +70,13 @@ namespace EngineCore::Utility {
         if (meshFilter) {
             meshFilter->SetVertexData(vertexData);
         }
-        planeObj->AddComponent<General::MeshRenderer>();
+        auto meshRenderer = planeObj->AddComponent<General::MeshRenderer>();
+        meshRenderer->SetShader("Geometry"); // デフォルトのジオメトリシェーダーを使用)
+        meshRenderer->GetMaterial().SetRenderPassType(Render::RenderPassType::DeferredOpaque);
+        meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Geometry.hlsl");
 
         {
-            // 1. 水平な正方形の上向き板ポリゴン
+            // 2. 天球
             // Pos(0.0,0.0,0.0) Scale(5,5,5) Rot(0,0,0)
             auto skyObj = objectManager->CreateObject();
             skyObj->SetName("SkyDome");
@@ -83,7 +86,7 @@ namespace EngineCore::Utility {
             auto skyTransform = skyObj->GetComponent<General::Transform>();
             if (skyTransform) {
                 skyTransform->SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-                skyTransform->SetScale(Vector3(5.0f, 5.0f, 5.0f));
+                skyTransform->SetScale(Vector3(10.0f, 10.0f, 10.0f));
                 skyTransform->SetRotation(Vector3(0.0f, 0.0f, 0.0f));
             }
 
@@ -93,16 +96,18 @@ namespace EngineCore::Utility {
 
             // MeshFilter と MeshRenderer の追加
             skyObj->AddComponent<General::MeshFilter>();
-            skyObj->AddComponent<General::MeshRenderer>();
+            auto meshRenderer = skyObj->AddComponent<General::MeshRenderer>();
             auto meshFilter = skyObj->GetComponent<General::MeshFilter>();
             if (meshFilter) {
                 meshFilter->SetVertexData(skyVertexData);
                 meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
             }
-
+            meshRenderer->SetShader("Unlit"); // スカイドーム用のシェーダーを使用
+            meshRenderer->GetMaterial().SetRenderPassType(Render::RenderPassType::ForwardOpaque);
+            meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Unlit.hlsl");
         }
 
-        // 2. ライトオブジェクト
+        // 3. ライトオブジェクト
         auto lightObj = objectManager->CreateObject();
         lightObj->SetName("DirectionalLight");
         
@@ -111,11 +116,11 @@ namespace EngineCore::Utility {
         if (lightTransform) {
             lightTransform->SetPosition(Vector3(0.0f, 5.0f, 0.0f));
             // 少し斜め下（地面方向）を照らすように回転を設定 (Pitch: 0.7f, Yaw: 0.7f)
-            lightTransform->SetRotation(Vector3(0.7f, 0.7f, 0.0f));
+            lightTransform->SetRotation(Vector3(-0.5f, 0.5f, 0.0f));
         }
         lightObj->AddComponent<General::Light>();
 
-        // 3. GameView用カメラ
+        // 4. GameView用カメラ
         auto cameraObj = objectManager->CreateObject();
         cameraObj->SetName("GameCamera"); // "EditorCamera" 以外の名前で登録
 

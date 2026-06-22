@@ -82,6 +82,42 @@ void MeshRenderer::Draw() {
 void MeshRenderer::Inspector() {
 	auto renderManager = Render::RenderManager::GetInstance();
 	
+	// --- Render Pass Picker ---
+	ImGui::Text("Render Pass");
+	ImGui::SameLine();
+	int currentPassType = static_cast<int>(m_Material.GetRenderPassType());
+	const char* passTypeNames[] = { "Deferred Opaque", "Forward Opaque", "Forward Transparent" };
+	if (ImGui::Combo("##RenderPass", &currentPassType, passTypeNames, _countof(passTypeNames))) {
+		Render::RenderPassType newPassType = static_cast<Render::RenderPassType>(currentPassType);
+		m_Material.SetRenderPassType(newPassType);
+		
+		// If shader path is set, automatically recompile PSO with the new configuration
+		std::string path = m_Material.GetShaderFilePath();
+		if (!path.empty() && renderManager) {
+			std::string shaderName = m_Material.GetShaderName();
+			ComPtr<ID3D12PipelineState> pso;
+			if (newPassType == Render::RenderPassType::DeferredOpaque) {
+				DXGI_FORMAT formats[] = {
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT
+				};
+				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), newPassType);
+			} else {
+				DXGI_FORMAT formats[] = {
+					DXGI_FORMAT_R16G16B16A16_FLOAT
+				};
+				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), newPassType);
+			}
+			
+			if (pso) {
+				renderManager->RegisterPipelineState(shaderName, pso);
+			}
+		}
+	}
+
 	// --- Shader Picker ---
 	ImGui::Text("Shader (HLSL)");
 	ImGui::SameLine();
@@ -92,19 +128,28 @@ void MeshRenderer::Inspector() {
 			std::string shaderName = path.substr(path.find_last_of("\\/") + 1);
 			shaderName = shaderName.substr(0, shaderName.find_last_of("."));
 			
-			// Compiling with Geometry Pass RTV Format (5 G-Buffer layers)
-			DXGI_FORMAT formats[] = {
-				DXGI_FORMAT_R16G16B16A16_FLOAT,
-				DXGI_FORMAT_R16G16B16A16_FLOAT,
-				DXGI_FORMAT_R16G16B16A16_FLOAT,
-				DXGI_FORMAT_R16G16B16A16_FLOAT,
-				DXGI_FORMAT_R16G16B16A16_FLOAT
-			};
+			Render::RenderPassType passType = m_Material.GetRenderPassType();
+			ComPtr<ID3D12PipelineState> pso;
+			if (passType == Render::RenderPassType::DeferredOpaque) {
+				DXGI_FORMAT formats[] = {
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT,
+					DXGI_FORMAT_R16G16B16A16_FLOAT
+				};
+				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), passType);
+			} else {
+				DXGI_FORMAT formats[] = {
+					DXGI_FORMAT_R16G16B16A16_FLOAT
+				};
+				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), passType);
+			}
 			
-			ComPtr<ID3D12PipelineState> pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats));
 			if (pso) {
 				renderManager->RegisterPipelineState(shaderName, pso);
 				m_Material.SetShader(shaderName);
+				m_Material.SetShaderFilePath(path);
 			}
 		}
 	}

@@ -5,7 +5,7 @@
 
 using namespace EngineCore::General;
 
-EditorCameraController::EditorCameraController() : _BaseMoveSpeed(0.05f), _LookSensitivity(0.002f) {}
+EditorCameraController::EditorCameraController() : _BaseMoveSpeed(0.05f), _LookSensitivity(0.001f) {}
 
 void EditorCameraController::Draw() {
 	// Right click must be held down to control editor camera

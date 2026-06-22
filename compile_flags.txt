@@ -11,6 +11,7 @@
 -ICode
 -Iyaml-cpp\Code
 -ICode\Render
+-IC:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0\um
 -I.
 
 InlayHints:

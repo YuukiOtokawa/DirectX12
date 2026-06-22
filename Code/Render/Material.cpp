@@ -6,6 +6,8 @@ namespace Render {
     Material::Material()
         : m_Name("")
         , m_ShaderName("")
+        , m_ShaderFilePath("")
+        , m_RenderPassType(RenderPassType::DeferredOpaque)
         , m_BaseColor(1.0f, 1.0f, 1.0f, 1.0f)
         , m_EmissionColor(0.0f, 0.0f, 0.0f, 1.0f)
         , m_Metallic(0.0f)
@@ -20,6 +22,8 @@ namespace Render {
     Material::Material(const std::string& name)
         : m_Name(name)
         , m_ShaderName("")
+        , m_ShaderFilePath("")
+        , m_RenderPassType(RenderPassType::DeferredOpaque)
         , m_BaseColor(1.0f, 1.0f, 1.0f, 1.0f)
         , m_EmissionColor(0.0f, 0.0f, 0.0f, 1.0f)
         , m_Metallic(0.0f)
@@ -33,6 +37,8 @@ namespace Render {
 
     Material::Material(const MaterialConstant& constantData)
         : m_ShaderName("")
+        , m_ShaderFilePath("")
+        , m_RenderPassType(RenderPassType::DeferredOpaque)
     {
         SetFromConstant(constantData);
     }

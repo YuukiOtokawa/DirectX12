@@ -15,6 +15,10 @@ namespace EngineCore::General {
 		void Draw() override;
 		void Inspector() override;
 
+		void SetShader(const std::string &shaderName) {
+            m_Material.SetShader(shaderName);
+        }
+
 		Render::Material& GetMaterial() { return m_Material; }
 		const Render::Material& GetMaterial() const { return m_Material; }
 	};
