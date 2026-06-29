@@ -60,6 +60,11 @@ namespace EngineCore::RenderSystem {
 		for (auto* component : forwardComponents) {
 			component->Draw();
 		}
+
+		// 7. Apply Post-Process to the fully composited image (deferred + forward)
+		if (renderManager) {
+			renderManager->ApplyPostProcess();
+		}
 	}
 
 }

@@ -255,4 +255,7 @@
     <None Include="Code\Shader\Screen.hlsl" />
     <None Include="Code\Shader\Unlit.hlsl" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Code\Shader\GrayScale.hlsl" />
+  </ItemGroup>
 </Project>

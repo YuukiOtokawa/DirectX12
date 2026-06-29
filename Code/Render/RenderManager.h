@@ -330,6 +330,7 @@ namespace Render {
 		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque);
 		void ResolveDeferredLighting();
 		void BeginForwardPass();
+		void ApplyPostProcess();
 		void AddPostProcessPass(const std::string& psoName) { m_ActivePostProcessPasses.push_back(psoName); }
 		void ClearPostProcessPasses() { m_ActivePostProcessPasses.clear(); }
 		bool RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile);

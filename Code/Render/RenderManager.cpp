@@ -822,21 +822,15 @@ void RenderManager::ResolveDeferredLighting()
 		m_GraphicsCommandList->ResourceBarrier(5, barriers);
 	}
 
-	// 2) Render deferred lighting to 1920x1080 m_PostProcessBuffer1
+	// 2) Render deferred lighting directly into m_LightedColorBuffer (1920x1080).
+	//    Post-process is applied later in ApplyPostProcess(), after the forward pass,
+	//    so that both deferred and forward geometry receive the post effects.
+	//    m_LightedColorBuffer is already in RENDER_TARGET state (steady-state contract).
 	{
-		// Transition m_PostProcessBuffer1: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
-		{
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_PostProcessBuffer1->Resource.Get(),
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-				D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
-		}
-
-		m_GraphicsCommandList->OMSetRenderTargets(1, &m_PostProcessBuffer1->RTVHandle, TRUE, nullptr);
+		m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
 
 		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_GraphicsCommandList->ClearRenderTargetView(m_PostProcessBuffer1->RTVHandle, clearColor, 0, nullptr);
+		m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
 
 		// Set G-Buffer pass viewports and scissors to fixed 1920x1080 size
 		D3D12_VIEWPORT gbufferViewport{};
@@ -856,7 +850,7 @@ void RenderManager::ResolveDeferredLighting()
 		m_GraphicsCommandList->RSSetViewports(1, &gbufferViewport);
 		m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
 
-		// Post process (Deferred Shading / Lighting)
+		// Deferred Shading / Lighting
 		SetPipelineState("Deferred");
 		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, m_ColorBuffer.get());
 		SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, m_NormalBuffer.get());
@@ -866,94 +860,112 @@ void RenderManager::ResolveDeferredLighting()
 		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture.get());
 		DrawScreen();
 	}
+}
 
-	// 3) Apply Post-Process passes (Ping-pong buffers)
+void RenderManager::ApplyPostProcess()
+{
+	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		return;
+	}
+
+	// At this point m_LightedColorBuffer holds the fully composited scene
+	// (deferred lighting + forward geometry) and is in RENDER_TARGET state.
+	// With no passes registered there is nothing to do: DrawEnd() will copy it as-is.
+	if (m_ActivePostProcessPasses.empty()) {
+		return;
+	}
+
+	// Set 1920x1080 viewport / scissor for the full-screen passes.
+	D3D12_VIEWPORT ppViewport{};
+	ppViewport.TopLeftX = 0.0f;
+	ppViewport.TopLeftY = 0.0f;
+	ppViewport.Width = 1920.0f;
+	ppViewport.Height = 1080.0f;
+	ppViewport.MinDepth = 0.0f;
+	ppViewport.MaxDepth = 1.0f;
+
+	D3D12_RECT ppScissor{};
+	ppScissor.left = 0;
+	ppScissor.top = 0;
+	ppScissor.right = 1920;
+	ppScissor.bottom = 1080;
+
+	m_GraphicsCommandList->RSSetViewports(1, &ppViewport);
+	m_GraphicsCommandList->RSSetScissorRects(1, &ppScissor);
+
+	// Ping-pong between m_LightedColorBuffer (source/result) and m_PostProcessBuffer1 (scratch).
+	RENDER_TARGET* currentInput = m_LightedColorBuffer.get();
+	RENDER_TARGET* currentOutput = m_PostProcessBuffer1.get();
+
+	// Transition the composited image (input): RENDER_TARGET -> PIXEL_SHADER_RESOURCE
 	{
-		RENDER_TARGET* currentInput = m_PostProcessBuffer1.get();
-		RENDER_TARGET* currentOutput = m_LightedColorBuffer.get();
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			currentInput->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+	}
 
-		// Transition m_PostProcessBuffer1: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+	for (size_t i = 0; i < m_ActivePostProcessPasses.size(); ++i) {
+		const auto& passName = m_ActivePostProcessPasses[i];
+
+		// Output must be in RENDER_TARGET state (both buffers rest in PIXEL_SHADER_RESOURCE).
 		{
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_PostProcessBuffer1->Resource.Get(),
+				currentOutput->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+		}
+
+		m_GraphicsCommandList->OMSetRenderTargets(1, &currentOutput->RTVHandle, TRUE, nullptr);
+		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
+
+		SetPipelineState(passName.c_str());
+		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+		DrawScreen();
+
+		// This pass's output becomes the next pass's input.
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				currentOutput->Resource.Get(),
 				D3D12_RESOURCE_STATE_RENDER_TARGET,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
 		}
 
-		if (m_ActivePostProcessPasses.empty()) {
-			// No post-process passes registered. Just do a pass-through copy using "PostProcess".
-			m_GraphicsCommandList->OMSetRenderTargets(1, &currentOutput->RTVHandle, TRUE, nullptr);
-			FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-			m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
+		std::swap(currentInput, currentOutput);
+	}
 
-			SetPipelineState("PostProcess");
-			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
-			DrawScreen();
+	// After the loop the final result is in currentInput (PIXEL_SHADER_RESOURCE state).
+	// DrawEnd() expects the result in m_LightedColorBuffer in RENDER_TARGET state.
+	if (currentInput == m_LightedColorBuffer.get()) {
+		// Even number of passes: result already lives in m_LightedColorBuffer.
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_LightedColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+		m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+	}
+	else {
+		// Odd number of passes: result lives in m_PostProcessBuffer1; copy it back.
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				m_LightedColorBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
 		}
-		else {
-			for (size_t i = 0; i < m_ActivePostProcessPasses.size(); ++i) {
-				const auto& passName = m_ActivePostProcessPasses[i];
 
-				// If we are writing to currentOutput, make sure it is in RENDER_TARGET state
-				if (i > 0) {
-					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-						currentOutput->Resource.Get(),
-						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-						D3D12_RESOURCE_STATE_RENDER_TARGET);
-					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
-				}
+		m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
+		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
 
-				m_GraphicsCommandList->OMSetRenderTargets(1, &currentOutput->RTVHandle, TRUE, nullptr);
-				FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
-
-				SetPipelineState(passName.c_str());
-				SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
-				DrawScreen();
-
-				// Transition the output of this pass to PIXEL_SHADER_RESOURCE to be used as input for the next pass
-				{
-					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-						currentOutput->Resource.Get(),
-						D3D12_RESOURCE_STATE_RENDER_TARGET,
-						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
-				}
-
-				std::swap(currentInput, currentOutput);
-			}
-
-			// After the loop, the latest result is in currentInput (which is now in PIXEL_SHADER_RESOURCE state).
-			// If the latest result is NOT in m_LightedColorBuffer, copy it there.
-			if (currentInput != m_LightedColorBuffer.get()) {
-				// Transition m_LightedColorBuffer to RENDER_TARGET
-				{
-					auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-						m_LightedColorBuffer->Resource.Get(),
-						D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-						D3D12_RESOURCE_STATE_RENDER_TARGET);
-					m_GraphicsCommandList->ResourceBarrier(1, &barrier);
-				}
-
-				m_GraphicsCommandList->OMSetRenderTargets(1, &m_LightedColorBuffer->RTVHandle, TRUE, nullptr);
-				FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-				m_GraphicsCommandList->ClearRenderTargetView(m_LightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
-
-				SetPipelineState("PostProcess");
-				SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
-				DrawScreen();
-			}
-			else {
-				// The latest result is already in m_LightedColorBuffer, but it is currently in PIXEL_SHADER_RESOURCE state.
-				// We must transition it back to RENDER_TARGET so that forward pass can render onto it.
-				auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-					m_LightedColorBuffer->Resource.Get(),
-					D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-					D3D12_RESOURCE_STATE_RENDER_TARGET);
-				m_GraphicsCommandList->ResourceBarrier(1, &barrier);
-			}
-		}
+		SetPipelineState("PostProcess");
+		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+		DrawScreen();
+		// m_PostProcessBuffer1 remains in PIXEL_SHADER_RESOURCE (its resting state).
 	}
 }
 
