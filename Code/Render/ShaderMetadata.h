@@ -10,6 +10,14 @@ namespace Render {
         size_t offset;
         size_t size;
         Vector4 defaultValue;
+
+        // Unity風アノテーション（HLSLの行末コメントから解析）
+        std::string displayName;      // 空なら name を表示に使用
+        std::string header;           // 非空ならこのプロパティの前にヘッダを表示
+        bool   isColor = false;       // float3/float4 をカラーピッカーで表示
+        bool   hasRange = false;      // [Range(min,max)] が指定された
+        float  rangeMin = 0.0f;
+        float  rangeMax = 1.0f;
     };
 
     struct ShaderMetadata {

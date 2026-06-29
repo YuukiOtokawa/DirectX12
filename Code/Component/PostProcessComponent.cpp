@@ -2,6 +2,7 @@
 #include "RenderManager.h"
 #include "../../ImGui/Code/imgui.h"
 #include "../Utility/FilePicker.h"
+#include "MaterialPropertyInspector.h"
 #include <cstring>
 #include <filesystem>
 
@@ -16,10 +17,21 @@ PostProcessComponent::PostProcessComponent() {
 }
 
 void PostProcessComponent::Start() {
+	// シェーダ登録済みのこのタイミングで各パスのマテリアルを構成
+	for (auto& pass : m_Passes) {
+		SetupPassMaterial(pass);
+	}
 	ApplyPassesToRenderManager();
 }
 
 void PostProcessComponent::Update() {
+}
+
+void PostProcessComponent::SetupPassMaterial(PostProcessPassInfo& pass) {
+	// SetShader が GetShaderMetadata でメタデータを引き、
+	// バッファサイズの確定とデフォルト値の初期化を行う
+	pass.material.SetShaderFilePath(pass.shaderPath);
+	pass.material.SetShader(pass.name);
 }
 
 void PostProcessComponent::ApplyPassesToRenderManager() {
@@ -28,11 +40,14 @@ void PostProcessComponent::ApplyPassesToRenderManager() {
 
 	renderManager->ClearPostProcessPasses();
 	for (const auto& pass : m_Passes) {
-		renderManager->AddPostProcessPass(pass.name);
+		// パス独自のプロパティバッファも一緒に渡す（b3にバインドされる）
+		renderManager->AddPostProcessPass(pass.name, pass.material.GetBufferData(), pass.material.GetBufferSize());
 	}
 }
 
 void PostProcessComponent::Inspector() {
+	auto* renderManager = Render::RenderManager::GetInstance();
+
 	ImGui::Text("Active Post-Process Passes:");
 	ImGui::Separator();
 
@@ -44,6 +59,20 @@ void PostProcessComponent::Inspector() {
 		if (ImGui::Button("Remove")) {
 			removeIndex = (int)i;
 		}
+
+		// パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）を編集
+		if (renderManager) {
+			const Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].name);
+			if (meta && !meta->properties.empty()) {
+				ImGui::Indent();
+				if (GUIHelper::DrawMaterialProperties(m_Passes[i].material, meta)) {
+					// 値が変わったらバッファをRenderManagerへ反映
+					ApplyPassesToRenderManager();
+				}
+				ImGui::Unindent();
+			}
+		}
+		ImGui::Separator();
 		ImGui::PopID();
 	}
 
@@ -80,6 +109,8 @@ void PostProcessComponent::Inspector() {
 				// 動的に登録を試みる
 				if (renderManager->RegisterDynamicPostProcess(m_NewName, m_NewShaderPath)) {
 					m_Passes.push_back({ m_NewName, m_NewShaderPath });
+					// 登録直後にメタデータが利用可能なのでマテリアルを構成
+					SetupPassMaterial(m_Passes.back());
 					ApplyPassesToRenderManager();
 					// クリア
 					m_NewName[0] = '\0';

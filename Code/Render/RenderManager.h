@@ -331,7 +331,17 @@ namespace Render {
 		void ResolveDeferredLighting();
 		void BeginForwardPass();
 		void ApplyPostProcess();
-		void AddPostProcessPass(const std::string& psoName) { m_ActivePostProcessPasses.push_back(psoName); }
+		// data/size を渡すと、そのパス描画時に SUBSET(b3) として定数バッファをバインドする
+		void AddPostProcessPass(const std::string& psoName, const void* data = nullptr, size_t size = 0) {
+			ActivePostProcessPass pass;
+			pass.name = psoName;
+			if (data && size > 0) {
+				pass.propertyBuffer.assign(
+					reinterpret_cast<const uint8_t*>(data),
+					reinterpret_cast<const uint8_t*>(data) + size);
+			}
+			m_ActivePostProcessPasses.push_back(std::move(pass));
+		}
 		void ClearPostProcessPasses() { m_ActivePostProcessPasses.clear(); }
 		bool RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile);
 		void RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState);
@@ -359,7 +369,11 @@ namespace Render {
 		RENDER_TARGET* GetPostProcessBuffer() { return m_PostProcessBuffer1.get(); }
 		RENDER_TARGET* GetLightedColorBuffer() { return m_LightedColorBuffer.get(); }
 	private:
-		std::vector<std::string> m_ActivePostProcessPasses;
+		struct ActivePostProcessPass {
+			std::string name;
+			std::vector<uint8_t> propertyBuffer; // 空ならcbufferバインドなし
+		};
+		std::vector<ActivePostProcessPass> m_ActivePostProcessPasses;
 	};
 
 #pragma endregion RenderManager

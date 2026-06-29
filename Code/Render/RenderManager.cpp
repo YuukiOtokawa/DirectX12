@@ -48,10 +48,13 @@ RenderManager::~RenderManager()
 
 
 
-
+//==================================================
+// DirectX 12 Initialization
+//==================================================
 
 void RenderManager::Init()
 {
+    // Window and BackBuffer settings
 
 	m_WindowMode = true;
 
@@ -602,6 +605,9 @@ void RenderManager::Init()
 
 
 
+//==================================================
+// Wait for GPU completion
+//==================================================
 
 void RenderManager::WaitGPU()
 {
@@ -620,6 +626,10 @@ void RenderManager::WaitGPU()
 
 
 
+
+//==================================================
+// Begin drawing
+//==================================================
 
 void RenderManager::DrawBegin()
 {
@@ -719,6 +729,10 @@ void RenderManager::DrawBegin()
 	}
 }
 
+//==================================================
+// End drawing
+//==================================================
+
 void RenderManager::DrawEnd()
 {
 	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
@@ -789,6 +803,10 @@ void RenderManager::DrawEnd()
 		}
 	}
 }
+
+//==================================================
+// Deferred Lighting Pass
+//==================================================
 
 void RenderManager::ResolveDeferredLighting()
 {
@@ -862,6 +880,10 @@ void RenderManager::ResolveDeferredLighting()
 	}
 }
 
+//==================================================
+// Apply Post-Process Passes
+//==================================================
+
 void RenderManager::ApplyPostProcess()
 {
 	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
@@ -907,7 +929,7 @@ void RenderManager::ApplyPostProcess()
 	}
 
 	for (size_t i = 0; i < m_ActivePostProcessPasses.size(); ++i) {
-		const auto& passName = m_ActivePostProcessPasses[i];
+		const auto& pass = m_ActivePostProcessPasses[i];
 
 		// Output must be in RENDER_TARGET state (both buffers rest in PIXEL_SHADER_RESOURCE).
 		{
@@ -922,8 +944,14 @@ void RenderManager::ApplyPostProcess()
 		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
 
-		SetPipelineState(passName.c_str());
+		SetPipelineState(pass.name.c_str());
 		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+		// パス独自のマテリアルプロパティ(b3)があればバインド
+		if (!pass.propertyBuffer.empty()) {
+			SetConstant(RenderManager::CONSTANT_TYPE::SUBSET,
+				pass.propertyBuffer.data(),
+				static_cast<unsigned int>(pass.propertyBuffer.size()));
+		}
 		DrawScreen();
 
 		// This pass's output becomes the next pass's input.
@@ -968,6 +996,10 @@ void RenderManager::ApplyPostProcess()
 		// m_PostProcessBuffer1 remains in PIXEL_SHADER_RESOURCE (its resting state).
 	}
 }
+
+//==================================================
+// Begin Forward Pass
+//==================================================
 
 void RenderManager::BeginForwardPass()
 {

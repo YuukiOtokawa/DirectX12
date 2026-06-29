@@ -1,5 +1,6 @@
 #pragma once
 #include "Component.h"
+#include "Material.h"
 #include <string>
 #include <vector>
 
@@ -8,6 +9,7 @@ namespace EngineCore::General {
 	struct PostProcessPassInfo {
 		std::string name;
 		std::string shaderPath;
+		Render::Material material; // パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）
 	};
 
 	class PostProcessComponent : public Component {
@@ -27,6 +29,10 @@ namespace EngineCore::General {
 		void Inspector() override;
 
 		void ApplyPassesToRenderManager();
+
+	private:
+		// メタデータからパスのマテリアルバッファを構成（シェーダ登録後に呼ぶ）
+		void SetupPassMaterial(PostProcessPassInfo& pass);
 	};
 
 }

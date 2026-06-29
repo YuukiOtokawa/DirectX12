@@ -84,7 +84,7 @@ namespace Render {
                 m_PropertyBuffer.resize(meta->totalSize);
                 // Initialize buffer with default values from shader metadata
                 for (auto& prop : meta->properties) {
-                    if (prop.type == "float4") {
+                    if (prop.type == "float4" || prop.type == "float3" || prop.type == "float2") {
                         SetVector(prop.name, prop.defaultValue);
                     } else if (prop.type == "float") {
                         SetFloat(prop.name, prop.defaultValue.x);
@@ -162,9 +162,11 @@ namespace Render {
             const ShaderMetadata* meta = renderManager->GetShaderMetadata(m_ShaderName);
             if (meta) {
                 for (auto& prop : meta->properties) {
-                    if (prop.name == name && prop.type == "float4") {
-                        if (prop.offset + sizeof(Vector4) <= m_PropertyBuffer.size()) {
-                            memcpy(m_PropertyBuffer.data() + prop.offset, &value, sizeof(Vector4));
+                    if (prop.name == name &&
+                        (prop.type == "float2" || prop.type == "float3" || prop.type == "float4")) {
+                        if (prop.offset + prop.size <= m_PropertyBuffer.size()) {
+                            // prop.size 分だけ書き込む（float2/float3 は未使用成分を切り捨て）
+                            memcpy(m_PropertyBuffer.data() + prop.offset, &value, prop.size);
                             UpdateLegacyMembersFromBuffer();
                         }
                         return;
@@ -184,10 +186,11 @@ namespace Render {
             const ShaderMetadata* meta = renderManager->GetShaderMetadata(m_ShaderName);
             if (meta) {
                 for (auto& prop : meta->properties) {
-                    if (prop.name == name && prop.type == "float4") {
-                        if (prop.offset + sizeof(Vector4) <= m_PropertyBuffer.size()) {
-                            Vector4 val;
-                            memcpy(&val, m_PropertyBuffer.data() + prop.offset, sizeof(Vector4));
+                    if (prop.name == name &&
+                        (prop.type == "float2" || prop.type == "float3" || prop.type == "float4")) {
+                        if (prop.offset + prop.size <= m_PropertyBuffer.size()) {
+                            Vector4 val(0, 0, 0, 0);
+                            memcpy(&val, m_PropertyBuffer.data() + prop.offset, prop.size);
                             return val;
                         }
                     }

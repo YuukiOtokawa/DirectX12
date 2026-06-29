@@ -14,6 +14,58 @@ namespace Render {
         return 0;
     }
 
+    static Vector4 ParseDefaultValue(const std::string& type, std::string valStr); // 前方宣言
+
+    // "1.0f" や " 0.5 " のような文字列を float に変換（f サフィックス・空白を許容）
+    static float ParseFloatToken(std::string s) {
+        s.erase(0, s.find_first_not_of(" \t\r\n"));
+        s.erase(s.find_last_not_of(" \t\r\n") + 1);
+        if (!s.empty() && (s.back() == 'f' || s.back() == 'F')) s.pop_back();
+        try { return std::stof(s); } catch (...) { return 0.0f; }
+    }
+
+    // 行末コメント（例: " [Header(Surface)] [Range(0,1)] \"Base Color\" "）から
+    // Unity風アノテーションを解析して prop に反映する
+    static void ParsePropertyAttributes(const std::string& comment, ShaderProperty& prop) {
+        if (comment.empty()) return;
+
+        // 表示名: ダブルクォートで囲まれた文字列
+        std::smatch m;
+        std::regex nameRegex("\"([^\"]*)\"");
+        if (std::regex_search(comment, m, nameRegex)) {
+            prop.displayName = m[1].str();
+        }
+
+        // [Range(min,max)]
+        std::regex rangeRegex(R"(\[\s*[Rr]ange\s*\(\s*([^,\)]+)\s*,\s*([^\)]+)\s*\)\s*\])");
+        if (std::regex_search(comment, m, rangeRegex)) {
+            prop.hasRange = true;
+            prop.rangeMin = ParseFloatToken(m[1].str());
+            prop.rangeMax = ParseFloatToken(m[2].str());
+        }
+
+        // [Header(Foo)]
+        std::regex headerRegex(R"(\[\s*[Hh]eader\s*\(\s*([^\)]*?)\s*\)\s*\])");
+        if (std::regex_search(comment, m, headerRegex)) {
+            prop.header = m[1].str();
+        }
+
+        // [Default(...)]: HLSLのcbufferメンバは初期化子を書けないため、
+        // コメントでデフォルト値を指定できるようにする
+        std::regex defaultRegex(R"(\[\s*[Dd]efault\s*\(([^\)]*)\)\s*\])");
+        if (std::regex_search(comment, m, defaultRegex)) {
+            prop.defaultValue = ParseDefaultValue(prop.type, m[1].str());
+        }
+
+        // [Color] / [Vector]（明示指定はデフォルトを上書き）
+        if (std::regex_search(comment, std::regex(R"(\[\s*[Cc]olor\s*\])"))) {
+            prop.isColor = true;
+        }
+        if (std::regex_search(comment, std::regex(R"(\[\s*[Vv]ector\s*\])"))) {
+            prop.isColor = false;
+        }
+    }
+
     static Vector4 ParseDefaultValue(const std::string& type, std::string valStr) {
         // Trim
         valStr.erase(0, valStr.find_first_not_of(" \t\r\n"));
@@ -142,7 +194,8 @@ namespace Render {
         }
 
         // 3. Extract variables from cbuffer content
-        std::regex propRegex(R"((float4|float3|float2|float)\s+(\w+)\s*(?:=\s*([^;]+))?\s*;)");
+        //    末尾の行末コメント（// ...）も取り込み、アノテーション解析に使う
+        std::regex propRegex(R"((float4|float3|float2|float)\s+(\w+)\s*(?:=\s*([^;]+?))?\s*;[ \t]*(//[^\r\n]*)?)");
         auto words_begin = std::sregex_iterator(cbufferContent.begin(), cbufferContent.end(), propRegex);
         auto words_end = std::sregex_iterator();
 
@@ -151,15 +204,22 @@ namespace Render {
             ShaderProperty prop;
             prop.type = m[1].str();
             prop.name = m[2].str();
-            
+
             // Skip structural declarations
             if (prop.name == "MATERIAL" || prop.name == "Material") continue;
-            
+
             std::string defValStr = m[3].str();
             prop.size = GetTypeSize(prop.type);
             prop.defaultValue = ParseDefaultValue(prop.type, defValStr);
-            prop.offset = 0; 
-            
+            prop.offset = 0;
+
+            // アノテーション無し時のデフォルト色判定:
+            // float4 は従来通りカラー、float2/float3 はベクトル
+            prop.isColor = (prop.type == "float4");
+
+            // 行末コメントから Unity風アノテーションを反映
+            ParsePropertyAttributes(m[4].str(), prop);
+
             metadata.properties.push_back(prop);
         }
 

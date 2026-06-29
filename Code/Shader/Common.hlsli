@@ -23,6 +23,10 @@ cbuffer ObjectConstantBuffer : register(b2)
 };
 
 
+// シェーダ側で独自のマテリアル cbuffer (register(b3)) を定義したい場合は、
+// Common.hlsli を include する前に CUSTOM_MATERIAL_CBUFFER を #define する。
+// その場合、下記の共有マテリアル定義は無効化される（Unity風の per-shader プロパティ運用）。
+#ifndef CUSTOM_MATERIAL_CBUFFER
 cbuffer SubsetConstantBuffer : register(b3)
 {
     struct MATERIAL
@@ -35,6 +39,7 @@ cbuffer SubsetConstantBuffer : register(b3)
         float NormalWeight;
     } Material;
 };
+#endif
 
 
 

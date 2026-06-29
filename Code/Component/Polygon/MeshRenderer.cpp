@@ -5,6 +5,7 @@
 #include "../../GameObject/GameObject.h"
 #include "../../../ImGui/Code/imgui.h"
 #include "../../Utility/FilePicker.h"
+#include "../MaterialPropertyInspector.h"
 
 using namespace EngineCore::General;
 using namespace Render::RenderStructure;
@@ -182,28 +183,7 @@ void MeshRenderer::Inspector() {
 
 	if (meta) {
 		ImGui::Text("Shader Properties (%s)", m_Material.GetShaderName().c_str());
-		for (auto& prop : meta->properties) {
-			if (prop.type == "float4") {
-				Vector4 val = m_Material.GetVector(prop.name);
-				float color[4] = { val.x, val.y, val.z, val.w };
-				if (ImGui::ColorEdit4(prop.name.c_str(), color)) {
-					m_Material.SetVector(prop.name, Vector4(color[0], color[1], color[2], color[3]));
-				}
-			}
-			else if (prop.type == "float") {
-				float val = m_Material.GetFloat(prop.name);
-				// Customize slider for common material properties
-				if (prop.name == "Metallic" || prop.name == "Roughness" || prop.name == "Specular" || prop.name == "NormalWeight") {
-					if (ImGui::SliderFloat(prop.name.c_str(), &val, 0.0f, 1.0f)) {
-						m_Material.SetFloat(prop.name, val);
-					}
-				} else {
-					if (ImGui::DragFloat(prop.name.c_str(), &val, 0.01f)) {
-						m_Material.SetFloat(prop.name, val);
-					}
-				}
-			}
-		}
+		GUIHelper::DrawMaterialProperties(m_Material, meta);
 	} else {
 		// Legacy Properties UI
 		// Base Color
