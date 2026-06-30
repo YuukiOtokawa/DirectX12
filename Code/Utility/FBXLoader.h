@@ -9,7 +9,7 @@
 
 #include "../Render/RenderManager.h"
 
-using namespace Render::Types;
+using namespace EngineCore::Render::Types;
 
 #define NOMINMAX
 

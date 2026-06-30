@@ -35,7 +35,7 @@ void PostProcessComponent::SetupPassMaterial(PostProcessPassInfo& pass) {
 }
 
 void PostProcessComponent::ApplyPassesToRenderManager() {
-	auto* renderManager = Render::RenderManager::GetInstance();
+	auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	renderManager->ClearPostProcessPasses();
@@ -46,7 +46,7 @@ void PostProcessComponent::ApplyPassesToRenderManager() {
 }
 
 void PostProcessComponent::Inspector() {
-	auto* renderManager = Render::RenderManager::GetInstance();
+	auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
 
 	ImGui::Text("Active Post-Process Passes:");
 	ImGui::Separator();
@@ -62,7 +62,7 @@ void PostProcessComponent::Inspector() {
 
 		// パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）を編集
 		if (renderManager) {
-			const Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].name);
+			const EngineCore::Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].name);
 			if (meta && !meta->properties.empty()) {
 				ImGui::Indent();
 				if (GUIHelper::DrawMaterialProperties(m_Passes[i].material, meta)) {
@@ -104,7 +104,7 @@ void PostProcessComponent::Inspector() {
 
 	if (ImGui::Button("Add and Register")) {
 		if (strlen(m_NewName) > 0 && strlen(m_NewShaderPath) > 0) {
-			auto* renderManager = Render::RenderManager::GetInstance();
+			auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
 			if (renderManager) {
 				// 動的に登録を試みる
 				if (renderManager->RegisterDynamicPostProcess(m_NewName, m_NewShaderPath)) {

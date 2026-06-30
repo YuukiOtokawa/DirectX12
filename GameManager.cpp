@@ -91,14 +91,14 @@ namespace EngineManager {
 		auto gameCamera = FindGameCamera();
 		if (gameCamera) {
 			EngineCore::General::Camera::SetActiveCamera(gameCamera);
-			m_RenderManger.SetCurrentTarget(Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW);
+			m_RenderManger.SetCurrentTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW);
 			m_RenderManger.DrawBegin();
 			_ObjectManager->DrawObjects();
 			m_RenderManger.DrawEnd();
 		}
 		else {
 			// Clear Game View to black if no active game camera exists
-			m_RenderManger.SetCurrentTarget(Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW);
+			m_RenderManger.SetCurrentTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW);
 			m_RenderManger.DrawBegin();
 			m_RenderManger.DrawEnd();
 		}
@@ -107,20 +107,20 @@ namespace EngineManager {
 		auto editorCamera = FindEditorCamera();
 		if (editorCamera) {
 			EngineCore::General::Camera::SetActiveCamera(editorCamera);
-			m_RenderManger.SetCurrentTarget(Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW);
+			m_RenderManger.SetCurrentTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW);
 			m_RenderManger.DrawBegin();
 			_ObjectManager->DrawObjects();
 			m_RenderManger.DrawEnd();
 		}
 		else {
 			// Clear Scene View to black if no active editor camera exists
-			m_RenderManger.SetCurrentTarget(Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW);
+			m_RenderManger.SetCurrentTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW);
 			m_RenderManger.DrawBegin();
 			m_RenderManger.DrawEnd();
 		}
 
 		// --- 3. ImGui Pass (To Back Buffer) ---
-		m_RenderManger.SetCurrentTarget(Render::RenderManager::RENDER_TARGET_TYPE::BACK_BUFFER);
+		m_RenderManger.SetCurrentTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::BACK_BUFFER);
 		m_RenderManger.DrawBegin();
 
 		m_ImGuiController.BeginFrame();

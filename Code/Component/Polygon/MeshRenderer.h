@@ -5,7 +5,7 @@
 namespace EngineCore::General {
 
 	class MeshRenderer : public Renderer {
-		Render::Material m_Material;
+		EngineCore::Render::Material m_Material;
 
 		REGISTER_COMPONENT(MeshRenderer)
 	public:
@@ -19,8 +19,8 @@ namespace EngineCore::General {
             m_Material.SetShader(shaderName);
         }
 
-		Render::Material& GetMaterial() { return m_Material; }
-		const Render::Material& GetMaterial() const { return m_Material; }
+		EngineCore::Render::Material& GetMaterial() { return m_Material; }
+		const EngineCore::Render::Material& GetMaterial() const { return m_Material; }
 	};
 
 }

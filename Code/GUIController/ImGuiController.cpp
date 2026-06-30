@@ -1,4 +1,4 @@
-﻿#include "ImGuiController.h"
+#include "ImGuiController.h"
 
 #include "../../Main.h"
 
@@ -15,7 +15,7 @@ using namespace GUIController::Gui;
 
 void ImGuiController::Initialize() {
 
-    auto renderManager = Render::RenderManager::GetInstance();
+    auto renderManager = EngineCore::Render::RenderManager::GetInstance();
     assert(renderManager);
 
     IMGUI_CHECKVERSION();
@@ -46,7 +46,7 @@ void ImGuiController::Initialize() {
 
     initInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
     {
-        auto* renderManager = static_cast<Render::RenderManager*>(info->UserData);
+        auto* renderManager = static_cast<EngineCore::Render::RenderManager*>(info->UserData);
         assert(renderManager);
 
         const unsigned int srvIndex = renderManager->CreateShaderResourceView(nullptr);
@@ -63,7 +63,7 @@ void ImGuiController::Initialize() {
     {
         (void)gpu_desc_handle;
 
-        auto* renderManager = static_cast<Render::RenderManager*>(info->UserData);
+        auto* renderManager = static_cast<EngineCore::Render::RenderManager*>(info->UserData);
         assert(renderManager);
 
         const unsigned int srvIndex = renderManager->GetShaderResourceViewIndex(cpu_desc_handle);
@@ -84,7 +84,7 @@ void ImGuiController::BeginFrame() {
 
 void ImGuiController::EndFrame() {
 
-    auto renderManager = Render::RenderManager::GetInstance();
+    auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 
     ImGui::Render();
 

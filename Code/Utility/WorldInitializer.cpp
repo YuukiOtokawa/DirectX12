@@ -35,7 +35,7 @@ namespace EngineCore::Utility {
 
         // 頂点データとインデックスデータの用意 (上向き板ポリゴン)
         // 頂点定義: 左上, 右上, 左下, 右下
-        std::vector<Render::Types::VERTEX> vertices = {
+        std::vector<EngineCore::Render::Types::VERTEX> vertices = {
             { Vector3(-0.5f, 0.0f,  0.5f), Vector3(0.0f, 1.0f, 0.0f), Vector2(0.0f, 0.0f), Vector4(1.0f, 1.0f, 1.0f, 1.0f) }, // 左上
             { Vector3( 0.5f, 0.0f,  0.5f), Vector3(0.0f, 1.0f, 0.0f), Vector2(1.0f, 0.0f), Vector4(1.0f, 1.0f, 1.0f, 1.0f) }, // 右上
             { Vector3(-0.5f, 0.0f, -0.5f), Vector3(0.0f, 1.0f, 0.0f), Vector2(0.0f, 1.0f), Vector4(1.0f, 1.0f, 1.0f, 1.0f) }, // 左下
@@ -54,11 +54,11 @@ namespace EngineCore::Utility {
         vertexData->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         // テクスチャのロードと設定
-        auto renderManager = Render::RenderManager::GetInstance();
+        auto renderManager = EngineCore::Render::RenderManager::GetInstance();
         if (renderManager) {
             auto texture = renderManager->LoadTexture("Assets/field004.dds");
             if (texture) {
-                std::vector<std::unique_ptr<Render::Types::TEXTURE>> textures;
+                std::vector<std::unique_ptr<EngineCore::Render::Types::TEXTURE>> textures;
                 textures.push_back(std::move(texture));
                 vertexData->SetTextures(std::move(textures));
             }
@@ -72,7 +72,7 @@ namespace EngineCore::Utility {
         }
         auto meshRenderer = planeObj->AddComponent<General::MeshRenderer>();
         meshRenderer->SetShader("Geometry"); // デフォルトのジオメトリシェーダーを使用)
-        meshRenderer->GetMaterial().SetRenderPassType(Render::RenderPassType::DeferredOpaque);
+        meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::DeferredOpaque);
         meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Geometry.hlsl");
 
         {
@@ -103,7 +103,7 @@ namespace EngineCore::Utility {
                 meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
             }
             meshRenderer->SetShader("Unlit"); // スカイドーム用のシェーダーを使用
-            meshRenderer->GetMaterial().SetRenderPassType(Render::RenderPassType::ForwardOpaque);
+            meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::ForwardOpaque);
             meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Unlit.hlsl");
         }
 

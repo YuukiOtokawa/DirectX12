@@ -106,7 +106,7 @@ void LoadVertexData(const aiScene* scene, std::string filename, std::vector<DEFO
 }
 
 void LoadTexture(const aiScene* scene, std::unordered_map<std::string, unsigned int>& textureSrvByAssimpPath, FBXData* fbxData) {
-	auto render = Render::RenderManager::GetInstance();
+	auto render = EngineCore::Render::RenderManager::GetInstance();
 	auto device = render->GetDevice();
 	auto cmd = render->GetGraphicsCommandList();
 
@@ -353,7 +353,7 @@ FBXData LoadFBX(const char* FileName, VertexData* pVertexData) {
 	CreateMaterial(model.m_Scene, textureSrvByAssimpPath, materials, baseColorTexOfMaterial);
 	model.baseColorTexOfMaterial = std::move(baseColorTexOfMaterial);
 
-	Render::RenderManager::GetInstance()->WaitGPU();
+	EngineCore::Render::RenderManager::GetInstance()->WaitGPU();
 	
 	resources.clear();
 

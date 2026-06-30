@@ -9,15 +9,15 @@ void TestOBJClass::Update() {
 }
 
 void TestOBJClass::Draw() {
-	auto render = Render::RenderManager::GetInstance();
+	auto render = EngineCore::Render::RenderManager::GetInstance();
 
 	{
-		Render::Types::ENV_CONSTANT constant;
+		EngineCore::Render::Types::ENV_CONSTANT constant;
 
 		constant.LightDirection = { 0.0f, 1.0f, 0.0f, 0.0f };
 		constant.LightColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		render->SetConstant(Render::RenderManager::CONSTANT_TYPE::ENV, &constant, sizeof(constant));
+		render->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::ENV, &constant, sizeof(constant));
 	}
 
 	{
@@ -26,9 +26,9 @@ void TestOBJClass::Draw() {
 		world *= XMMatrixScaling(scale.x, scale.y, scale.z);
 		world *= XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
 		world *= XMMatrixTranslation(position.x, position.y, position.z);
-		Render::Types::OBJECT_CONSTANT objectConstant{};
+		EngineCore::Render::Types::OBJECT_CONSTANT objectConstant{};
 		XMStoreFloat4x4(&objectConstant.World, XMMatrixTranspose(world));
-		render->SetConstant(Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
+		render->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
 	}
 
 	{
@@ -48,11 +48,11 @@ void TestOBJClass::Draw() {
 			1000.0f
 		);
 
-		Render::Types::CAMERA_CONSTANT cameraConstant{};
+		EngineCore::Render::Types::CAMERA_CONSTANT cameraConstant{};
 		XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(view));
 		XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(projection));
 
-		render->SetConstant(Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
+		render->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
 	}
 
 	model.Draw();

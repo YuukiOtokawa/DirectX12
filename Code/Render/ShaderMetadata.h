@@ -3,7 +3,7 @@
 #include <vector>
 #include "../Utility/VectorClass.h"
 
-namespace Render {
+namespace EngineCore::Render {
     struct ShaderProperty {
         std::string name;
         std::string type; // "float", "float2", "float3", "float4" など

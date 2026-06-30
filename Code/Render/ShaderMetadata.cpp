@@ -4,7 +4,7 @@
 #include <regex>
 #include <iostream>
 
-namespace Render {
+namespace EngineCore::Render {
 
     static size_t GetTypeSize(const std::string& type) {
         if (type == "float") return 4;

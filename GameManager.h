@@ -17,7 +17,7 @@ namespace EngineManager {
 
 		static GameManager* m_Instance;
 
-		Render::RenderManager	m_RenderManger;
+		EngineCore::Render::RenderManager	m_RenderManger;
 
 		GUIController::Gui::ImGuiController m_ImGuiController;
 

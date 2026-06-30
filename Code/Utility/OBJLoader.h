@@ -7,9 +7,9 @@
 // 描画サブセットマテリアル構造体
 struct SUBSET_MATERIAL {
   char Name[256];
-  Render::Material Material;
+  EngineCore::Render::Material Material;
 
-  std::unique_ptr<Render::Types::TEXTURE> TextureBaseColor;
+  std::unique_ptr<EngineCore::Render::Types::TEXTURE> TextureBaseColor;
 };
 
 // 描画サブセット構造体
@@ -23,7 +23,7 @@ struct SUBSET {
 // モデルサブセットマテリアル構造体
 struct MODEL_SUBSET_MATERIAL {
   char Name[256];
-  Render::Types::MATERIAL Material;
+  EngineCore::Render::Types::MATERIAL Material;
 
   char TextureNameBaseColor[256];
 };
@@ -38,7 +38,7 @@ struct MODEL_SUBSET {
 
 // モデル構造体
 struct MODEL {
-  Render::Types::VERTEX *VertexArray;
+  EngineCore::Render::Types::VERTEX *VertexArray;
   unsigned int VertexNum;
 
   unsigned int *IndexArray;

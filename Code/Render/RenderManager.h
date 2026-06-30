@@ -7,7 +7,7 @@
 #include "ShaderMetadata.h"
 #include <memory>
 
-namespace Render {
+namespace EngineCore::Render {
 
 	namespace Types {
 
@@ -21,7 +21,7 @@ namespace Render {
 		};
 
 		// マテリアルデータ Materialクラスに移動
-		using MATERIAL = Render::MaterialConstant;
+		using MATERIAL = EngineCore::Render::MaterialConstant;
 
 
 

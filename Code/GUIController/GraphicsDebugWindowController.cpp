@@ -4,24 +4,24 @@
 
 void GUIController::Window::GraphicsDebugWindowController::Draw() {
 	ImGui::Text("Color Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetColorBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetColorBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
 	ImGui::Text("Normal Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetNormalBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetNormalBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
     ImGui::Text("Position Buffer");
-    ImGui::Image((void *)Render::RenderManager::GetInstance()->GetPositionBuffer()->SRVHandle.ptr,
+    ImGui::Image((void *)EngineCore::Render::RenderManager::GetInstance()->GetPositionBuffer()->SRVHandle.ptr,
                  ImVec2(300.0f, 200.0f));
 	ImGui::Text("Material Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetMaterialBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetMaterialBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
 	ImGui::Text("Emission Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetEmissionBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetEmissionBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
 	ImGui::Text("PostProcess Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetPostProcessBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetPostProcessBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
 	ImGui::Text("Lighted Color Buffer");
-	ImGui::Image((void*)Render::RenderManager::GetInstance()->GetLightedColorBuffer()->SRVHandle.ptr,
+	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetLightedColorBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
 }

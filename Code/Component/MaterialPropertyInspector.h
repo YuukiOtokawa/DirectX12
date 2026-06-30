@@ -12,7 +12,7 @@ namespace GUIHelper {
 
     // meta に基づき mat の動的プロパティを編集UIとして描画する。
     // いずれかの値が変更されたら true を返す。
-    inline bool DrawMaterialProperties(Render::Material& mat, const Render::ShaderMetadata* meta) {
+    inline bool DrawMaterialProperties(EngineCore::Render::Material& mat, const EngineCore::Render::ShaderMetadata* meta) {
         if (!meta) return false;
 
         bool changed = false;
@@ -73,7 +73,7 @@ namespace GUIHelper {
         }
 
         // --- テクスチャプロパティ（register space1）---
-        auto* rm = Render::RenderManager::GetInstance();
+        auto* rm = EngineCore::Render::RenderManager::GetInstance();
         for (auto& tex : meta->textures) {
             const char* tlabel = tex.displayName.empty() ? tex.name.c_str() : tex.displayName.c_str();
             if (!tex.header.empty()) {
@@ -82,7 +82,7 @@ namespace GUIHelper {
 
             ImGui::PushID(tex.name.c_str());
 
-            const Render::Types::TEXTURE* cur = mat.GetTexture(tex.name);
+            const EngineCore::Render::Types::TEXTURE* cur = mat.GetTexture(tex.name);
             if (cur && rm) {
                 auto handle = rm->GetShaderResourceViewHandle(cur->SRVIndex);
                 ImGui::Image((void*)handle.ptr, ImVec2(48.0f, 48.0f));
@@ -93,7 +93,7 @@ namespace GUIHelper {
                 COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.png;*.jpg;*.tga;*.dds" }, { L"All Files", L"*.*" } };
                 std::string path = OpenFileDialog(texFilter, _countof(texFilter));
                 if (!path.empty() && rm) {
-                    std::shared_ptr<Render::Types::TEXTURE> t = rm->LoadTexture(path.c_str());
+                    std::shared_ptr<EngineCore::Render::Types::TEXTURE> t = rm->LoadTexture(path.c_str());
                     if (t) {
                         mat.SetTexture(tex.name, std::move(t));
                         changed = true;

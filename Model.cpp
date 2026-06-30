@@ -11,7 +11,7 @@
 
 
 
-using namespace Render;
+using namespace EngineCore::Render;
 
 void Model::Load(const char* FileName)
 {

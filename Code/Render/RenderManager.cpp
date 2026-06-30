@@ -10,7 +10,7 @@
 using namespace DirectX;
 
 using namespace EngineCore;
-using namespace Render;
+using namespace EngineCore::Render;
 
 
 RenderManager* RenderManager::m_Instance = nullptr;
@@ -1665,7 +1665,7 @@ std::unique_ptr<RENDER_TARGET> RenderManager::CreateRenderTarget(unsigned int Wi
 	return std::move(renderTarget);
 }
 
-void Render::RenderManager::CreateRenderTarget() {
+void EngineCore::Render::RenderManager::CreateRenderTarget() {
     for (UINT i = 0; i < 2; i++) {
         ComPtr<ID3D12Resource> backBuffer;
         HRESULT hr = m_SwapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer));
@@ -1844,7 +1844,7 @@ void RenderManager::Resize(unsigned int Width, unsigned int Height) {
 	m_SwapChainPendingHeight = Height;
 }
 
-void Render::RenderManager::ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height) {
+void EngineCore::Render::RenderManager::ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height) {
 	if (width == 0 || height == 0) return;
 
 	if (type == RENDER_TARGET_TYPE::GAME_VIEW) {
@@ -1859,7 +1859,7 @@ void Render::RenderManager::ResizeTarget(RENDER_TARGET_TYPE type, unsigned int w
 	}
 }
 
-void Render::RenderManager::ApplyPendingResizes() {
+void EngineCore::Render::RenderManager::ApplyPendingResizes() {
 	if (!m_SwapChainResizePending && !m_GameViewResizePending && !m_SceneViewResizePending) return;
 
 	if (m_SwapChainResizePending) {
@@ -2037,7 +2037,7 @@ RENDER_TARGET::~RENDER_TARGET()
 	RenderManager::GetInstance()->ReleaseRenderTargetView(RTVIndex);
 }
 
-bool Render::RenderManager::RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile)
+bool EngineCore::Render::RenderManager::RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile)
 {
 	DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 	ComPtr<ID3D12PipelineState> pipeline = CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);

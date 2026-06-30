@@ -41,21 +41,21 @@ void EngineCore::General::MeshFilter::Inspector() {
 	}
 }
 
-void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::vector<Render::Types::VERTEX> vertices, std::vector<unsigned int> indices) {
+void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::vector<EngineCore::Render::Types::VERTEX> vertices, std::vector<unsigned int> indices) {
 	HRESULT hr;
 	{
-		auto render = Render::RenderManager::GetInstance();
+		auto render = EngineCore::Render::RenderManager::GetInstance();
 
-		m_VertexBuffer = render->CreateVertexBuffer(sizeof(Render::Types::VERTEX), (unsigned int)vertices.size());
-		Render::Types::VERTEX* buffer{};
+		m_VertexBuffer = render->CreateVertexBuffer(sizeof(EngineCore::Render::Types::VERTEX), (unsigned int)vertices.size());
+		EngineCore::Render::Types::VERTEX* buffer{};
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 
-		memcpy(buffer, vertices.data(), sizeof(Render::Types::VERTEX) * vertices.size());
+		memcpy(buffer, vertices.data(), sizeof(EngineCore::Render::Types::VERTEX) * vertices.size());
 		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
 	if (!indices.empty()) {
-		auto render = Render::RenderManager::GetInstance();
+		auto render = EngineCore::Render::RenderManager::GetInstance();
 		m_IndexBuffer = render->CreateIndexBuffer((unsigned int)indices.size());
 		unsigned int* buffer{};
 		hr = m_IndexBuffer->Resource->Map(0, nullptr, (void**)&buffer);

@@ -12,17 +12,17 @@ void Light::Draw() {
 	auto transform = GetOwner()->GetComponent<Transform>();
 	if (!transform) return;
 
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	// Calculate light direction (opposite of transform forward)
 	Vector3 forward = transform->GetForward();
 	
-	Render::RenderStructure::ENV_CONSTANT envConstant{};
+	EngineCore::Render::RenderStructure::ENV_CONSTANT envConstant{};
 	envConstant.LightDirection = Vector4(-forward.x, -forward.y, -forward.z, 0.0f);
 	envConstant.LightColor = Vector4(m_Color.x * m_Intensity, m_Color.y * m_Intensity, m_Color.z * m_Intensity, m_Color.w);
 
-	renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::ENV, &envConstant, sizeof(envConstant));
+	renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::ENV, &envConstant, sizeof(envConstant));
 }
 
 void Light::Inspector() {

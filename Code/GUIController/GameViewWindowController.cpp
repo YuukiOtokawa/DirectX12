@@ -5,7 +5,7 @@
 using namespace GUIController::Window;
 
 void GameViewWindowController::Draw() {
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	auto gameViewTarget = renderManager->GetGameViewTarget();
@@ -43,7 +43,7 @@ void GameViewWindowController::Draw() {
 		// Check window size change and resize render target
 		D3D12_RESOURCE_DESC desc = gameViewTarget->Resource->GetDesc();
 		if (targetWidth != desc.Width || targetHeight != desc.Height) {
-			renderManager->ResizeTarget(Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW, 
+			renderManager->ResizeTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::GAME_VIEW, 
 				targetWidth, targetHeight);
 			
 			// Refresh target pointer after resize

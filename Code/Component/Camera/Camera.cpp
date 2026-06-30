@@ -11,7 +11,7 @@
 #include "../../../ImGui/Code/imgui.h"
 
 using namespace EngineCore::General;
-using namespace Render::RenderStructure;
+using namespace EngineCore::Render::RenderStructure;
 
 // Static member definition
 Camera* Camera::s_ActiveCamera = nullptr;
@@ -42,7 +42,7 @@ void Camera::Draw() {
 		return;
 	}
 
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	unsigned int width = 0;
@@ -52,7 +52,7 @@ void Camera::Draw() {
 
 	// If rendering into the G-Buffer (GameView or SceneView), the G-Buffer is strictly allocated at a fixed 1920x1080 resolution.
 	// We must use a constant 1920x1080 to calculate the aspect ratio for G-Buffer pass rendering.
-	if (renderManager->GetCurrentTarget() != Render::RenderManager::RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (renderManager->GetCurrentTarget() != EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::BACK_BUFFER) {
 		width = 1920;
 		height = 1080;
 	}
@@ -130,7 +130,7 @@ void Camera::Draw() {
     cameraConstant.Position =
         transform ? Vector4(transform->Position.x, transform->Position.y, transform->Position.z, 1.0f) : Vector4(0.0f, 0.0f, 0.0f, 1.0f);
 
-	renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
+	renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
 }
 
 void Camera::Inspector() {

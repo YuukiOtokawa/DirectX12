@@ -1,7 +1,7 @@
 #include "Material.h"
 #include "RenderManager.h"
 
-namespace Render {
+namespace EngineCore::Render {
 
     Material::Material()
         : m_Name("")
@@ -107,11 +107,11 @@ namespace Render {
         UpdateBufferFromLegacyMembers();
     }
 
-    void Material::SetTextureBaseColor(std::shared_ptr<Render::Types::TEXTURE> texture) {
+    void Material::SetTextureBaseColor(std::shared_ptr<EngineCore::Render::Types::TEXTURE> texture) {
         m_TextureBaseColor = std::move(texture);
     }
 
-    const Render::Types::TEXTURE* Material::GetTextureBaseColor() const {
+    const EngineCore::Render::Types::TEXTURE* Material::GetTextureBaseColor() const {
         return m_TextureBaseColor.get();
     }
 
@@ -138,7 +138,7 @@ namespace Render {
         }
     }
 
-    void Material::SetTexture(const std::string& name, std::shared_ptr<Render::Types::TEXTURE> texture) {
+    void Material::SetTexture(const std::string& name, std::shared_ptr<EngineCore::Render::Types::TEXTURE> texture) {
         auto rm = RenderManager::GetInstance();
         // 既存テクスチャを置き換える場合、GPU使用中の可能性があるため即解放せず遅延解放へ回す
         auto existing = m_Textures.find(name);
@@ -158,7 +158,7 @@ namespace Render {
         }
     }
 
-    const Render::Types::TEXTURE* Material::GetTexture(const std::string& name) const {
+    const EngineCore::Render::Types::TEXTURE* Material::GetTexture(const std::string& name) const {
         auto it = m_Textures.find(name);
         return (it != m_Textures.end()) ? it->second.get() : nullptr;
     }

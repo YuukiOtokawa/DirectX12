@@ -12,9 +12,9 @@
 struct SUBSET_MATERIAL
 {
 	char						Name[256];
-	Render::Material			Material;
+	EngineCore::Render::Material			Material;
 
-	std::unique_ptr<Render::Types::TEXTURE>	TextureBaseColor;
+	std::unique_ptr<EngineCore::Render::Types::TEXTURE>	TextureBaseColor;
 
 };
 
@@ -34,7 +34,7 @@ struct SUBSET
 struct MODEL_SUBSET_MATERIAL
 {
 	char						Name[256];
-	Render::Types::MATERIAL					Material;
+	EngineCore::Render::Types::MATERIAL					Material;
 
 	char						TextureNameBaseColor[256];
 };
@@ -55,7 +55,7 @@ struct MODEL_SUBSET
 // モデル構造体
 struct MODEL
 {
-	Render::Types::VERTEX		*VertexArray;
+	EngineCore::Render::Types::VERTEX		*VertexArray;
 	unsigned int	VertexNum;
 
 	unsigned int	*IndexArray;
@@ -74,8 +74,8 @@ class Model
 {
 private:
 
-	std::unique_ptr<Render::Types::VERTEX_BUFFER>	m_VertexBuffer;
-	std::unique_ptr<Render::Types::INDEX_BUFFER>	m_IndexBuffer;
+	std::unique_ptr<EngineCore::Render::Types::VERTEX_BUFFER>	m_VertexBuffer;
+	std::unique_ptr<EngineCore::Render::Types::INDEX_BUFFER>	m_IndexBuffer;
 	std::vector<SUBSET>				m_SubsetArray;
 
 

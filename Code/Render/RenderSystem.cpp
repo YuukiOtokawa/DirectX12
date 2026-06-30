@@ -23,8 +23,8 @@ namespace EngineCore::RenderSystem {
 					if (component) {
 						auto* meshRenderer = dynamic_cast<EngineCore::General::MeshRenderer*>(component.get());
 						if (meshRenderer && 
-							(meshRenderer->GetMaterial().GetRenderPassType() == Render::RenderPassType::ForwardOpaque ||
-							 meshRenderer->GetMaterial().GetRenderPassType() == Render::RenderPassType::ForwardTransparent)) {
+							(meshRenderer->GetMaterial().GetRenderPassType() == EngineCore::Render::RenderPassType::ForwardOpaque ||
+							 meshRenderer->GetMaterial().GetRenderPassType() == EngineCore::Render::RenderPassType::ForwardTransparent)) {
 							forwardComponents.push_back(component.get());
 						} else {
 							deferredOpaqueComponents.push_back(component.get());
@@ -41,7 +41,7 @@ namespace EngineCore::RenderSystem {
 		std::sort(deferredOpaqueComponents.begin(), deferredOpaqueComponents.end(), sortByDrawOrder);
 		std::sort(forwardComponents.begin(), forwardComponents.end(), sortByDrawOrder);
 
-		auto* renderManager = Render::RenderManager::GetInstance();
+		auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
 
 		// 3. Draw Deferred Opaque pass (G-Buffer targets are already bound by DrawBegin)
 		for (auto* component : deferredOpaqueComponents) {

@@ -9,7 +9,7 @@ namespace EngineCore::General {
 	struct PostProcessPassInfo {
 		std::string name;
 		std::string shaderPath;
-		Render::Material material; // パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）
+		EngineCore::Render::Material material; // パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）
 	};
 
 	class PostProcessComponent : public Component {

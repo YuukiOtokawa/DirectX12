@@ -144,11 +144,16 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
 
 ---
 
-## 9. 名前空間の不統一
+## 9. 名前空間の不統一 ✅ Render は対応済み
 
-- 自作コードは `EngineCore::General` / `EngineCore::Manager` / `EngineCore::Utility` / `GUIController::Gui` に整理されているのに、描画系だけ `Render`（`EngineCore` の外）になっている（[Material.h:7](Code/Render/Material.h), [RenderManager.h:10](Code/Render/RenderManager.h)）。
+- 自作コードは `EngineCore::General` / `EngineCore::Manager` / `EngineCore::Utility` に整理されているのに、描画系だけ `Render`（`EngineCore` の外）になっていた。
 
-**やること**: `EngineCore::Render` に寄せるなど、トップレベル名前空間を1本化。
+**対応**: `Render` を **`EngineCore::Render`** に移動（定義5箇所 + `using namespace Render*` 7箇所を修正）。EngineCore 外（GUIController・グローバルの VertexData/OBJLoader 等）からの参照は `EngineCore::Render::` に**完全修飾**して統一（**35ファイル・136箇所**、Debug x64 ビルド通過）。否定先読みで二重修飾を回避。
+
+**残り（別パス）**:
+- `GUIController::Window` / `GUIController::Gui` を `EngineCore::GUIController::*` に寄せるか。
+- グローバル名前空間に置かれたクラス（`VertexData`、`MODEL`/OBJLoader 系、`Model`、`WindowManager` 等）を `EngineCore` 配下へ。
+- ヘッダ内 `using namespace`（`ObjectManager.h` の `General`、`FBXLoader.h` の `EngineCore::Render::Types` 等）の除去は #10 と合わせて。
 
 ---
 

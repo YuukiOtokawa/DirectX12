@@ -8,7 +8,7 @@
 #include "../MaterialPropertyInspector.h"
 
 using namespace EngineCore::General;
-using namespace Render::RenderStructure;
+using namespace EngineCore::Render::RenderStructure;
 
 void MeshRenderer::Draw() {
 	auto meshFilter = GetOwner()->GetComponent<MeshFilter>();
@@ -18,7 +18,7 @@ void MeshRenderer::Draw() {
 	auto vertexData = meshFilter->GetVertexData();
 	if (!vertexBuffer || !vertexData) return;
 
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	auto transform = GetOwner()->GetComponent<Transform>();
@@ -33,7 +33,7 @@ void MeshRenderer::Draw() {
 		OBJECT_CONSTANT objectConstant{};
 		XMStoreFloat4x4(&objectConstant.World, XMMatrixTranspose(world));
 
-		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
+		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
 	}
 
 	// Bind Vertex Buffer and Topology
@@ -55,18 +55,18 @@ void MeshRenderer::Draw() {
 
 	// Bind Material Constant Buffer (Dynamic or Legacy)
 	if (!m_Material.GetShaderName().empty()) {
-		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
+		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
 	} else {
-		Render::MaterialConstant constData = m_Material.GetConstantData();
-		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(Render::MaterialConstant));
+		EngineCore::Render::MaterialConstant constData = m_Material.GetConstantData();
+		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(EngineCore::Render::MaterialConstant));
 	}
 
 	// Bind Material Textures
 	if (m_Material.GetTextureBaseColor()) {
-		renderManager->SetTexture(Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, m_Material.GetTextureBaseColor());
+		renderManager->SetTexture(EngineCore::Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, m_Material.GetTextureBaseColor());
 	} else {
 		for (auto& texture : vertexData->GetTextures()) {
-			renderManager->SetTexture(Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, texture.get());
+			renderManager->SetTexture(EngineCore::Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, texture.get());
 		}
 	}
 
@@ -88,7 +88,7 @@ void MeshRenderer::Draw() {
 }
 
 void MeshRenderer::Inspector() {
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	
 	// --- Render Pass Picker ---
 	ImGui::Text("Render Pass");
@@ -96,7 +96,7 @@ void MeshRenderer::Inspector() {
 	int currentPassType = static_cast<int>(m_Material.GetRenderPassType());
 	const char* passTypeNames[] = { "Deferred Opaque", "Forward Opaque", "Forward Transparent" };
 	if (ImGui::Combo("##RenderPass", &currentPassType, passTypeNames, _countof(passTypeNames))) {
-		Render::RenderPassType newPassType = static_cast<Render::RenderPassType>(currentPassType);
+		EngineCore::Render::RenderPassType newPassType = static_cast<EngineCore::Render::RenderPassType>(currentPassType);
 		m_Material.SetRenderPassType(newPassType);
 		
 		// If shader path is set, automatically recompile PSO with the new configuration
@@ -104,7 +104,7 @@ void MeshRenderer::Inspector() {
 		if (!path.empty() && renderManager) {
 			std::string shaderName = m_Material.GetShaderName();
 			ComPtr<ID3D12PipelineState> pso;
-			if (newPassType == Render::RenderPassType::DeferredOpaque) {
+			if (newPassType == EngineCore::Render::RenderPassType::DeferredOpaque) {
 				DXGI_FORMAT formats[] = {
 					DXGI_FORMAT_R16G16B16A16_FLOAT,
 					DXGI_FORMAT_R16G16B16A16_FLOAT,
@@ -136,9 +136,9 @@ void MeshRenderer::Inspector() {
 			std::string shaderName = path.substr(path.find_last_of("\\/") + 1);
 			shaderName = shaderName.substr(0, shaderName.find_last_of("."));
 			
-			Render::RenderPassType passType = m_Material.GetRenderPassType();
+			EngineCore::Render::RenderPassType passType = m_Material.GetRenderPassType();
 			ComPtr<ID3D12PipelineState> pso;
-			if (passType == Render::RenderPassType::DeferredOpaque) {
+			if (passType == EngineCore::Render::RenderPassType::DeferredOpaque) {
 				DXGI_FORMAT formats[] = {
 					DXGI_FORMAT_R16G16B16A16_FLOAT,
 					DXGI_FORMAT_R16G16B16A16_FLOAT,
@@ -173,7 +173,7 @@ void MeshRenderer::Inspector() {
 		COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.png;*.jpg;*.tga;*.dds" }, { L"All Files", L"*.*" } };
 		std::string path = OpenFileDialog(texFilter, _countof(texFilter));
 		if (!path.empty() && renderManager) {
-			std::shared_ptr<Render::Types::TEXTURE> tex = renderManager->LoadTexture(path.c_str());
+			std::shared_ptr<EngineCore::Render::Types::TEXTURE> tex = renderManager->LoadTexture(path.c_str());
 			if (tex) {
 				m_Material.SetTextureBaseColor(std::move(tex));
 			}
@@ -183,7 +183,7 @@ void MeshRenderer::Inspector() {
 	ImGui::Separator();
 
 	// --- Dynamic Properties UI ---
-	const Render::ShaderMetadata* meta = nullptr;
+	const EngineCore::Render::ShaderMetadata* meta = nullptr;
 	if (renderManager && !m_Material.GetShaderName().empty()) {
 		meta = renderManager->GetShaderMetadata(m_Material.GetShaderName());
 	}

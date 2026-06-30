@@ -2,11 +2,11 @@
 #include "Main.h"
 
 using namespace EngineCore::General;
-using namespace Render::RenderStructure;
+using namespace EngineCore::Render::RenderStructure;
 using namespace DirectX;
 
 SpriteRenderer::SpriteRenderer() {
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 
 	m_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), 4);
 
@@ -40,7 +40,7 @@ void SpriteRenderer::Update() {
 }
 
 void SpriteRenderer::Draw() {
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	
 	//マトリクス設定
 	{
@@ -48,7 +48,7 @@ void SpriteRenderer::Draw() {
 		OBJECT_CONSTANT objectConstant{};
 		XMStoreFloat4x4(&objectConstant.World, XMMatrixTranspose(world));
 
-		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
+		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::OBJECT, &objectConstant, sizeof(objectConstant));
 	}
 
 	{
@@ -64,7 +64,7 @@ void SpriteRenderer::Draw() {
 		XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(view));
 		XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(projection));
 
-		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
+		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
 	}
 
 	renderManager->SetVertexBuffer(m_VertexBuffer.get());

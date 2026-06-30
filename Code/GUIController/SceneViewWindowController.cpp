@@ -5,7 +5,7 @@
 using namespace GUIController::Window;
 
 void SceneViewWindowController::Draw() {
-	auto renderManager = Render::RenderManager::GetInstance();
+	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
 	auto sceneViewTarget = renderManager->GetSceneViewTarget();
@@ -43,7 +43,7 @@ void SceneViewWindowController::Draw() {
 		// Check window size change and resize render target
 		D3D12_RESOURCE_DESC desc = sceneViewTarget->Resource->GetDesc();
 		if (targetWidth != desc.Width || targetHeight != desc.Height) {
-			renderManager->ResizeTarget(Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW, 
+			renderManager->ResizeTarget(EngineCore::Render::RenderManager::RENDER_TARGET_TYPE::SCENE_VIEW, 
 				targetWidth, targetHeight);
 			
 			// Refresh target pointer after resize

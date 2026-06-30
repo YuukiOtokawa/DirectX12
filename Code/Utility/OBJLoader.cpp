@@ -7,7 +7,7 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
-using namespace Render;
+using namespace EngineCore::Render;
 
 void LoadObjBin(const char *FileName, MODEL *Model) {
     FILE *file;
@@ -501,7 +501,7 @@ void LoadObjToVertexData(const char* FileName, VertexData* pOutVertexData) {
   }
 
   // Transfer vertices and indices to VertexData
-  std::vector<Render::Types::VERTEX> vertices(model.VertexArray, model.VertexArray + model.VertexNum);
+  std::vector<EngineCore::Render::Types::VERTEX> vertices(model.VertexArray, model.VertexArray + model.VertexNum);
   std::vector<unsigned int> indices(model.IndexArray, model.IndexArray + model.IndexNum);
 
   pOutVertexData->SetVertices(vertices);
@@ -510,7 +510,7 @@ void LoadObjToVertexData(const char* FileName, VertexData* pOutVertexData) {
   pOutVertexData->SetFilePath(FileName);
 
   // Load textures
-  std::vector<std::unique_ptr<Render::Types::TEXTURE>> textures;
+  std::vector<std::unique_ptr<EngineCore::Render::Types::TEXTURE>> textures;
   for (unsigned int i = 0; i < model.SubsetNum; i++) {
     if (strlen(model.SubsetArray[i].Material.TextureNameBaseColor) != 0) {
       auto tex = RenderManager::GetInstance()->LoadTexture(
