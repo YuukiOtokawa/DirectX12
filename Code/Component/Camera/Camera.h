@@ -10,29 +10,29 @@ using namespace DirectX;
 namespace EngineCore::General {
 
 	class Camera : public Component {
-		Vector3 _TargetPosition;
-		float _Fov;
+		Vector3 m_TargetPosition;
+		float m_Fov;
 
-		XMMATRIX _ProjectionMatrix;
-		XMMATRIX _ViewMatrix;
+		XMMATRIX m_ProjectionMatrix;
+		XMMATRIX m_ViewMatrix;
 
-		float _Near;
-		float _Far;
+		float m_Near;
+		float m_Far;
 
-		Vector3 _UpVector;
+		Vector3 m_UpVector;
 
-		Vector3 _LastPosition;
-		Vector3 _LastRotation;
-		Vector3 _LastTargetPosition;
-		float _TargetDistance;
-		bool _IsInitialized;
+		Vector3 m_LastPosition;
+		Vector3 m_LastRotation;
+		Vector3 m_LastTargetPosition;
+		float m_TargetDistance;
+		bool m_IsInitialized;
 
 		static Camera* s_ActiveCamera;
 
 		REGISTER_COMPONENT(Camera)
 	public:
-		const XMMATRIX& GetProjectionMatrix() const { return _ProjectionMatrix; }
-		const XMMATRIX& GetViewMatrix() const { return _ViewMatrix; }
+		const XMMATRIX& GetProjectionMatrix() const { return m_ProjectionMatrix; }
+		const XMMATRIX& GetViewMatrix() const { return m_ViewMatrix; }
 
 		Camera();
 

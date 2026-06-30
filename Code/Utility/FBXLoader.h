@@ -23,7 +23,7 @@ struct DEFORM_VERTEX {
 
 
 struct FBXData {
-	const aiScene* _Scene = nullptr;
+	const aiScene* m_Scene = nullptr;
 
 	std::vector<std::unique_ptr<TEXTURE>> textures;
 

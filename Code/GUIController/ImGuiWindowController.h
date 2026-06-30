@@ -10,19 +10,19 @@ namespace GUIController::Gui {
 		class ImGuiWindowController {
 
 		protected:
-			bool _isActive = true;
-			std::string _WindowName;
+			bool m_IsActive = true;
+			std::string m_WindowName;
 
-			uint32_t _WindowID = 0;
+			uint32_t m_WindowID = 0;
 
 		private:
-			static uint32_t _WindowIDCounter;
+			static uint32_t m_WindowIDCounter;
 		public:
-			ImGuiWindowController() : _WindowName("Window") {
-				_WindowID = _WindowIDCounter++;
+			ImGuiWindowController() : m_WindowName("Window") {
+				m_WindowID = m_WindowIDCounter++;
 			}
-			ImGuiWindowController(const std::string& name) : _WindowName(name) {
-				_WindowID = _WindowIDCounter++;
+			ImGuiWindowController(const std::string& name) : m_WindowName(name) {
+				m_WindowID = m_WindowIDCounter++;
 			}
 			virtual void Initialize() = 0;
 			virtual void Update() = 0;
@@ -31,8 +31,8 @@ namespace GUIController::Gui {
 			virtual void AfterDraw();
 			virtual void Finalize() = 0;
 
-			std::string GetName() { return _WindowName; }
-			bool* GetIsActive() { return &_isActive; }
+			std::string GetName() { return m_WindowName; }
+			bool* GetIsActive() { return &m_IsActive; }
 		};
 }
 

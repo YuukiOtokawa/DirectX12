@@ -13,18 +13,18 @@ namespace EngineCore::General {
 		public Component {
 		REGISTER_COMPONENT(MeshFilter)
 
-		std::unique_ptr<Render::Types::VERTEX_BUFFER> _VertexBuffer;
-		std::unique_ptr<Render::Types::INDEX_BUFFER> _IndexBuffer;
+		std::unique_ptr<Render::Types::VERTEX_BUFFER> m_VertexBuffer;
+		std::unique_ptr<Render::Types::INDEX_BUFFER> m_IndexBuffer;
 
-		D3D12_PRIMITIVE_TOPOLOGY _PrimitiveTopology;
+		D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
 
-		VertexData* _pVertexData = nullptr;
+		VertexData* m_VertexData = nullptr;
 	public:
 		MeshFilter() = default;
 		~MeshFilter() override {
-			if (_pVertexData) {
-				delete _pVertexData;
-				_pVertexData = nullptr;
+			if (m_VertexData) {
+				delete m_VertexData;
+				m_VertexData = nullptr;
 			}
 		}
 		void Update() override;
@@ -32,22 +32,22 @@ namespace EngineCore::General {
 		void Inspector() override;
 
 		void SetVertexBuffer(Render::Types::VERTEX_BUFFER* pVertexBuffer) {
-			_VertexBuffer.reset(pVertexBuffer);
+			m_VertexBuffer.reset(pVertexBuffer);
 		}
 		void SetIndexBuffer(Render::Types::INDEX_BUFFER* pIndexBuffer) {
-			_IndexBuffer.reset(pIndexBuffer);
+			m_IndexBuffer.reset(pIndexBuffer);
 		}
 		void SetVertexData(VertexData* vertexData) {
-			_pVertexData = vertexData;
+			m_VertexData = vertexData;
 			SetVertexData(vertexData->GetFilePath().c_str(), vertexData->GetVertices(), vertexData->GetIndices());
 			SetPrimitiveTopology(vertexData->GetPrimitiveTopology());
 		}
 		void SetVertexData(const char* FilePath, std::vector<Render::Types::VERTEX> vertices, std::vector<unsigned int> indices = {});
-		void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) { _PrimitiveTopology = topology; }
+		void SetPrimitiveTopology(D3D12_PRIMITIVE_TOPOLOGY topology) { m_PrimitiveTopology = topology; }
 
-		Render::Types::VERTEX_BUFFER* GetVertexBuffer() const { return _VertexBuffer.get(); }
-		Render::Types::INDEX_BUFFER* GetIndexBuffer() const { return _IndexBuffer.get(); }
-		VertexData* GetVertexData() const { return _pVertexData; }
-		D3D12_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return _PrimitiveTopology; }
+		Render::Types::VERTEX_BUFFER* GetVertexBuffer() const { return m_VertexBuffer.get(); }
+		Render::Types::INDEX_BUFFER* GetIndexBuffer() const { return m_IndexBuffer.get(); }
+		VertexData* GetVertexData() const { return m_VertexData; }
+		D3D12_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return m_PrimitiveTopology; }
 	};
 }

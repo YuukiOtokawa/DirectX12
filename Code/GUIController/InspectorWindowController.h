@@ -8,7 +8,7 @@ namespace GUIController::Window {
 
 	public:
 		InspectorWindowController() {
-			_WindowName = "Inspector Window";
+			m_WindowName = "Inspector Window";
 		}
 		void Draw() override;
 	};

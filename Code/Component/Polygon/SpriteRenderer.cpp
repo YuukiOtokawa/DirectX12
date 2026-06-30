@@ -8,10 +8,10 @@ using namespace DirectX;
 SpriteRenderer::SpriteRenderer() {
 	auto renderManager = Render::RenderManager::GetInstance();
 
-	_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), 4);
+	m_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), 4);
 
 	VERTEX* buffer{};
-	HRESULT hr = _VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
+	HRESULT hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 
 	buffer[0].Position = { 0.0f,0.0f,0.0f };
 	buffer[1].Position = { 200.0f,0.0f,0.0f };
@@ -33,7 +33,7 @@ SpriteRenderer::SpriteRenderer() {
 	buffer[2].TexCoord = { 0.0f,1.0f };
 	buffer[3].TexCoord = { 1.0f,1.0f };
 
-	_VertexBuffer->Resource->Unmap(0, nullptr);
+	m_VertexBuffer->Resource->Unmap(0, nullptr);
 }
 
 void SpriteRenderer::Update() {
@@ -67,7 +67,7 @@ void SpriteRenderer::Draw() {
 		renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
 	}
 
-	renderManager->SetVertexBuffer(_VertexBuffer.get());
+	renderManager->SetVertexBuffer(m_VertexBuffer.get());
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 	renderManager->SetPipelineState("unlit");

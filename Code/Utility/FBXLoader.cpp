@@ -328,29 +328,29 @@ FBXData LoadFBX(const char* FileName, VertexData* pVertexData) {
 
 	const std::string m_ModelPath(FileName);
 
-	model._Scene = aiImportFile(m_ModelPath.c_str(), aiProcess_Triangulate | aiProcess_ConvertToLeftHanded);
-	assert(model._Scene && "Failed to load model");
+	model.m_Scene = aiImportFile(m_ModelPath.c_str(), aiProcess_Triangulate | aiProcess_ConvertToLeftHanded);
+	assert(model.m_Scene && "Failed to load model");
 
-	auto deformVertex = new std::vector<DEFORM_VERTEX>[model._Scene->mNumMeshes];
+	auto deformVertex = new std::vector<DEFORM_VERTEX>[model.m_Scene->mNumMeshes];
 	std::unordered_map<std::string, UINT> textureSrvByAssimpPath; // "*0", "diffuse.png" など
 
 	std::vector<MATERIAL> materials;
 	std::vector<UINT> baseColorTexOfMaterial;
 
 	// CreateBone
-	CreateBone(model._Scene->mRootNode, bone);
+	CreateBone(model.m_Scene->mRootNode, bone);
 
 	// LoadVertexData
-	LoadVertexData(model._Scene, m_ModelPath, deformVertex, bone, &model);
+	LoadVertexData(model.m_Scene, m_ModelPath, deformVertex, bone, &model);
 
 	// LoadTexture
-	LoadTexture(model._Scene, textureSrvByAssimpPath, &model);
+	LoadTexture(model.m_Scene, textureSrvByAssimpPath, &model);
 
 	// LoadAnimation
 	LoadAnimation(FileName);
 
 	// CreateMaterial
-	CreateMaterial(model._Scene, textureSrvByAssimpPath, materials, baseColorTexOfMaterial);
+	CreateMaterial(model.m_Scene, textureSrvByAssimpPath, materials, baseColorTexOfMaterial);
 	model.baseColorTexOfMaterial = std::move(baseColorTexOfMaterial);
 
 	Render::RenderManager::GetInstance()->WaitGPU();

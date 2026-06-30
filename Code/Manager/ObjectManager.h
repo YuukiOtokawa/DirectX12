@@ -25,20 +25,20 @@ namespace EngineCore::Manager {
 
 	private:
 
-		static ObjectManager* _Instance;
+		static ObjectManager* m_Instance;
 
-		std::vector<GameObjectEntry> _Objects;
-		std::vector<Index> _FreeEntries;
+		std::vector<GameObjectEntry> m_Objects;
+		std::vector<Index> m_FreeEntries;
 
-		General::GameObject* _SelectedObject = nullptr;
+		General::GameObject* m_SelectedObject = nullptr;
 
 	public:
 		
 		static ObjectManager* GetInstance() {
-			if (!_Instance) {
-				_Instance = new ObjectManager();
+			if (!m_Instance) {
+				m_Instance = new ObjectManager();
 			}
-			return _Instance;
+			return m_Instance;
 		}
 
 		General::GameObject* CreateObject();
@@ -50,17 +50,17 @@ namespace EngineCore::Manager {
 		bool IsValid(const uint64_t id) const;
 
 		const std::vector<GameObjectEntry>& GetObjects() const {
-			return _Objects;
+			return m_Objects;
 		}
 
 		bool CheckObjectExists(const std::string& name) const;
 
 		void SelectObject(General::GameObject* object) {
-			_SelectedObject = object;
+			m_SelectedObject = object;
 		}
 
 		General::GameObject* GetSelectedObject() const {
-			return _SelectedObject;
+			return m_SelectedObject;
 		}
 
 		void UpdateObjects();

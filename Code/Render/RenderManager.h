@@ -212,7 +212,7 @@ namespace Render {
 		std::unique_ptr<RENDER_TARGET>		m_GameViewTarget;
 		std::unique_ptr<RENDER_TARGET>		m_SceneViewTarget;
 
-		RENDER_TARGET_TYPE                  _CurrentTargetType = RENDER_TARGET_TYPE::GAME_VIEW;
+		RENDER_TARGET_TYPE                  m_CurrentTargetType = RENDER_TARGET_TYPE::GAME_VIEW;
 
 		bool m_SwapChainResizePending = false;
 		unsigned int m_SwapChainPendingWidth = 0;
@@ -299,19 +299,19 @@ namespace Render {
 		void CleanUpRenderTarget();
 		void Resize(unsigned int Width, unsigned int Height);
 
-		void SetCurrentTarget(RENDER_TARGET_TYPE targetType) { _CurrentTargetType = targetType; }
-		RENDER_TARGET_TYPE GetCurrentTarget() const { return _CurrentTargetType; }
+		void SetCurrentTarget(RENDER_TARGET_TYPE targetType) { m_CurrentTargetType = targetType; }
+		RENDER_TARGET_TYPE GetCurrentTarget() const { return m_CurrentTargetType; }
 
 		RENDER_TARGET* GetGameViewTarget() const { return m_GameViewTarget.get(); }
 		RENDER_TARGET* GetSceneViewTarget() const { return m_SceneViewTarget.get(); }
 
 		void GetActiveTargetSize(unsigned int& width, unsigned int& height) {
-			if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+			if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 				width = m_BackBufferWidth;
 				height = m_BackBufferHeight;
 			}
 			else {
-				RENDER_TARGET* target = (_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
+				RENDER_TARGET* target = (m_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
 				if (target && target->Resource) {
 					D3D12_RESOURCE_DESC desc = target->Resource->GetDesc();
 					width = static_cast<unsigned int>(desc.Width);

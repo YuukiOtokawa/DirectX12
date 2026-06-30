@@ -17,20 +17,20 @@ using namespace Render::RenderStructure;
 Camera* Camera::s_ActiveCamera = nullptr;
 
 Camera::Camera() {
-	_ProjectionMatrix = XMMatrixIdentity();
-	_ViewMatrix = XMMatrixIdentity();
+	m_ProjectionMatrix = XMMatrixIdentity();
+	m_ViewMatrix = XMMatrixIdentity();
 	
-	_Fov = 60.0f;
-	_Near = 0.1f;
-	_Far = 1000.0f;
-	_UpVector = Vector3(0.0f, 1.0f, 0.0f);
-	_TargetPosition = Vector3(0.0f, 0.0f, 0.0f);
+	m_Fov = 60.0f;
+	m_Near = 0.1f;
+	m_Far = 1000.0f;
+	m_UpVector = Vector3(0.0f, 1.0f, 0.0f);
+	m_TargetPosition = Vector3(0.0f, 0.0f, 0.0f);
 
-	_LastPosition = Vector3(0.0f, 0.0f, 0.0f);
-	_LastRotation = Vector3(0.0f, 0.0f, 0.0f);
-	_LastTargetPosition = Vector3(0.0f, 0.0f, 0.0f);
-	_TargetDistance = 10.0f;
-	_IsInitialized = false;
+	m_LastPosition = Vector3(0.0f, 0.0f, 0.0f);
+	m_LastRotation = Vector3(0.0f, 0.0f, 0.0f);
+	m_LastTargetPosition = Vector3(0.0f, 0.0f, 0.0f);
+	m_TargetDistance = 10.0f;
+	m_IsInitialized = false;
 
 	if (s_ActiveCamera == nullptr) {
 		s_ActiveCamera = this;
@@ -57,76 +57,76 @@ void Camera::Draw() {
 		height = 1080;
 	}
 
-	_ProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(_Fov), (float)width / (float)height, _Near, _Far);
+	m_ProjectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(m_Fov), (float)width / (float)height, m_Near, m_Far);
 
 	auto transform = GetOwner()->GetComponent<Transform>();
 	if (transform) {
-		if (!_IsInitialized) {
-			_LastPosition = transform->Position;
-			_LastRotation = transform->Rotation;
+		if (!m_IsInitialized) {
+			m_LastPosition = transform->Position;
+			m_LastRotation = transform->Rotation;
 
-			Vector3 toTarget = _TargetPosition - transform->Position;
+			Vector3 toTarget = m_TargetPosition - transform->Position;
 			float len = toTarget.Length();
 			if (len > 0.001f) {
-				_TargetDistance = len;
+				m_TargetDistance = len;
 			}
 			else {
-				_TargetDistance = 10.0f;
+				m_TargetDistance = 10.0f;
 			}
 
 			Vector3 forward = transform->GetForward();
-			_TargetPosition = transform->Position + forward * _TargetDistance;
-			_LastTargetPosition = _TargetPosition;
-			_IsInitialized = true;
+			m_TargetPosition = transform->Position + forward * m_TargetDistance;
+			m_LastTargetPosition = m_TargetPosition;
+			m_IsInitialized = true;
 		}
 		else {
-			bool posChanged = !(transform->Position == _LastPosition);
-			bool rotChanged = !(transform->Rotation == _LastRotation);
-			bool targetChanged = !(_TargetPosition == _LastTargetPosition);
+			bool posChanged = !(transform->Position == m_LastPosition);
+			bool rotChanged = !(transform->Rotation == m_LastRotation);
+			bool targetChanged = !(m_TargetPosition == m_LastTargetPosition);
 
 			if (posChanged || rotChanged) {
 				Vector3 forward = transform->GetForward();
-				_TargetPosition = transform->Position + forward * _TargetDistance;
+				m_TargetPosition = transform->Position + forward * m_TargetDistance;
 			}
 			else if (targetChanged) {
-				Vector3 toTarget = _TargetPosition - transform->Position;
+				Vector3 toTarget = m_TargetPosition - transform->Position;
 				float len = toTarget.Length();
 				if (len > 0.001f) {
-					_TargetDistance = len;
+					m_TargetDistance = len;
 					Vector3 dir = toTarget.Normalize();
 					float pitch = std::asin(dir.y);
 					float yaw = std::atan2(dir.z, dir.x);
 					transform->Rotation = Vector3(pitch, yaw, 0.0f);
 				}
 				else {
-					_TargetDistance = 1.0f;
+					m_TargetDistance = 1.0f;
 				}
 			}
 			else {
-				if (transform->Position == _TargetPosition) {
+				if (transform->Position == m_TargetPosition) {
 					Vector3 forward = transform->GetForward();
-					_TargetPosition = transform->Position + forward * _TargetDistance;
+					m_TargetPosition = transform->Position + forward * m_TargetDistance;
 				}
 			}
 		}
 
-		_LastPosition = transform->Position;
-		_LastRotation = transform->Rotation;
-		_LastTargetPosition = _TargetPosition;
+		m_LastPosition = transform->Position;
+		m_LastRotation = transform->Rotation;
+		m_LastTargetPosition = m_TargetPosition;
 
 		XMFLOAT3 posF3 = { transform->Position.x, transform->Position.y, transform->Position.z };
-		XMFLOAT3 targetF3 = { _TargetPosition.x, _TargetPosition.y, _TargetPosition.z };
-		XMFLOAT3 upF3 = { _UpVector.x, _UpVector.y, _UpVector.z };
+		XMFLOAT3 targetF3 = { m_TargetPosition.x, m_TargetPosition.y, m_TargetPosition.z };
+		XMFLOAT3 upF3 = { m_UpVector.x, m_UpVector.y, m_UpVector.z };
 
 		XMVECTOR pos = XMLoadFloat3(&posF3);
 		XMVECTOR eyev = XMLoadFloat3(&targetF3);
 		XMVECTOR up = XMLoadFloat3(&upF3);
-		_ViewMatrix = XMMatrixLookAtLH(pos, eyev, up);
+		m_ViewMatrix = XMMatrixLookAtLH(pos, eyev, up);
 	}
 
 	CAMERA_CONSTANT cameraConstant{};
-	XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(_ViewMatrix));
-	XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(_ProjectionMatrix));
+	XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(m_ViewMatrix));
+	XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(m_ProjectionMatrix));
     cameraConstant.Position =
         transform ? Vector4(transform->Position.x, transform->Position.y, transform->Position.z, 1.0f) : Vector4(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -134,9 +134,9 @@ void Camera::Draw() {
 }
 
 void Camera::Inspector() {
-	ImGui::DragFloat("FOV", &_Fov, 0.5f, 1.0f, 180.0f, "%.1f");
-	ImGui::DragFloat("Near", &_Near, 0.05f, 0.01f, 10.0f, "%.2f");
-	ImGui::DragFloat("Far", &_Far, 1.0f, 10.0f, 10000.0f, "%.1f");
-    ImGui::DragFloat3("Target Position", &_TargetPosition.x, 0.1f, -1000.0f,
+	ImGui::DragFloat("FOV", &m_Fov, 0.5f, 1.0f, 180.0f, "%.1f");
+	ImGui::DragFloat("Near", &m_Near, 0.05f, 0.01f, 10.0f, "%.2f");
+	ImGui::DragFloat("Far", &m_Far, 1.0f, 10.0f, 10000.0f, "%.1f");
+    ImGui::DragFloat3("Target Position", &m_TargetPosition.x, 0.1f, -1000.0f,
                       1000.0f, "%.1f");
 }

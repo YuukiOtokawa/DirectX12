@@ -13,10 +13,10 @@ namespace EngineCore::General {
     class GameObject :
         public Object {
 
-		bool _IsStarted = false;
+		bool m_IsStarted = false;
 
-		bool _IsActive = true;
-        std::string _Name = "object";
+		bool m_IsActive = true;
+        std::string m_Name = "object";
     
 		std::vector<std::unique_ptr<Component>> m_Components;
 	public:
@@ -26,11 +26,11 @@ namespace EngineCore::General {
 
 		const std::vector<std::unique_ptr<Component>>& GetComponents() const;
 		void ExecUpdate() {
-			if (!_IsStarted) {
+			if (!m_IsStarted) {
 				//Start();
-				_IsStarted = true;
+				m_IsStarted = true;
 			}
-			if (_IsActive) {
+			if (m_IsActive) {
 				Update();
 			}
 		}
@@ -39,9 +39,9 @@ namespace EngineCore::General {
 
 		void DrawInspector() override;
 
-		bool IsActive() const { return _IsActive; }
-		void SetActive(bool active) { _IsActive = active; }
-		std::string GetName() const { return _Name; }
+		bool IsActive() const { return m_IsActive; }
+		void SetActive(bool active) { m_IsActive = active; }
+		std::string GetName() const { return m_Name; }
 		void SetName(const std::string& name);	
 
 		template<typename T> 

@@ -12,20 +12,23 @@
 
 ---
 
-## 1. 命名規則の統一（最優先・影響範囲が広い）
+## 1. 命名規則の統一（最優先・影響範囲が広い） ✅ メンバ変数は対応済み
 
-メンバ変数の接頭辞が **ファイル・クラスどころか同じクラス内でも混在**している。
+メンバ変数の接頭辞が **ファイル・クラスどころか同じクラス内でも混在**していた。
 
 | パターン | 例 | 場所 |
 |---|---|---|
 | `m_` + PascalCase | `m_Components`, `m_WindowHandle`, `m_Name` | GameObject, RenderManager, Material |
 | `_` + PascalCase | `_IsActive`, `_Name`, `_Objects`, `_SelectedObject`, `_CurrentTargetType` | GameObject, ObjectManager, RenderManager |
-| `_` + camelCase | `_instanceID` | Object |
+| `_` + camelCase | `_instanceID`, `_isActive` | Object, ImGuiWindowController |
 
-- `GameObject.h` は `_IsStarted` / `_IsActive` / `_Name` と `m_Components` が同居（[GameObject.h:16-21](Code/GameObject/GameObject.h)）
-- `RenderManager.h` も `m_*` が大半なのに `_CurrentTargetType` だけ `_`（[RenderManager.h:202](Code/Render/RenderManager.h)）
+**対応**: 統一先を **`m_PascalCase`** に決定（既存多数派＝差分最小、かつ `_` + 大文字始まりは C++ 標準が実装に予約する命名なので是正の意味も大きい）。
+`_`始まりのメンバ 41 種を `m_PascalCase` に機械置換した（**35 ファイル・261 箇所**）。`_instanceID`→`m_InstanceID`、`_isActive`→`m_IsActive`、`_creators`→`m_Creators`、`_pVertexData`→`m_VertexData` のように camelCase/ハンガリアンは PascalCase 化。Debug x64 ビルド通過を確認（新規の警告・エラーなし）。
 
-**やること**: 接頭辞・大文字小文字のルールを1つ決めて全体を機械置換。関数の引数も `Width` / `Height` / `Resource` のように PascalCase になっており（C++ では珍しい）、ローカル変数のルールも合わせて決めたい。
+**残り（このパスでは未対応・別パス）**:
+- `Transform` の **public 無接頭辞メンバ** `Position` / `Rotation` / `Scale` / `Quaternion` — public データメンバに `m_` を付けるかは別の判断（private 化＋アクセサ化とセットで検討）。
+- **関数引数・ローカル変数** が `Width` / `Height` / `Resource` のように PascalCase（C++ では珍しい）。規則を別途決めて統一したい。
+- **static メンバの接頭辞** — `s_ActiveCamera`（Camera）等の `s_` を残すか `m_` に寄せるか。今回は `s_` を温存。
 
 ---
 

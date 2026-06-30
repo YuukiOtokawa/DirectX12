@@ -5,7 +5,7 @@
 
 using namespace EngineCore::General;
 
-EditorCameraController::EditorCameraController() : _BaseMoveSpeed(0.05f), _LookSensitivity(0.001f) {}
+EditorCameraController::EditorCameraController() : m_BaseMoveSpeed(0.05f), m_LookSensitivity(0.001f) {}
 
 void EditorCameraController::Draw() {
 	// Right click must be held down to control editor camera
@@ -20,8 +20,8 @@ void EditorCameraController::Draw() {
 
 	// 1. Camera Look Rotation (Right Click + Drag)
 	Vector3 rot = transform->GetRotation();
-	rot.y += io.MouseDelta.x * _LookSensitivity; // Yaw (left/right)
-	rot.x += io.MouseDelta.y * _LookSensitivity; // Pitch (up/down)
+	rot.y += io.MouseDelta.x * m_LookSensitivity; // Yaw (left/right)
+	rot.x += io.MouseDelta.y * m_LookSensitivity; // Pitch (up/down)
 
 	// Clamp pitch to prevent camera flipping
 	if (rot.x > 1.5f) rot.x = 1.5f;
@@ -30,7 +30,7 @@ void EditorCameraController::Draw() {
 	transform->SetRotation(rot);
 
 	// 2. Camera Translation Movement (WASD + QE)
-	float currentSpeed = _BaseMoveSpeed;
+	float currentSpeed = m_BaseMoveSpeed;
 	if (io.KeyShift) {
 		currentSpeed *= 3.0f; // Fast move speed (Shift + WASD)
 	}

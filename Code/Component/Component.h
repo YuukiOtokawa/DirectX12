@@ -29,7 +29,7 @@ private: \
 		REGISTER_COMPONENT(Component)
 
 	protected:
-		GameObject* _Owner = nullptr;
+		GameObject* m_Owner = nullptr;
 	public:
 		virtual ~Component() = default;
 		virtual void Start();
@@ -38,8 +38,8 @@ private: \
 		virtual void Draw() {}
 		virtual DrawOrder GetDrawOrder() const { return DrawOrder::Default; }
 
-		void SetOwner(GameObject* owner) { _Owner = owner; }
-		GameObject* GetOwner() const { return _Owner; }
+		void SetOwner(GameObject* owner) { m_Owner = owner; }
+		GameObject* GetOwner() const { return m_Owner; }
 
 		void DrawInspector() override;
 		virtual void Inspector();

@@ -4,7 +4,7 @@
 #include "GameObject/GameObject.h"
 #include "../Render/RenderSystem.h"
 
-EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::_Instance;
+EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::m_Instance;
 
 namespace EngineCore::Manager {
 	using namespace General;
@@ -25,45 +25,45 @@ namespace EngineCore::Manager {
 
 		Index i;
 		Generation generation;
-		if (!_FreeEntries.empty()) {
-			i = _FreeEntries.back();
-			_FreeEntries.pop_back();
-			generation = _Objects[i].generation; // 解放時に進めた世代を引き継ぐ
-			_Objects[i].object = std::move(object);
+		if (!m_FreeEntries.empty()) {
+			i = m_FreeEntries.back();
+			m_FreeEntries.pop_back();
+			generation = m_Objects[i].generation; // 解放時に進めた世代を引き継ぐ
+			m_Objects[i].object = std::move(object);
 		}
 		else {
-			i = static_cast<Index>(_Objects.size());
+			i = static_cast<Index>(m_Objects.size());
 			generation = 0;
-			_Objects.push_back(GameObjectEntry{std::move(object), generation});
+			m_Objects.push_back(GameObjectEntry{std::move(object), generation});
 		}
 
 		// index と generation からハンドル(ID)を生成して紐付ける
-		_Objects[i].object->SetID(CreateID(i, generation));
+		m_Objects[i].object->SetID(CreateID(i, generation));
 	}
 
 	void ObjectManager::RemoveObject(const uint64_t id) {
 		auto index = GetIndex(id);
-		if ((index) >= _Objects.size() || !_Objects[index].object) {
+		if ((index) >= m_Objects.size() || !m_Objects[index].object) {
 			return;
 		}
-		_Objects[index].object.reset();
-		_Objects[index].generation++;
-		_FreeEntries.push_back(index);
+		m_Objects[index].object.reset();
+		m_Objects[index].generation++;
+		m_FreeEntries.push_back(index);
 	}
 
 	bool ObjectManager::IsValid(const uint64_t id) const {
 		auto index = GetIndex(id);
-		if (index >= _Objects.size() || !_Objects[index].object) {
+		if (index >= m_Objects.size() || !m_Objects[index].object) {
 			return false;
 		}
-		if (_Objects[index].generation != GetGeneration(id)) {
+		if (m_Objects[index].generation != GetGeneration(id)) {
 			return false;
 		}
 		return true;
 	}
 
 	bool ObjectManager::CheckObjectExists(const std::string& name) const {
-		for (const auto& object : _Objects) {
+		for (const auto& object : m_Objects) {
 			if (object.object->GetName() == name) {
 				return true;
 			}
@@ -72,7 +72,7 @@ namespace EngineCore::Manager {
 	}
 
 	void ObjectManager::UpdateObjects() {
-		for (const auto& object : _Objects) {
+		for (const auto& object : m_Objects) {
 			if (object.object) {
 				object.object->ExecUpdate();
 			}
@@ -80,10 +80,10 @@ namespace EngineCore::Manager {
 	}
 
 	void ObjectManager::DrawObjects() {
-		if (_Objects.empty()) {
+		if (m_Objects.empty()) {
 			return;
 		}
-		EngineCore::RenderSystem::RenderSystem::GetInstance()->Render(_Objects);
+		EngineCore::RenderSystem::RenderSystem::GetInstance()->Render(m_Objects);
 	}
 
 }

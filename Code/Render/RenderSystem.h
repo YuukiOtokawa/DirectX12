@@ -6,14 +6,14 @@ namespace EngineCore::RenderSystem {
 
 	class RenderSystem {
 	private:
-		static RenderSystem* _Instance;
+		static RenderSystem* m_Instance;
 		RenderSystem() = default;
 	public:
 		static RenderSystem* GetInstance() {
-			if (!_Instance) {
-				_Instance = new RenderSystem();
+			if (!m_Instance) {
+				m_Instance = new RenderSystem();
 			}
-			return _Instance;
+			return m_Instance;
 		}
 
 		// Execute render for all active objects

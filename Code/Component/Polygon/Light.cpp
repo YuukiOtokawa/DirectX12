@@ -6,7 +6,7 @@
 
 using namespace EngineCore::General;
 
-Light::Light() : _Color(1.0f, 1.0f, 1.0f, 1.0f), _Intensity(1.0f) {}
+Light::Light() : m_Color(1.0f, 1.0f, 1.0f, 1.0f), m_Intensity(1.0f) {}
 
 void Light::Draw() {
 	auto transform = GetOwner()->GetComponent<Transform>();
@@ -20,18 +20,18 @@ void Light::Draw() {
 	
 	Render::RenderStructure::ENV_CONSTANT envConstant{};
 	envConstant.LightDirection = Vector4(-forward.x, -forward.y, -forward.z, 0.0f);
-	envConstant.LightColor = Vector4(_Color.x * _Intensity, _Color.y * _Intensity, _Color.z * _Intensity, _Color.w);
+	envConstant.LightColor = Vector4(m_Color.x * m_Intensity, m_Color.y * m_Intensity, m_Color.z * m_Intensity, m_Color.w);
 
 	renderManager->SetConstant(Render::RenderManager::CONSTANT_TYPE::ENV, &envConstant, sizeof(envConstant));
 }
 
 void Light::Inspector() {
 	// Color Picker
-	float color[4] = { _Color.x, _Color.y, _Color.z, _Color.w };
+	float color[4] = { m_Color.x, m_Color.y, m_Color.z, m_Color.w };
 	if (ImGui::ColorEdit4("Light Color", color)) {
-		_Color = Vector4(color[0], color[1], color[2], color[3]);
+		m_Color = Vector4(color[0], color[1], color[2], color[3]);
 	}
 
 	// Intensity Slider
-	ImGui::SliderFloat("Intensity", &_Intensity, 0.0f, 10.0f);
+	ImGui::SliderFloat("Intensity", &m_Intensity, 0.0f, 10.0f);
 }

@@ -17,8 +17,8 @@ void EngineCore::General::MeshFilter::Inspector() {
 		if (filePath.empty())
 			return;
 
-		if (!_pVertexData) {
-			_pVertexData = new VertexData();
+		if (!m_VertexData) {
+			m_VertexData = new VertexData();
 		}
 
 		// Determine file extension
@@ -27,16 +27,16 @@ void EngineCore::General::MeshFilter::Inspector() {
 		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
 		if (ext == "fbx") {
-			auto fbxData = LoadFBX(filePath.c_str(), _pVertexData);
-			if (fbxData._Scene) {
+			auto fbxData = LoadFBX(filePath.c_str(), m_VertexData);
+			if (fbxData.m_Scene) {
 				SetVertexData(fbxData.vertexData[0]);
 				SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
 			}
 		}
 		else if (ext == "obj") {
-			LoadObjToVertexData(filePath.c_str(), _pVertexData);
-			SetVertexData(_pVertexData->GetFilePath().c_str(), _pVertexData->GetVertices(), _pVertexData->GetIndices());
-			SetPrimitiveTopology(_pVertexData->GetPrimitiveTopology());
+			LoadObjToVertexData(filePath.c_str(), m_VertexData);
+			SetVertexData(m_VertexData->GetFilePath().c_str(), m_VertexData->GetVertices(), m_VertexData->GetIndices());
+			SetPrimitiveTopology(m_VertexData->GetPrimitiveTopology());
 		}
 	}
 }
@@ -46,29 +46,29 @@ void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::v
 	{
 		auto render = Render::RenderManager::GetInstance();
 
-		_VertexBuffer = render->CreateVertexBuffer(sizeof(Render::Types::VERTEX), (unsigned int)vertices.size());
+		m_VertexBuffer = render->CreateVertexBuffer(sizeof(Render::Types::VERTEX), (unsigned int)vertices.size());
 		Render::Types::VERTEX* buffer{};
-		hr = _VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
+		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 
 		memcpy(buffer, vertices.data(), sizeof(Render::Types::VERTEX) * vertices.size());
-		_VertexBuffer->Resource->Unmap(0, nullptr);
+		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
 	if (!indices.empty()) {
 		auto render = Render::RenderManager::GetInstance();
-		_IndexBuffer = render->CreateIndexBuffer((unsigned int)indices.size());
+		m_IndexBuffer = render->CreateIndexBuffer((unsigned int)indices.size());
 		unsigned int* buffer{};
-		hr = _IndexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
+		hr = m_IndexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
 		memcpy(buffer, indices.data(), sizeof(unsigned int) * indices.size());
-		_IndexBuffer->Resource->Unmap(0, nullptr);
+		m_IndexBuffer->Resource->Unmap(0, nullptr);
 	}
 
-	// 描画システムが _pVertexData を必要とするため、設定されていない場合は生成・設定する
-	if (!_pVertexData) {
-		_pVertexData = new VertexData(FilePath, vertices, indices);
+	// 描画システムが m_VertexData を必要とするため、設定されていない場合は生成・設定する
+	if (!m_VertexData) {
+		m_VertexData = new VertexData(FilePath, vertices, indices);
 	} else {
-		_pVertexData->SetFilePath(FilePath);
-		_pVertexData->SetVertices(vertices);
-		_pVertexData->SetIndices(indices);
+		m_VertexData->SetFilePath(FilePath);
+		m_VertexData->SetVertices(vertices);
+		m_VertexData->SetIndices(indices);
 	}
 }

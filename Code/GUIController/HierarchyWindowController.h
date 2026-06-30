@@ -8,7 +8,7 @@ namespace GUIController::Window {
 
 	public:
 		HierarchyWindowController() {
-			_WindowName = "Hierarchy Window";
+			m_WindowName = "Hierarchy Window";
 		}
 		void Draw() override;
     };

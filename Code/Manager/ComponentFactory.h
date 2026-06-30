@@ -18,7 +18,7 @@ namespace EngineCore::Manager {
 	public: 
 		std::string GetComponentTypeName() { return typeid(decltype(this)).name(); } \
 
-		std::map<std::string, ComponentCreator> _creators;
+		std::map<std::string, ComponentCreator> m_Creators;
 	public:
 		static ComponentFactory* GetInstance() {
 			static ComponentFactory instance;
@@ -26,7 +26,7 @@ namespace EngineCore::Manager {
 		}
 
 		void RegisterComponent(const std::string& name, ComponentCreator creator) {
-			_creators[name] = creator;
+			m_Creators[name] = creator;
 		}
 
 		std::unique_ptr<Component> CreateComponent(const std::string& name);

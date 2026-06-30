@@ -5,7 +5,7 @@ namespace GUIController::Window {
 	class GameViewWindowController : public DefaultWindowController {
 	public:
 		GameViewWindowController() {
-			_WindowName = "Game View";
+			m_WindowName = "Game View";
 		}
 		void Draw() override;
 	};

@@ -25,7 +25,7 @@ void WindowManager::Initialize() {
 void WindowManager::Draw() {
 	ImGui::Begin("WindowManager");
 
-	for (const auto& window : _Windows) {
+	for (const auto& window : m_Windows) {
 		if (!window) {
 			continue;
 		}
@@ -41,7 +41,7 @@ void WindowManager::Draw() {
 }
 
 void GUIController::Window::WindowManager::DrawWindows() {
-	for (auto& window : _Windows) {
+	for (auto& window : m_Windows) {
 		if (window && *window->GetIsActive()) {
 			window->DrawSystem();
 		}

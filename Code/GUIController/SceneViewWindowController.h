@@ -5,7 +5,7 @@ namespace GUIController::Window {
 	class SceneViewWindowController : public DefaultWindowController {
 	public:
 		SceneViewWindowController() {
-			_WindowName = "Scene View";
+			m_WindowName = "Scene View";
 		}
 		void Draw() override;
 	};

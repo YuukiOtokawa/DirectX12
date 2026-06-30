@@ -6,8 +6,8 @@ namespace EngineCore::General {
 	class EditorCameraController : public Component {
 		REGISTER_COMPONENT(EditorCameraController)
 	private:
-		float _BaseMoveSpeed;
-		float _LookSensitivity;
+		float m_BaseMoveSpeed;
+		float m_LookSensitivity;
 	public:
 		EditorCameraController();
 		~EditorCameraController() override = default;

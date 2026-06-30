@@ -10,7 +10,7 @@
 namespace GUIController::Window {
 
 			class WindowManager {
-				std::vector<std::shared_ptr<Gui::ImGuiWindowController>> _Windows;
+				std::vector<std::shared_ptr<Gui::ImGuiWindowController>> m_Windows;
 
 			public:
 				template<class T, class... Args>
@@ -29,7 +29,7 @@ namespace GUIController::Window {
 					"T must derive from GUIController::Gui::ImGuiWindowController");
 
 				auto newWindow = std::make_shared<T>(std::forward<Args>(args)...);
-				_Windows.push_back(newWindow);
+				m_Windows.push_back(newWindow);
 				return newWindow.get();
 			}
 

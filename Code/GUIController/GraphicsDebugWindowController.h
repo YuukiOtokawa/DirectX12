@@ -8,7 +8,7 @@ namespace GUIController::Window {
 
 	public:
 		GraphicsDebugWindowController() {
-			_WindowName = "Graphics Debug Window";
+			m_WindowName = "Graphics Debug Window";
 		}
 		void Draw() override;
     };

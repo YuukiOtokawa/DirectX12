@@ -667,7 +667,7 @@ void RenderManager::DrawBegin()
 	// Constant buffer index reset
 	m_ConstantBufferIndex[m_RTIndex] = 0;
 
-	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		m_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
 		m_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
 
@@ -759,11 +759,11 @@ void RenderManager::DrawBegin()
 
 void RenderManager::DrawEnd()
 {
-	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		// BackBuffer path: ImGui will render onto it, so we do nothing here.
 	}
 	else {
-		RENDER_TARGET* target = (_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
+		RENDER_TARGET* target = (m_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
 		if (target) {
 			// 1) Transition m_LightedColorBuffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
 			{
@@ -834,7 +834,7 @@ void RenderManager::DrawEnd()
 
 void RenderManager::ResolveDeferredLighting()
 {
-	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		return;
 	}
 
@@ -910,7 +910,7 @@ void RenderManager::ResolveDeferredLighting()
 
 void RenderManager::ApplyPostProcess()
 {
-	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		return;
 	}
 
@@ -1027,7 +1027,7 @@ void RenderManager::ApplyPostProcess()
 
 void RenderManager::BeginForwardPass()
 {
-	if (_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
+	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		return;
 	}
 

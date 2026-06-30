@@ -20,7 +20,7 @@ void EngineCore::General::GameObject::Draw() {
 void EngineCore::General::GameObject::DrawInspector() {
 
 	// Active Checkbox
-	ImGui::Checkbox("###Active", &_IsActive);
+	ImGui::Checkbox("###Active", &m_IsActive);
 
 	// GameObject Name
 	std::string name = GetName();
@@ -77,7 +77,7 @@ void EngineCore::General::GameObject::SetName(const std::string& name) {
 		}
 		n += std::to_string(i);
 	}
-	_Name = n;
+	m_Name = n;
 }
 
 const std::vector<std::unique_ptr<EngineCore::General::Component>>& EngineCore::General::GameObject::GetComponents() const {

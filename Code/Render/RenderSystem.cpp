@@ -6,7 +6,7 @@
 
 namespace EngineCore::RenderSystem {
 
-	RenderSystem* RenderSystem::_Instance = nullptr;
+	RenderSystem* RenderSystem::m_Instance = nullptr;
 
 	void RenderSystem::Render(const std::vector<EngineCore::Manager::ObjectManager::GameObjectEntry>& objects) {
 		if (objects.empty()) {
