@@ -191,6 +191,13 @@ namespace Render {
 		};
 		std::vector<PendingReleasePSO>									m_PendingReleasePSOs;
 
+		// GPU使用中の可能性があるテクスチャを、フェンス通過まで保持してから解放する
+		struct PendingReleaseTexture {
+			std::shared_ptr<Types::TEXTURE> tex;
+			UINT64 fenceValue;
+		};
+		std::vector<PendingReleaseTexture>								m_PendingReleaseTextures;
+
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
 		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
@@ -250,6 +257,8 @@ namespace Render {
 		unsigned int GetDefaultMaterialBlock() const { return m_DefaultMaterialBlock; }
 		// ダミー＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
 		void         EnsureMaterialTextureSetup();
+		// GPU使用中の可能性があるテクスチャをフェンス通過まで保持してから解放する
+		void         DeferReleaseTexture(std::shared_ptr<Types::TEXTURE> tex);
 
 		unsigned int CreateRenderTargetView(ID3D12Resource* Resource, unsigned int MipLevel = 0);
 		D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetViewHandle(unsigned int RTVIndex);

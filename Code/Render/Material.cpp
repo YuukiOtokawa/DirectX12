@@ -92,8 +92,10 @@ namespace Render {
                 }
                 UpdateLegacyMembersFromBuffer();
 
-                // 動的テクスチャ用のブロックを確保して反映
-                if (!meta->textures.empty()) {
+                // ブロックは「テクスチャが実際に割り当て済みのとき」だけ反映する（遅延確保）。
+                // シーン初期化時の SetShader では未割当なので確保しない
+                // （この時点ではダミーテクスチャが未生成で、確保すると不正ディスクリプタになる）。
+                if (!meta->textures.empty() && !m_Textures.empty()) {
                     EnsureTextureBlock();
                     ApplyTextureSlots();
                 }
@@ -137,8 +139,13 @@ namespace Render {
     }
 
     void Material::SetTexture(const std::string& name, std::shared_ptr<Render::Types::TEXTURE> texture) {
-        m_Textures[name] = texture;
         auto rm = RenderManager::GetInstance();
+        // 既存テクスチャを置き換える場合、GPU使用中の可能性があるため即解放せず遅延解放へ回す
+        auto existing = m_Textures.find(name);
+        if (existing != m_Textures.end() && existing->second && existing->second != texture && rm) {
+            rm->DeferReleaseTexture(existing->second);
+        }
+        m_Textures[name] = texture;
         if (!rm || m_ShaderName.empty()) return;
         const ShaderMetadata* meta = rm->GetShaderMetadata(m_ShaderName);
         if (!meta) return;

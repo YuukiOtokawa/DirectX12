@@ -1099,6 +1099,15 @@ void RenderManager::FrameEnd() {
 				}),
 			m_PendingReleasePSOs.end()
 		);
+
+		// GPU側で実行が完了したテクスチャを解放する
+		m_PendingReleaseTextures.erase(
+			std::remove_if(m_PendingReleaseTextures.begin(), m_PendingReleaseTextures.end(),
+				[completedValue](const PendingReleaseTexture& pending) {
+					return completedValue >= pending.fenceValue;
+				}),
+			m_PendingReleaseTextures.end()
+		);
 	}
 
 
@@ -1528,6 +1537,14 @@ void RenderManager::EnsureMaterialTextureSetup()
 
 	// 検証用の既定ブロックを確保（全スロット=ダミー緑）
 	m_DefaultMaterialBlock = AllocateMaterialTextureBlock();
+}
+
+// GPU使用中の可能性があるテクスチャをフェンス通過まで保持してから解放する
+void RenderManager::DeferReleaseTexture(std::shared_ptr<Types::TEXTURE> tex)
+{
+	if (!tex) return;
+	// 記録中フレーム＋飛行中フレームをまたいで安全に保持するため +2 のマージン
+	m_PendingReleaseTextures.push_back({ std::move(tex), m_FenceValue + 2 });
 }
 
 
