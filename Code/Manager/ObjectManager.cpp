@@ -24,16 +24,21 @@ namespace EngineCore::Manager {
 		object->SetName(object->GetName());
 
 		Index i;
+		Generation generation;
 		if (!_FreeEntries.empty()) {
 			i = _FreeEntries.back();
 			_FreeEntries.pop_back();
-			_Objects[i].object = { std::move(object) };
+			generation = _Objects[i].generation; // 解放時に進めた世代を引き継ぐ
+			_Objects[i].object = std::move(object);
 		}
 		else {
-			i = _Objects.size();
-			_Objects.push_back(GameObjectEntry{std::move(object), 0});
+			i = static_cast<Index>(_Objects.size());
+			generation = 0;
+			_Objects.push_back(GameObjectEntry{std::move(object), generation});
 		}
 
+		// index と generation からハンドル(ID)を生成して紐付ける
+		_Objects[i].object->SetID(CreateID(i, generation));
 	}
 
 	void ObjectManager::RemoveObject(const uint64_t id) {
@@ -51,7 +56,7 @@ namespace EngineCore::Manager {
 		if (index >= _Objects.size() || !_Objects[index].object) {
 			return false;
 		}
-		if (_Objects[index].generation == GetGeneration(id)) {
+		if (_Objects[index].generation != GetGeneration(id)) {
 			return false;
 		}
 		return true;

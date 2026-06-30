@@ -3,6 +3,13 @@
 `Code/` 以下の自作ソース（`assimp` / `ImGui` などの外部ライブラリは除く）を一通り読んで、
 リファクタリングでやれそうなことを洗い出した。優先度順（上が高い）。
 
+> **進捗（最終更新: 2026-06-30）**
+> - ✅ **#4 文字コード崩れ … 対応済み**。自作189ファイル全てが「化け0・有効UTF-8」になったことを確認。
+> - 🔄 commit `e88c42a`（テクスチャ差し替え時クラッシュ修正）を取り込み済み。RenderManager / Material に
+>   テクスチャの**遅延解放機構**が追加され、本書の #3 / #6 に反映した。
+> - 🆕 TODO.md に高優先の新項目が追加された（`assertを避ける` / `シェーダーテクスチャのエディタ設定` /
+>   `PositionBuffer→深度バッファ化`）。リファクタリングと絡む点は末尾「TODO との関連」に追記。
+
 ---
 
 ## 1. 命名規則の統一（最優先・影響範囲が広い）
@@ -51,10 +58,13 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
 - 定数バッファのリングバッファ管理
 - レンダーターゲット生成・リサイズ（pending 機構）
 - テクスチャ読み込み（`LoadTexture`）
-- PSO 生成・登録・遅延解放
+- PSO 生成・登録・遅延解放（`m_PendingReleasePSOs`）
+- **テクスチャの遅延解放**（`m_PendingReleaseTextures` / `DeferReleaseTexture`、commit `e88c42a` で追加）
 - **Deferred ライティング解決 / ポストプロセス / Forward パス**（高レベルのレンダーグラフ）
 
 低レベル（GPU リソース確保）と高レベル（パスの組み立て）が同居しているのが一番の問題。
+さらに「フェンス通過まで保持してから解放する」遅延解放が **PSO 用・テクスチャ用と別々に2系統**生えてきており
+（今後バッファ等でも増えそう）、`DeferredReleaseQueue` のような**汎用の遅延解放キュー1本**に寄せる余地がある。
 
 **やること（分割案）**:
 - `GraphicsDevice` … デバイス・キュー・スワップチェーン・フェンス
@@ -63,6 +73,7 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
 - `RenderTargetManager` … RT 生成・リサイズ・pending
 - `RenderPipeline` / `RenderGraph` … Deferred/Forward/PostProcess のパス制御
 - `TextureLoader` … `LoadTexture`
+- `DeferredReleaseQueue` … フェンス通過後に解放する遅延解放を一元化（現状 PSO/テクスチャで重複）
 
 ---
 
@@ -83,24 +94,28 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
 
 ---
 
-## 5. 既知のバグ・デッドコードの除去
+## 5. 既知のバグ・デッドコードの除去 ✅ ほぼ対応済み
 
-リファクタリングのついでに直すべき明確な不具合：
+調査の結果、「バグ」の一部は**半実装サブシステムの入口**だった。Debug x64 ビルド通過を確認済み。
 
-- **`Object::operator==` が壊れている**: 引数 `other` を一切使わず自分の `IsValid()` を返すだけ（[Object.h:13-15](Code/Object.h)）。意図通りに比較できていない。
-- **return 後の到達不能コード**: `GetSRVDescriptorCPUHandle()` が `return` の後に `m_SRVDescriptorPool.pop_front();` を書いていて永遠に実行されない（[RenderManager.h:357-360](Code/Render/RenderManager.h)）。
-- **呼ばれない Start**: `GameObject::ExecUpdate` で `//Start();` がコメントアウトされたまま `_IsStarted` だけ立てている（[GameObject.h:28-36](Code/GameObject/GameObject.h)）。Component に `Start()` がある以上、ライフサイクルとして繋ぐべき。
-- **デストラクタの巨大コメントアウト**: `~RenderManager` の ReportLiveDeviceObjects ブロック（[RenderManager.cpp:34-46](Code/Render/RenderManager.cpp)）。`#if _DEBUG` で残すか消すか決める。
+- ✅ **ハンドル/ID 検証システムを完成**（当初「`Object::operator==` が壊れている」と記載していた件）。
+  - 実態: `_instanceID` を**どこも代入しておらず**（`CreateID` 未使用）、`GetID()`/`Object::IsValid()`/`operator==` が未初期化値を触る半実装だった。さらに `ObjectManager::IsValid` は条件が**反転**（世代一致で `false`）。
+  - 対応: `ObjectManager::AddObject` で `SetID(CreateID(index, generation))` を代入（[ObjectManager.cpp](Code/Manager/ObjectManager.cpp)）。`IsValid` の反転を修正。`operator==` を `GetID()` 比較に。`SetID` は friend で `ObjectManager` のみに限定（[Object.h](Code/Object.h)）。→ 世代ベースの dangling 検出が実際に機能するように。
+- ✅ **return 後の到達不能コード**: `GetSRVDescriptorCPUHandle()` の `m_SRVDescriptorPool.pop_front();` を削除（[RenderManager.h](Code/Render/RenderManager.h)）。
+- ⏸ **コンポーネント Start ライフサイクル（半実装・後回し）**: `GameObject::ExecUpdate` の `//Start();` がコメントアウト、`GameObject::Update()` も空（[GameObject.cpp:14](Code/GameObject/GameObject.cpp)）。Component の `Start()`/`Update()` ディスパッチが未配線。これはオブジェクト管理／ライフサイクルの設計とセットなので、TODO「シーン機能」等の実装時にまとめて対応する。
+- ⏭ **`~RenderManager` の ReportLiveDeviceObjects ブロック**: D3D12 リーク検出の有用なデバッグツール（コメントアウト中）。**そのまま残す**判断（必要時に `#if _DEBUG` で有効化）。
 
 ---
 
 ## 6. Material の二重管理の解消
 
-`Material` が「動的プロパティバッファ `m_PropertyBuffer`」と「互換用の個別メンバ `m_BaseColor` など」を**両方持ち、手動で同期**している（[Material.h:39-48](Code/Render/Material.h), `UpdateBufferFromLegacyMembers` / `UpdateLegacyMembersFromBuffer`）。
+`Material` がプロパティ／テクスチャを**複数の表現で二重〜三重に保持**しており、手動同期が必要になっている（[Material.h:40-57](Code/Render/Material.h)）。
 
-- 真実の源（source of truth）が2つあり、同期忘れによるバグの温床。
+- **スカラー系**: 動的バッファ `m_PropertyBuffer` ＋ 互換用個別メンバ `m_BaseColor` 等を両方持ち、`UpdateBufferFromLegacyMembers` / `UpdateLegacyMembersFromBuffer` で手動同期。
+- **テクスチャ系**: 旧 API の `m_TextureBaseColor`（単体）と、新 API の `m_Textures`（名前→テクスチャの map, register space1）が並存。さらに `m_TextureBlock`（RAII）でディスクリプタブロックを遅延確保。
+- source of truth が複数あり、同期忘れ・解放タイミングのバグ温床（実際 `e88c42a` でテクスチャ差し替え時のクラッシュを遅延解放で塞いだばかり）。
 
-**やること**: プロパティバッファ一本に寄せ、個別 getter/setter はバッファ参照に置き換える。`MaterialConstant`（POD）と `Material`（ロジック）の役割分担も整理。
+**やること**: スカラーはプロパティバッファ一本に寄せ、個別 getter/setter はバッファ参照に。テクスチャも `m_Textures` の map に一本化し、`m_TextureBaseColor` は名前付きスロット（例 `"BaseColor"`）へ吸収。`MaterialConstant`（POD）と `Material`（ロジック）の役割分担も整理。
 
 ---
 
@@ -157,9 +172,24 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
 
 ## 補足：着手順のおすすめ
 
-1. **#4 文字コード**と**#5 バグ/デッドコード** … 機械的・低リスク・差分が読みやすい
+0. ~~**#4 文字コード**~~ … ✅ 対応済み
+1. **#5 バグ/デッドコード** … 機械的・低リスク・差分が読みやすい（次はここが楽）
 2. **#1 命名規則**と**#9 名前空間** … 一括置換系、早めにやると後続が楽
 3. **#2 構造体のクラス化** … #1 と連動
 4. **#6 Material 二重管理** … 局所的で効果大
 5. **#3 RenderManager 分割** … 最大の山。上記が片付いてから腰を据えて
 6. **#7/#8 所有権・シングルトン** と **#11 シーン外部化** … 設計寄り。TODO の他項目（シーン機能・スクリプト）と合わせて進める
+
+---
+
+## TODO との関連（新規項目の取り込み）
+
+TODO.md に追加された高優先項目は、本書のリファクタリング項目と次のように噛み合う。
+
+- **assertを避ける（クラッシュさせない／エディタ動作中にエラー表示して直す）**
+  → #5・#7 と直結。今 `assert(...)` で落としている箇所（例 [ImGuiController.cpp:19,50,67](Code/GUIController/ImGuiController.cpp)）を、
+  戻り値／エラー状態 + ログ出力（TODO「ログ出力ウィンドウ」）に置き換える設計が要る。例外 or `Result` 型の方針を先に決めると後が楽。
+- **シェーダーテクスチャをエディタから設定**
+  → #6 Material のテクスチャ一本化（`m_Textures` map 集約）と同じ土俵。先に Material を整理しておくと実装が乗せやすい。
+- **PositionBuffer を深度バッファに切り替える**
+  → #3 RenderManager の G-Buffer 周り（`m_PositionBuffer` 等）に直接手を入れる話。分割（`RenderTargetManager` / `RenderPipeline`）と同時に進めると衝突が減る。

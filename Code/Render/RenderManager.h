@@ -391,7 +391,6 @@ namespace Render {
 		ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return m_SRVDescriptorHeap.Get(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetSRVDescriptorCPUHandle() {
 			return m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			m_SRVDescriptorPool.pop_front();
 		}
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(); }
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
