@@ -20,10 +20,18 @@ namespace Render {
         float  rangeMax = 1.0f;
     };
 
+    struct ShaderTextureProperty {
+        std::string  name;          // HLSL変数名
+        unsigned int registerIndex; // space1内の tN（= マテリアルブロックのスロット番号）
+        std::string  displayName;   // 空なら name を表示に使用
+        std::string  header;        // 任意（[Header(...)]）
+    };
+
     struct ShaderMetadata {
         std::string shaderName;
         std::string shaderFilePath;
         std::vector<ShaderProperty> properties;
+        std::vector<ShaderTextureProperty> textures;  // register space1 のテクスチャ
         size_t totalSize = 0;
     };
 

@@ -210,7 +210,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
 
 
 
-	//vfǍ
+	//頂点データ読み込み
 	Vector3* pos = posArray;
 	Vector3* nor = norArray;
 	Vector2* tex = texArray;
@@ -295,7 +295,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
         sc++;
 
       } else if (strcmp(str, "f") == 0) {
-        // ��
+        // 面
         in = 0;
 
         do {
@@ -305,7 +305,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
           Model->VertexArray[vc].Position = posArray[atoi(s) - 1];
 
           if (s[strlen(s) + 1] != '/') {
-            // eNX`W݂Ȃꍇ
+            // テクスチャ座標がある場合
             s = strtok(NULL, "/");
             Model->VertexArray[vc].TexCoord = texArray[atoi(s) - 1];
           }
@@ -329,7 +329,7 @@ void LoadModel(const char *FileName, MODEL *Model) {
 
         std::swap(Model->IndexArray[ic - in], Model->IndexArray[ic - in + 1]);
 
-        // �l�p�͎O�p�ɕ���
+        // 四角は三角に分割
         if (in == 4) {
           Model->IndexArray[ic] = vc - 2;
           ic++;

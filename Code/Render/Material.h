@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 namespace Render {
 
@@ -48,6 +49,13 @@ namespace Render {
         std::vector<uint8_t> m_PropertyBuffer;
         std::shared_ptr<Render::Types::TEXTURE> m_TextureBaseColor;
 
+        // 動的テクスチャ（register space1）
+        std::unordered_map<std::string, std::shared_ptr<Render::Types::TEXTURE>> m_Textures;
+        std::shared_ptr<unsigned int> m_TextureBlock; // RAII: デリータでブロック解放
+
+        void EnsureTextureBlock();   // 遅延でブロック確保
+        void ApplyTextureSlots();    // メタデータに従い全スロットを反映
+
     public:
         Material();
         Material(const std::string& name);
@@ -90,6 +98,12 @@ namespace Render {
 
         void SetTextureBaseColor(std::shared_ptr<Render::Types::TEXTURE> texture);
         const Render::Types::TEXTURE* GetTextureBaseColor() const;
+
+        // 動的テクスチャ（register space1）
+        void SetTexture(const std::string& name, std::shared_ptr<Render::Types::TEXTURE> texture);
+        const Render::Types::TEXTURE* GetTexture(const std::string& name) const;
+        bool HasTextureBlock() const { return m_TextureBlock != nullptr; }
+        unsigned int GetTextureBlock() const { return m_TextureBlock ? *m_TextureBlock : 0; }
 
         void SetFloat(const std::string& name, float value);
         float GetFloat(const std::string& name) const;

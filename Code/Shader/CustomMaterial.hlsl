@@ -4,21 +4,23 @@
 #include "Common.hlsli"
 
 // 各フィールドの行末コメントが Inspector のUIに反映される:
-//   "..."           表示名
+//   "..."            表示名
 //   [Range(min,max)] スライダー範囲（float）
 //   [Color]/[Vector] float3/float4 のUI切り替え
-//   [Header(...)]   区切りヘッダ
-// 注: HLSL の明示的 cbuffer メンバは初期化子を持てないため、ここでは = で
-// デフォルト値を書かない（初期値は Inspector 側で調整する）。
+//   [Header(...)]    区切りヘッダ
+//   [Default(...)]   初期値（HLSLのcbufferメンバは初期化子を書けないため）
 cbuffer MaterialProperties : register(b3)
 {
-    float4 _BaseColor;   // [Header(Surface)] [Color] "Base Color"
-    float4 _Emission;    // [Color] "Emission"
+    float4 _BaseColor;   // [Header(Surface)] [Color] [Default(1,1,1,1)] "Base Color"
+    float4 _Emission;    // [Color] [Default(0,0,0,1)] "Emission"
     float  _Metallic;    // [Range(0,1)] "Metallic"
-    float  _Roughness;   // [Range(0,1)] "Roughness"
-    float3 _Tint;        // [Vector] "Tint (RGB)"
-    float  _Intensity;   // [Range(0,4)] "Intensity"
+    float  _Roughness;   // [Range(0,1)] [Default(0.5)] "Roughness"
+    float3 _Tint;        // [Vector] [Default(1,1,1)] "Tint (RGB)"
+    float  _Intensity;   // [Range(0,4)] [Default(1)] "Intensity"
 };
+
+// register space1 の追加マテリアルテクスチャ（未設定なら白ダミー＝変化なし）
+Texture2D _DetailTex : register(t0, space1);  // [Texture] "Detail Texture"
 
 PS_INPUT vtx(VS_INPUT input)
 {
@@ -47,7 +49,9 @@ PS_OUTPUT pix(PS_INPUT input)
     float4 tex = TextureBaseColor.Sample(Sampler, input.TexCoord);
     float3 rgb = tex.rgb * _BaseColor.rgb * _Tint * _Intensity + _Emission.rgb;
 
-    output.Color = float4(rgb, tex.a * _BaseColor.a);
+    // space1 の追加テクスチャ（未設定なら白ダミー＝変化なし）
+    rgb *= _DetailTex.Sample(Sampler, input.TexCoord).rgb;
 
+    output.Color = float4(rgb, tex.a * _BaseColor.a);
     return output;
 }

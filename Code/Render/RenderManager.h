@@ -26,7 +26,7 @@ namespace Render {
 
 
 
-		// 16*4�o�C�g���E///////////////////////
+		// 16*4バイト境界///////////////////////
 		// 光源データ Lightクラスに移動
 		struct ENV_CONSTANT
 		{
@@ -163,6 +163,12 @@ namespace Render {
 		std::list<unsigned int>				m_SRVDescriptorPool;
 		static const unsigned int			SRV_DESCRIPTOR_MAX = 10000;
 
+		// --- マテリアルテクスチャ（register space1 の連続ディスクリプタテーブル）---
+		static const unsigned int			MATERIAL_TEX_SLOTS = 8;        // 1マテリアル最大テクスチャ数（space1 t0..t7）
+		static const unsigned int			MATERIAL_BLOCK_MAX = 64;       // 同時に持てるブロック数
+		static const unsigned int			MATERIAL_TEX_ROOT_PARAM = 12;  // ルートパラメータ番号（CBV4+SRV8の次）
+		static const unsigned int			MATERIAL_BLOCK_REGION_BASE = SRV_DESCRIPTOR_MAX - MATERIAL_TEX_SLOTS * MATERIAL_BLOCK_MAX; // = 9488
+
 		ComPtr<ID3D12DescriptorHeap>		m_RTVDescriptorHeap;
 		std::list<unsigned int>				m_RTVDescriptorPool;
 		static const unsigned int			RTV_DESCRIPTOR_MAX = 1000;
@@ -218,12 +224,32 @@ namespace Render {
 
 		std::unique_ptr<TEXTURE> m_EnvTexture;
 
+		ComPtr<ID3D12Resource>		m_DummyTexture;          // 未割当スロット用の1x1ダミー
+		ComPtr<ID3D12Resource>		m_DummyUpload;           // ↑のアップロード用（GPU消費まで保持）
+		std::list<unsigned int>		m_MaterialBlockPool;     // 空きブロック先頭indexのリスト
+		unsigned int				m_DefaultMaterialBlock = 0; // ステップ1検証用の既定ブロック
+		bool						m_MaterialTexInitialized = false;
+
 		void Init();
 
 	public:
 
 		unsigned int CreateShaderResourceView(ID3D12Resource* Resource);
 		D3D12_GPU_DESCRIPTOR_HANDLE GetShaderResourceViewHandle(unsigned int SRVIndex);
+
+		// --- マテリアルテクスチャ（space1 連続テーブル）---
+		// 指定indexにSRVを作る（ブロックスロット用）
+		void         CreateShaderResourceViewAt(unsigned int index, ID3D12Resource* Resource);
+		// 連続8枠を確保し全スロットをダミーで初期化、先頭indexを返す
+		unsigned int AllocateMaterialTextureBlock();
+		void         FreeMaterialTextureBlock(unsigned int blockBase);
+		// ブロックの指定スロットを実テクスチャのSRVで上書き
+		void         SetMaterialBlockSlot(unsigned int blockBase, unsigned int slot, ID3D12Resource* Resource);
+		// space1テーブルをバインド
+		void         SetMaterialTextureTable(unsigned int blockBase);
+		unsigned int GetDefaultMaterialBlock() const { return m_DefaultMaterialBlock; }
+		// ダミー＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
+		void         EnsureMaterialTextureSetup();
 
 		unsigned int CreateRenderTargetView(ID3D12Resource* Resource, unsigned int MipLevel = 0);
 		D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetViewHandle(unsigned int RTVIndex);
@@ -256,7 +282,7 @@ namespace Render {
 		void ReleaseShaderResourceView(unsigned int SRVIndex);
 		void ReleaseRenderTargetView(unsigned int SRVIndex);
 
-		//�����_�[�^�[�Q�b�g
+		//レンダーターゲット
 		std::unique_ptr<RENDER_TARGET> CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, const FLOAT* ClearColor = nullptr, unsigned int MipLevel = 1);
 
 		void CreateRenderTarget();
@@ -292,7 +318,7 @@ namespace Render {
 		void ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height);
 		void ApplyPendingResizes();
 
-		//�萔�o�b�t�@
+		//定数バッファ
 		enum class CONSTANT_TYPE
 		{
 			ENV,
@@ -302,7 +328,7 @@ namespace Render {
 		};
 		void SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size);
 
-		//�e�N�X�`��
+		//テクスチャ
 		enum class TEXTURE_TYPE
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
@@ -316,11 +342,11 @@ namespace Render {
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
 		void SetTexture(TEXTURE_TYPE Type, const RENDER_TARGET* Texture);
 
-		//���_�o�b�t�@
+		//頂点バッファ
 		std::unique_ptr<VERTEX_BUFFER> CreateVertexBuffer(unsigned int Stride, unsigned int Size);
 		void SetVertexBuffer(const VERTEX_BUFFER* VertexBuffer);
 
-		//�C���f�b�N�X�o�b�t�@
+		//インデックスバッファ
 		std::unique_ptr<INDEX_BUFFER> CreateIndexBuffer(unsigned int Size);
 		void SetIndexBuffer(const INDEX_BUFFER* IndexBuffer);
 

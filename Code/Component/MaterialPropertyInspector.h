@@ -5,6 +5,8 @@
 #include "../../ImGui/Code/imgui.h"
 #include "Material.h"
 #include "ShaderMetadata.h"
+#include "RenderManager.h"
+#include "../Utility/FilePicker.h"
 
 namespace GUIHelper {
 
@@ -69,6 +71,41 @@ namespace GUIHelper {
                 }
             }
         }
+
+        // --- テクスチャプロパティ（register space1）---
+        auto* rm = Render::RenderManager::GetInstance();
+        for (auto& tex : meta->textures) {
+            const char* tlabel = tex.displayName.empty() ? tex.name.c_str() : tex.displayName.c_str();
+            if (!tex.header.empty()) {
+                ImGui::SeparatorText(tex.header.c_str());
+            }
+
+            ImGui::PushID(tex.name.c_str());
+
+            const Render::Types::TEXTURE* cur = mat.GetTexture(tex.name);
+            if (cur && rm) {
+                auto handle = rm->GetShaderResourceViewHandle(cur->SRVIndex);
+                ImGui::Image((void*)handle.ptr, ImVec2(48.0f, 48.0f));
+                ImGui::SameLine();
+            }
+
+            if (ImGui::Button("Select")) {
+                COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.png;*.jpg;*.tga;*.dds" }, { L"All Files", L"*.*" } };
+                std::string path = OpenFileDialog(texFilter, _countof(texFilter));
+                if (!path.empty() && rm) {
+                    std::shared_ptr<Render::Types::TEXTURE> t = rm->LoadTexture(path.c_str());
+                    if (t) {
+                        mat.SetTexture(tex.name, std::move(t));
+                        changed = true;
+                    }
+                }
+            }
+            ImGui::SameLine();
+            ImGui::Text("%s", tlabel);
+
+            ImGui::PopID();
+        }
+
         return changed;
     }
 

@@ -70,6 +70,13 @@ void MeshRenderer::Draw() {
 		}
 	}
 
+	// マテリアルテクスチャ(space1)テーブルをバインド
+	if (m_Material.HasTextureBlock()) {
+		renderManager->SetMaterialTextureTable(m_Material.GetTextureBlock());
+	} else {
+		renderManager->SetMaterialTextureTable(renderManager->GetDefaultMaterialBlock());
+	}
+
 	// Issue Draw command
 	if (indexBuffer && !vertexData->GetIndices().empty()) {
 		renderManager->GetGraphicsCommandList()->DrawIndexedInstanced(

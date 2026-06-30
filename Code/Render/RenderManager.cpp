@@ -319,8 +319,13 @@ void RenderManager::Init()
 
 		m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_SRVDescriptorHeap));
 
-		for (int i = 0; i < SRV_DESCRIPTOR_MAX; i++)
+		// 汎用プールは予約領域(MATERIAL_BLOCK_REGION_BASE)の手前まで
+		for (unsigned int i = 0; i < MATERIAL_BLOCK_REGION_BASE; i++)
 			m_SRVDescriptorPool.push_back(i);
+
+		// マテリアルブロック専用領域を8枠刻みでブロックプールへ
+		for (unsigned int b = 0; b < MATERIAL_BLOCK_MAX; b++)
+			m_MaterialBlockPool.push_back(MATERIAL_BLOCK_REGION_BASE + b * MATERIAL_TEX_SLOTS);
 	}
 
 	{
@@ -409,8 +414,8 @@ void RenderManager::Init()
 	// RootSignature
 	{
 
-		D3D12_ROOT_PARAMETER		rootParameters[12]{};
-		D3D12_DESCRIPTOR_RANGE		range[12]{};
+		D3D12_ROOT_PARAMETER		rootParameters[13]{};
+		D3D12_DESCRIPTOR_RANGE		range[13]{};
 
 
 		// ConstantBuffer
@@ -433,6 +438,22 @@ void RenderManager::Init()
 		{
 			range[i].NumDescriptors = 1;
 			range[i].BaseShaderRegister = i - 4;
+			range[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+			range[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+			rootParameters[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+			rootParameters[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+			rootParameters[i].DescriptorTable.NumDescriptorRanges = 1;
+			rootParameters[i].DescriptorTable.pDescriptorRanges = &range[i];
+		}
+
+
+		// MaterialTexture (register space1, t0..t7 を1つの連続テーブルとして)
+		{
+			unsigned int i = MATERIAL_TEX_ROOT_PARAM; // = 12
+			range[i].NumDescriptors = MATERIAL_TEX_SLOTS; // 8
+			range[i].BaseShaderRegister = 0;
+			range[i].RegisterSpace = 1;                   // ← space1
 			range[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 			range[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
@@ -639,6 +660,9 @@ void RenderManager::DrawBegin()
 
 	// Root signature
 	m_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+
+	// マテリアルテクスチャ（space1）の初期化を保証（初回のみ実行）
+	EnsureMaterialTextureSetup();
 
 	// Constant buffer index reset
 	m_ConstantBufferIndex[m_RTIndex] = 0;
@@ -1093,15 +1117,15 @@ void RenderManager::DrawScreen()
 
 
 
-	//_obt@ݒ
+	//頂点バッファ設定
 	SetVertexBuffer(m_VertexBuffer.get());
 
 
-	//g|Wݒ
+	//トポロジー設定
 	m_GraphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
 
-	//`
+	//描画
 	m_GraphicsCommandList->DrawInstanced(4, 1, 0, 0);
 
 
@@ -1235,9 +1259,10 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	ComPtr<ID3DBlob> vsBlob;
 	ComPtr<ID3DBlob> psBlob;
 
-	bool vsSuccess = compileShader(ShaderFile, "vtx", "vs_5_0", &vsBlob);
+	// register space を使うため Shader Model 5.1 でコンパイル（5.0の上位互換）
+	bool vsSuccess = compileShader(ShaderFile, "vtx", "vs_5_1", &vsBlob);
 	if (!vsSuccess) return nullptr;
-	bool psSuccess = compileShader(ShaderFile, "pix", "ps_5_0", &psBlob);
+	bool psSuccess = compileShader(ShaderFile, "pix", "ps_5_1", &psBlob);
 	if (!psSuccess) return nullptr;
 
 	pipelineStateDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();
@@ -1247,7 +1272,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.PS.BytecodeLength = psBlob->GetBufferSize();
 
 
-	//�C���v�b�g���C�A�E�g
+	//インプットレイアウト
 	D3D12_INPUT_ELEMENT_DESC InputElementDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,		0,  0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -1277,7 +1302,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.pRootSignature = m_RootSignature.Get();
 
 
-	//���X�^���C�U�X�e�[�g
+	//ラスタライザステート
 	pipelineStateDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 	pipelineStateDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 	pipelineStateDesc.RasterizerState.FrontCounterClockwise = FALSE;
@@ -1290,7 +1315,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.RasterizerState.MultisampleEnable = FALSE;
 
 
-	//uhXe[g
+	//ブレンドステート
 	for (int i = 0; i < _countof(pipelineStateDesc.BlendState.RenderTarget); ++i)
 	{	
 		if (passType == RenderPassType::ForwardTransparent) {
@@ -1319,7 +1344,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	pipelineStateDesc.BlendState.IndependentBlendEnable = FALSE;
 
 
-	//fvXEXeVXe[g
+	//デプスステンシルステート
 	if (passType == RenderPassType::PostProcess) {
 		pipelineStateDesc.DepthStencilState.DepthEnable = FALSE;
 		pipelineStateDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
@@ -1397,6 +1422,112 @@ unsigned int RenderManager::CreateShaderResourceView(ID3D12Resource* Resource)
 
 
 	return index;
+}
+
+
+// 指定indexにSRVを作る（プールを消費しない。ブロックスロット用）
+void RenderManager::CreateShaderResourceViewAt(unsigned int index, ID3D12Resource* Resource)
+{
+	if (!Resource) return;
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.ptr += size * index;
+
+	D3D12_RESOURCE_DESC resDesc = Resource->GetDesc();
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+	srvDesc.Format = resDesc.Format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = resDesc.MipLevels;
+
+	m_Device->CreateShaderResourceView(Resource, &srvDesc, handle);
+}
+
+// 連続8枠を確保し、全スロットをダミーSRVで初期化。先頭indexを返す
+unsigned int RenderManager::AllocateMaterialTextureBlock()
+{
+	if (m_MaterialBlockPool.empty()) {
+		assert(false && "Material texture block pool exhausted");
+		return MATERIAL_BLOCK_REGION_BASE; // フォールバック
+	}
+	unsigned int base = m_MaterialBlockPool.front();
+	m_MaterialBlockPool.pop_front();
+
+	// 全スロットをダミーで埋める（未割当スロットを安全にサンプルできるように）
+	for (unsigned int s = 0; s < MATERIAL_TEX_SLOTS; s++) {
+		CreateShaderResourceViewAt(base + s, m_DummyTexture.Get());
+	}
+	return base;
+}
+
+void RenderManager::FreeMaterialTextureBlock(unsigned int blockBase)
+{
+	m_MaterialBlockPool.push_back(blockBase);
+}
+
+// ブロックの指定スロットを実テクスチャのSRVで上書き
+void RenderManager::SetMaterialBlockSlot(unsigned int blockBase, unsigned int slot, ID3D12Resource* Resource)
+{
+	if (slot >= MATERIAL_TEX_SLOTS) return;
+	ID3D12Resource* res = Resource ? Resource : m_DummyTexture.Get();
+	CreateShaderResourceViewAt(blockBase + slot, res);
+}
+
+// space1テーブルをバインド（ブロック先頭ハンドルを丸ごと）
+void RenderManager::SetMaterialTextureTable(unsigned int blockBase)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	handle.ptr += size * blockBase;
+
+	m_GraphicsCommandList->SetGraphicsRootDescriptorTable(MATERIAL_TEX_ROOT_PARAM, handle);
+}
+
+// ダミーテクスチャ＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
+void RenderManager::EnsureMaterialTextureSetup()
+{
+	if (m_MaterialTexInitialized) return;
+	m_MaterialTexInitialized = true;
+
+	// 1x1 RGBA8 の緑ダミーテクスチャ（検証用に分かりやすい色）
+	{
+		// DEFAULTヒープのテクスチャ本体（COPY_DEST）
+		auto texProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+		auto texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+
+		HRESULT hr = m_Device->CreateCommittedResource(&texProp, D3D12_HEAP_FLAG_NONE, &texDesc,
+			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_DummyTexture));
+		assert(SUCCEEDED(hr));
+
+		// アップロードバッファ（GPUがコピーを消費するまで保持する必要があるためメンバに保存）
+		UINT64 reqSize = GetRequiredIntermediateSize(m_DummyTexture.Get(), 0, 1);
+		auto upProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+		auto upDesc = CD3DX12_RESOURCE_DESC::Buffer(reqSize);
+		hr = m_Device->CreateCommittedResource(&upProp, D3D12_HEAP_FLAG_NONE, &upDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_DummyUpload));
+		assert(SUCCEEDED(hr));
+
+		// 白（中立。未割当スロットはサンプルしても見た目を変えない）
+		const uint8_t pixel[4] = { 255, 255, 255, 255 };
+		D3D12_SUBRESOURCE_DATA sub{};
+		sub.pData = pixel;
+		sub.RowPitch = 4;   // 1px * 4byte
+		sub.SlicePitch = 4;
+
+		UpdateSubresources(m_GraphicsCommandList.Get(), m_DummyTexture.Get(), m_DummyUpload.Get(),
+			0, 0, 1, &sub);
+
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			m_DummyTexture.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
+	}
+
+	// 検証用の既定ブロックを確保（全スロット=ダミー緑）
+	m_DefaultMaterialBlock = AllocateMaterialTextureBlock();
 }
 
 

@@ -237,6 +237,31 @@ namespace Render {
         }
         metadata.totalSize = ((curr_offset + 15) / 16) * 16;
 
+        // 5. テクスチャプロパティ（register space1 のみ。space0はエンジン予約なので対象外）
+        {
+            std::regex texRegex(R"(Texture2D(?:<[^>]*>)?\s+(\w+)\s*:\s*register\s*\(\s*t(\d+)\s*,\s*space(\d+)\s*\)\s*;[ \t]*(//[^\r\n]*)?)");
+            auto tb = std::sregex_iterator(content.begin(), content.end(), texRegex);
+            auto te = std::sregex_iterator();
+            for (std::sregex_iterator i = tb; i != te; ++i) {
+                std::smatch tm = *i;
+                unsigned int space = (unsigned int)std::stoul(tm[3].str());
+                if (space == 0) continue; // エンジン予約(space0)は除外
+
+                ShaderTextureProperty tp;
+                tp.name = tm[1].str();
+                tp.registerIndex = (unsigned int)std::stoul(tm[2].str());
+
+                std::string comment = tm[4].str();
+                std::smatch cm;
+                if (std::regex_search(comment, cm, std::regex("\"([^\"]*)\"")))
+                    tp.displayName = cm[1].str();
+                if (std::regex_search(comment, cm, std::regex(R"(\[\s*[Hh]eader\s*\(\s*([^\)]*?)\s*\)\s*\])")))
+                    tp.header = cm[1].str();
+
+                metadata.textures.push_back(tp);
+            }
+        }
+
         return metadata;
     }
 }

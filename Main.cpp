@@ -87,7 +87,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 		g_WindowHeight = rc.bottom - rc.top;
 
 		g_Window = CreateWindow(CLASS_NAME, APP_NAME, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-			rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, g_Instance, nullptr);// TODO : ウィンドウサイズを記録できるようにする
+			rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, g_Instance, nullptr);// TODO : 繧ｦ繧｣繝ｳ繝峨え繧ｵ繧､繧ｺ繧定ｨ倬鹸縺ｧ縺阪ｋ繧医≧縺ｫ縺吶ｋ
 	}
 
 
@@ -108,7 +108,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 
 
 
-		//フレームカウント初期化
+		//繝輔Ξ繝ｼ繝繧ｫ繧ｦ繝ｳ繝亥�晄悄蛹�
 		DWORD dwExecLastTime;
 		DWORD dwCurrentTime;
 		timeBeginPeriod(1);

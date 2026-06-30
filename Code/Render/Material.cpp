@@ -91,6 +91,12 @@ namespace Render {
                     }
                 }
                 UpdateLegacyMembersFromBuffer();
+
+                // 動的テクスチャ用のブロックを確保して反映
+                if (!meta->textures.empty()) {
+                    EnsureTextureBlock();
+                    ApplyTextureSlots();
+                }
                 return;
             }
         }
@@ -105,6 +111,49 @@ namespace Render {
 
     const Render::Types::TEXTURE* Material::GetTextureBaseColor() const {
         return m_TextureBaseColor.get();
+    }
+
+    void Material::EnsureTextureBlock() {
+        if (m_TextureBlock) return;
+        auto rm = RenderManager::GetInstance();
+        if (!rm) return;
+        unsigned int base = rm->AllocateMaterialTextureBlock();
+        m_TextureBlock = std::shared_ptr<unsigned int>(new unsigned int(base), [](unsigned int* p) {
+            if (auto rm = RenderManager::GetInstance()) rm->FreeMaterialTextureBlock(*p);
+            delete p;
+        });
+    }
+
+    void Material::ApplyTextureSlots() {
+        auto rm = RenderManager::GetInstance();
+        if (!rm || !m_TextureBlock || m_ShaderName.empty()) return;
+        const ShaderMetadata* meta = rm->GetShaderMetadata(m_ShaderName);
+        if (!meta) return;
+        for (auto& t : meta->textures) {
+            auto it = m_Textures.find(t.name);
+            ID3D12Resource* res = (it != m_Textures.end() && it->second) ? it->second->Resource.Get() : nullptr;
+            rm->SetMaterialBlockSlot(*m_TextureBlock, t.registerIndex, res); // nullptrはダミーで埋まる
+        }
+    }
+
+    void Material::SetTexture(const std::string& name, std::shared_ptr<Render::Types::TEXTURE> texture) {
+        m_Textures[name] = texture;
+        auto rm = RenderManager::GetInstance();
+        if (!rm || m_ShaderName.empty()) return;
+        const ShaderMetadata* meta = rm->GetShaderMetadata(m_ShaderName);
+        if (!meta) return;
+        for (auto& t : meta->textures) {
+            if (t.name == name) {
+                EnsureTextureBlock();
+                rm->SetMaterialBlockSlot(*m_TextureBlock, t.registerIndex, texture ? texture->Resource.Get() : nullptr);
+                break;
+            }
+        }
+    }
+
+    const Render::Types::TEXTURE* Material::GetTexture(const std::string& name) const {
+        auto it = m_Textures.find(name);
+        return (it != m_Textures.end()) ? it->second.get() : nullptr;
     }
 
     void Material::SetFloat(const std::string& name, float value) {

@@ -42,7 +42,7 @@ void SpriteRenderer::Update() {
 void SpriteRenderer::Draw() {
 	auto renderManager = Render::RenderManager::GetInstance();
 	
-	//ƒ}ƒgƒŠƒNƒXİ’è
+	//ãƒãƒˆãƒªã‚¯ã‚¹è¨­å®š
 	{
 		XMMATRIX world = XMMatrixIdentity();
 		OBJECT_CONSTANT objectConstant{};
