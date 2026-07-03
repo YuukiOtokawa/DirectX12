@@ -2025,12 +2025,6 @@ TEXTURE::~TEXTURE()
 }
 
 
-CONSTANT_BUFFER::~CONSTANT_BUFFER()
-{
-	RenderManager::GetInstance()->ReleaseShaderResourceView(SRVIndex);
-}
-
-
 RENDER_TARGET::~RENDER_TARGET()
 {
 	RenderManager::GetInstance()->ReleaseShaderResourceView(SRVIndex);

@@ -49,26 +49,12 @@ namespace EngineCore::Render {
 			XMFLOAT4X4 World;
 		};
 
-		// サブセットごとの定数 Rendererクラスに移動
-		struct SUBSET_CONSTANT
-		{
-			MATERIAL Material;
-		};
-
 		// テクスチャデータ Textureクラスに移動
 		struct TEXTURE
 		{
 			ComPtr<ID3D12Resource>	Resource;
 			unsigned int			SRVIndex;
 			~TEXTURE();
-		};
-
-
-		struct CONSTANT_BUFFER
-		{
-			ComPtr<ID3D12Resource>	Resource;
-			unsigned int			SRVIndex;
-			~CONSTANT_BUFFER();
 		};
 
 
@@ -108,9 +94,7 @@ namespace EngineCore::Render {
 	using Types::ENV_CONSTANT;
 	using Types::CAMERA_CONSTANT;
 	using Types::OBJECT_CONSTANT;
-	using Types::SUBSET_CONSTANT;
 	using Types::TEXTURE;
-	using Types::CONSTANT_BUFFER;
 	using Types::RENDER_TARGET;
 	using Types::VERTEX_BUFFER;
 	using Types::INDEX_BUFFER;

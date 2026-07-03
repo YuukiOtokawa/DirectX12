@@ -3,12 +3,20 @@
 `Code/` 以下の自作ソース（`assimp` / `ImGui` などの外部ライブラリは除く）を一通り読んで、
 リファクタリングでやれそうなことを洗い出した。優先度順（上が高い）。
 
-> **進捗（最終更新: 2026-06-30）**
+> **進捗（最終更新: 2026-07-04）**
 > - ✅ **#4 文字コード崩れ … 対応済み**。自作189ファイル全てが「化け0・有効UTF-8」になったことを確認。
 > - 🔄 commit `e88c42a`（テクスチャ差し替え時クラッシュ修正）を取り込み済み。RenderManager / Material に
 >   テクスチャの**遅延解放機構**が追加され、本書の #3 / #6 に反映した。
 > - 🆕 TODO.md に高優先の新項目が追加された（`assertを避ける` / `シェーダーテクスチャのエディタ設定` /
 >   `PositionBuffer→深度バッファ化`）。リファクタリングと絡む点は末尾「TODO との関連」に追記。
+> - 🔍 **#2 を調査**：「○○クラスに移動」とコメントされた構造体のうち、実際にクラス側へ完全移行して
+>   `struct` が死んでいたのは `SUBSET_CONSTANT`（Rendererへ移動と記載）と `CONSTANT_BUFFER`（コメント無し）の
+>   **2つのみ**と判明、削除した（Debug x64 ビルド通過）。他の構造体（`VERTEX`/`TEXTURE`/`RENDER_TARGET`/
+>   `VERTEX_BUFFER`/`INDEX_BUFFER`/`ENV_CONSTANT`/`CAMERA_CONSTANT`/`OBJECT_CONSTANT`）は「移動先」とされる
+>   クラス（`VertexData`/`Light`/`Camera`/`Renderer`/`MeshFilter`等）が実在していても、実際にはそのクラスが
+>   構造体を**メンバとして保持**するか、GPU転送用に構造体を**その場で組み立てて使う**だけで、構造体自体は
+>   現役。コメントは「移行済み」という誤った印象を与えるだけだったので、本項の内容そのものを見直す必要がある
+>   （詳細は #2 節を参照）。
 
 ---
 
@@ -32,23 +40,35 @@
 
 ---
 
-## 2. C スタイルの ALL_CAPS 構造体を正式なクラスへ移行
+## 2. C スタイルの ALL_CAPS 構造体を正式なクラスへ移行 ✅ 死んでいた2件は削除済み
 
-`RenderManager.h` の `namespace Types` に、コメントで「○○クラスに移動」と書かれたまま放置されている構造体群がある（[RenderManager.h:12-100](Code/Render/RenderManager.h)）。
+`RenderManager.h` の `namespace Types` に、コメントで「○○クラスに移動」と書かれたまま放置されている構造体群があった（[RenderManager.h:12-100](Code/Render/RenderManager.h)）。
 
 ```cpp
 struct VERTEX        // → VertexData クラスに移動（コメント済み）
 struct MATERIAL      // → Material クラスに移動
 struct ENV_CONSTANT  // → Light クラスに移動
-struct CAMERA_CONSTANT, OBJECT_CONSTANT, SUBSET_CONSTANT, TEXTURE,
-       CONSTANT_BUFFER, RENDER_TARGET, VERTEX_BUFFER, INDEX_BUFFER
+struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
+       RENDER_TARGET, VERTEX_BUFFER, INDEX_BUFFER
 ```
 
 - ALL_CAPS は本来マクロ用の命名で、型名としては不適切。
-- 移行が途中で止まっており「正規版クラス」と「旧 struct」が二重に存在している。
 - さらに `using Types::VERTEX;` 等を **namespace スコープで丸ごと再公開**しており（[RenderManager.h:106-116](Code/Render/RenderManager.h)）、`Render` 名前空間が汚染されている。
 
-**やること**: 各構造体を責務を持つクラスへ移し切る。GPU リソース保持系（`RENDER_TARGET` / `VERTEX_BUFFER` / `TEXTURE` など）は `Render` 配下のリソースクラスに整理。
+**調査（2026-07-04）**: 「コメントで書かれた移動先クラスが実際にその役割を果たしていて構造体が不要になっていないか」を1つずつ確認した。結果、コメントの「移動」は**ほぼ実現していなかった**：
+
+- ✅ **削除済み（本当に死んでいた）**
+  - `SUBSET_CONSTANT`（「Rendererクラスに移動」と記載）— `Renderer` 側にも移行された形跡がなく、宣言・`using` 以外に使用箇所ゼロ。
+  - `CONSTANT_BUFFER`（移行コメント無し）— 宣言・デストラクタ定義・`using` 以外に使用箇所ゼロ（デストラクタも誰からも呼ばれていなかった）。
+  - → 両方を `RenderManager.h`/`.cpp` から削除。Debug x64 ビルド通過を確認。
+- ⚠️ **現役（コメントは誤り・移行未完了）**
+  - `VERTEX` — `VertexData` クラスは存在するが、`std::vector<VERTEX>` を**保持するだけ**で置き換えてはいない。`OBJLoader`/`FBXLoader`/`MeshFilter`/`SpriteRenderer` 等で構造体自体が広く使われている。
+  - `ENV_CONSTANT` / `CAMERA_CONSTANT` / `OBJECT_CONSTANT` — `Light`/`Camera`/`Renderer` クラスは存在するが、各クラスの `Draw()` 内で**その場で構造体を組み立てて GPU に送る**用途に使っており、構造体は GPU 定数バッファのレイアウトとして現役。
+  - `TEXTURE` — 「`Texture` クラスに移動」とコメントされているが、**`Texture` クラス自体がコードベースに存在しない**（コメントが完全に誤り）。`Material`/`RenderManager`/`OBJLoader`/`FBXLoader` 等で広範に使用。
+  - `VERTEX_BUFFER` / `INDEX_BUFFER` — 「`MeshFilter` クラスに移動」とコメントされているが、`MeshFilter` は `std::unique_ptr<VERTEX_BUFFER>` を**保持するだけ**。`RenderManager` の `CreateVertexBuffer`/`SetVertexBuffer` 等でも現役。
+  - `RENDER_TARGET` — 移行コメント無し。G-Buffer 各種（`m_ColorBuffer` 等）の実体として現役。
+
+**やること（残り）**: 上記「現役」組はまだ削除できないが、コメントの「移動」は誤解を招くので、いずれ本気で移行するか（#3 の `RenderTargetManager`/`TextureLoader` 等への分割と合わせて）、コメント自体を実態に合わせて書き直すか判断する。GPU リソース保持系（`RENDER_TARGET` / `VERTEX_BUFFER` / `TEXTURE` など）は `Render` 配下のリソースクラスに整理していく方向は変わらず。
 
 ---
 
