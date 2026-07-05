@@ -17,12 +17,15 @@
 >   構造体を**メンバとして保持**するか、GPU転送用に構造体を**その場で組み立てて使う**だけで、構造体自体は
 >   現役。コメントは「移行済み」という誤った印象を与えるだけだったので、本項の内容そのものを見直す必要がある
 >   （詳細は #2 節を参照）。
-> - ✅ **#3 に着手（Stage 0〜5 完了、一区切り）**：`RenderManager`（当初約1900行）から
+> - ✅ **#3 ほぼ完了（Stage 0〜6）**：`RenderManager`（当初約1900行）から
 >   `DeferredReleaseQueue`/`DescriptorAllocator`/`ConstantBufferRing`/`TextureLoader`/
->   `RenderTargetFactory`/`GraphicsDevice` の6クラスを段階的に切り出し、**1714行まで縮小**。
->   全段階で外部呼び出し元（MeshRenderer/SpriteRenderer/Light/Camera等）は無改修、各段階でDebug x64
->   ビルド通過＋実行確認済み。**G-Buffer所有権・バックバッファ/深度バッファ・`ApplyPendingResizes`
->   （リサイズ機構）は最もリスクが高い部分としてあえて未着手**（詳細は #3 節参照）。
+>   `RenderTargetFactory`/`GraphicsDevice`/`RenderTargetManager` の7クラスを段階的に切り出し、
+>   **1458行まで縮小**。最もリスクの高かったStage 6（G-Buffer所有権・バックバッファ/深度バッファ・
+>   `ApplyPendingResizes`）もユーザーの希望で再開し、`DrawBegin`/`DrawEnd`/`FrameEnd`/
+>   `ResolveDeferredLighting`/`BeginForwardPass`/`ApplyPostProcess`のメンバ直接アクセスを機械的に
+>   置換（ロジック不変）。全段階で外部呼び出し元（MeshRenderer/SpriteRenderer/Light/Camera/
+>   GameViewWindowController等）は無改修、各段階でDebug x64ビルド通過＋実行確認済み。
+>   残るは任意の`RenderPipeline`/`RenderGraph`切り出しのみ（詳細は #3 節参照）。
 
 ---
 
@@ -78,7 +81,7 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 
 ---
 
-## 3. 神クラス RenderManager の分割 🔄 Stage 0〜5 完了・一区切り
+## 3. 神クラス RenderManager の分割 ✅ Stage 0〜6 完了
 
 `RenderManager.cpp` が **1903 行**で全描画処理を抱えている（[RenderManager.cpp](Code/Render/RenderManager.cpp)）。1クラスに以下が混在：
 
@@ -100,27 +103,22 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 委譲する形で、段階的に・都度ビルド確認しながら進めた（自動テストが無くDX12ネイティブウィンドウの
 描画結果は目視でしか確認できないため、各段階でユーザーが実行して確認）。
 
-**進捗（2026-07-06 時点、Stage 0〜5 完了）**:
+**進捗（2026-07-06 時点、Stage 0〜6 完了）**:
 - ✅ `DeferredReleaseQueue<T>`（[DeferredReleaseQueue.h](Code/Render/DeferredReleaseQueue.h)）… PSO/テクスチャの遅延解放を1本化
 - ✅ `DescriptorAllocator`（[DescriptorAllocator.h](Code/Render/DescriptorAllocator.h)/[.cpp](Code/Render/DescriptorAllocator.cpp)）… SRV/RTVヒープ生成＋フリーリスト（SRV用・RTV用で2インスタンス）
 - ✅ `ConstantBufferRing`（[ConstantBufferRing.h](Code/Render/ConstantBufferRing.h)/[.cpp](Code/Render/ConstantBufferRing.cpp)）… 2フレーム分の定数バッファリング
 - ✅ `TextureLoader`（[TextureLoader.h](Code/Render/TextureLoader.h)/[.cpp](Code/Render/TextureLoader.cpp)）… `LoadTexture`のDDS読込・SRV作成ロジック（`TEXTURE`構造体自体は外部8ファイルがフル修飾参照しているため`Types`名前空間に残置）
-- ✅ `RenderTargetFactory`（[RenderTargetFactory.h](Code/Render/RenderTargetFactory.h)/[.cpp](Code/Render/RenderTargetFactory.cpp)）… `CreateRenderTarget(width,height,format,...)`の生成ロジック（`RENDER_TARGET`構造体自体は外部から型名で参照されていないと確認済みだが、所有権はまだRenderManager側）
+- ✅ `RenderTargetFactory`（[RenderTargetFactory.h](Code/Render/RenderTargetFactory.h)/[.cpp](Code/Render/RenderTargetFactory.cpp)）… `CreateRenderTarget(width,height,format,...)`の生成ロジック
 - ✅ `GraphicsDevice`（[GraphicsDevice.h](Code/Render/GraphicsDevice.h)/[.cpp](Code/Render/GraphicsDevice.cpp)）… Factory/Adapter/Device/CommandQueue/Fence/CommandAllocator×2/CommandList/SwapChainの生成。`RenderManager`側の`m_Device`等は型を変えずInit直後にコピーするだけにして、他の全既存コードを無改修に保った
-- → `RenderManager.cpp` は **1903行→1714行** に縮小。全段階でDebug x64ビルド通過・実行確認済み。
+- ✅ `RenderTargetManager`（[RenderTargetManager.h](Code/Render/RenderTargetManager.h)/[.cpp](Code/Render/RenderTargetManager.cpp)）… G-Buffer（Color/Normal/Position/Material/Emission/LightedColor/PostProcess1）・バックバッファ・深度バッファ・ゲーム/シーンビューターゲット・リサイズpending機構・`ApplyPendingResizes`のリソース再生成ロジックを全て移設。
+  `RenderManager::RENDER_TARGET_TYPE`は新規`RenderTargetType`（[RenderTargetType.h](Code/Render/RenderTargetType.h)）への`using`型エイリアスに変更し、外部3ファイル（Camera.cpp/GameViewWindowController.cpp/SceneViewWindowController.cpp）は無改修のまま。`DrawBegin`/`DrawEnd`/`FrameEnd`/`ResolveDeferredLighting`/`BeginForwardPass`/`ApplyPostProcess`はメンバ直接アクセスを`m_RenderTargetManager.GetXxxBuffer()`呼び出しに機械的に置換（ロジックは不変）。コマンドリストのClose/Reset・`WaitGPU`・コマンドアロケータリセットは計画通り`RenderManager`側に残した（`GraphicsDevice`/フレームライフサイクルの責務として分離）。
+- → `RenderManager.cpp` は **1903行→1458行** に縮小。全段階でDebug x64ビルド通過・実行確認済み。
 
-**あえて未着手（最もリスクが高い部分）**:
-- **G-Buffer（Color/Normal/Position/Material/Emission/LightedColor/PostProcess）・バックバッファ・深度バッファの所有権**
-- **`ApplyPendingResizes()`**（スワップチェーンリサイズ/ゲームビュー・シーンビューリサイズのpending機構。コマンドリストのClose/Reset・`WaitGPU`・コマンドアロケータリセットと密結合していて、単純な「生成ロジックの切り出し」パターンが通用しない）
-- **`DrawBegin`/`DrawEnd`/`ResolveDeferredLighting`/`BeginForwardPass`/`ApplyPostProcess`**（高レベルのレンダーグラフ）
-
-これらは描画ループの中核で、壊れた場合に画面が黒くなる・G-Bufferが化ける等、目視確認でしか検知できない
-バグを埋め込むリスクが高い。ユーザーと相談の上、**このパスでは着手を見送り**、`RenderTargetManager`
-（本格版）と`RenderPipeline`/`RenderGraph`は別パスとして仕切り直す判断とした。
-
-**残タスク（次回以降）**:
-- `RenderTargetManager` … G-Buffer/バックバッファ/深度バッファの所有権、`ApplyPendingResizes`の移行
-- `RenderPipeline` / `RenderGraph` … Deferred/Forward/PostProcess のパス制御
+**残タスク（任意・未着手）**:
+- `RenderPipeline` / `RenderGraph` … `DrawBegin`/`DrawEnd`/`ResolveDeferredLighting`/`BeginForwardPass`/
+  `ApplyPostProcess`（Deferred/Forward/PostProcessのパス制御自体）を専用クラスへ切り出す案。現状は
+  `RenderManager`がこれらのメソッドを持ったまま`RenderTargetManager`等に委譲する形になっており、
+  実用上は困っていないため優先度は低い。
 
 ---
 
@@ -227,10 +225,9 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 0. ~~**#4 文字コード**~~ … ✅ 対応済み
 1. ~~**#5 バグ/デッドコード**~~ … ✅ ほぼ対応済み
 2. ~~**#1 命名規則**~~ / ~~**#9 名前空間**~~ … ✅ メンバ変数・Render名前空間は対応済み
-3. **#2 構造体のクラス化** … 🔄 死んでいた2件は削除済み。残りは #3 の続きと連動
+3. **#2 構造体のクラス化** … 🔄 死んでいた2件は削除済み。残り（`VERTEX`等6種）は現状維持
 4. **#6 Material 二重管理** … 局所的で効果大（未着手）
-5. **#3 RenderManager 分割** … 🔄 Stage 0〜5 完了・一区切り。G-Buffer所有権/`ApplyPendingResizes`/
-   `RenderPipeline`が残タスク（最大の山の本体はここから）
+5. **#3 RenderManager 分割** … ✅ Stage 0〜6 完了。残りは任意の`RenderPipeline`切り出しのみ
 6. **#7/#8 所有権・シングルトン** と **#11 シーン外部化** … 設計寄り。TODO の他項目（シーン機能・スクリプト）と合わせて進める
 
 ---

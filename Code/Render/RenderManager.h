@@ -11,6 +11,8 @@
 #include "TextureLoader.h"
 #include "RenderTargetFactory.h"
 #include "GraphicsDevice.h"
+#include "RenderTargetType.h"
+#include "RenderTargetManager.h"
 #include <memory>
 
 namespace EngineCore::Render {
@@ -108,11 +110,7 @@ namespace EngineCore::Render {
 	class RenderManager
 	{
 	public:
-		enum class RENDER_TARGET_TYPE {
-			BACK_BUFFER,
-			GAME_VIEW,
-			SCENE_VIEW
-		};
+		using RENDER_TARGET_TYPE = RenderTargetType;
 
 	private:
 		static RenderManager* m_Instance;
@@ -140,17 +138,6 @@ namespace EngineCore::Render {
 
 		HANDLE								m_FenceEvent;
 
-		ComPtr<ID3D12Resource>				m_RenderTarget[2];
-		ComPtr<ID3D12DescriptorHeap>		m_RenderTargetDescriptorHeap;
-		D3D12_CPU_DESCRIPTOR_HANDLE			m_RenderTargetHandle[2];
-
-		ComPtr<ID3D12Resource>				m_DepthBuffer;
-		ComPtr<ID3D12DescriptorHeap>		m_DepthBufferDescriptorHeap;
-		D3D12_CPU_DESCRIPTOR_HANDLE			m_DepthBufferHandle;
-
-		D3D12_RECT							m_ScissorRect;
-		D3D12_VIEWPORT						m_Viewport;
-
 		DescriptorAllocator					m_SRVAllocator;
 		static const unsigned int			SRV_DESCRIPTOR_MAX = 10000;
 
@@ -177,31 +164,7 @@ namespace EngineCore::Render {
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
-		std::unique_ptr<RENDER_TARGET>		m_ColorBuffer;
-		std::unique_ptr<RENDER_TARGET>		m_NormalBuffer;
-        std::unique_ptr<RENDER_TARGET>		m_PositionBuffer;
-		std::unique_ptr<RENDER_TARGET>		m_MaterialBuffer;
-		std::unique_ptr<RENDER_TARGET>		m_EmissionBuffer;
-		std::unique_ptr<RENDER_TARGET>		m_LightedColorBuffer;
-
-		std::unique_ptr<RENDER_TARGET>		m_PostProcessBuffer1;
-
-		std::unique_ptr<RENDER_TARGET>		m_GameViewTarget;
-		std::unique_ptr<RENDER_TARGET>		m_SceneViewTarget;
-
-		RENDER_TARGET_TYPE                  m_CurrentTargetType = RENDER_TARGET_TYPE::GAME_VIEW;
-
-		bool m_SwapChainResizePending = false;
-		unsigned int m_SwapChainPendingWidth = 0;
-		unsigned int m_SwapChainPendingHeight = 0;
-
-		bool m_GameViewResizePending = false;
-		unsigned int m_GameViewPendingWidth = 0;
-		unsigned int m_GameViewPendingHeight = 0;
-
-		bool m_SceneViewResizePending = false;
-		unsigned int m_SceneViewPendingWidth = 0;
-		unsigned int m_SceneViewPendingHeight = 0;
+		RenderTargetManager					m_RenderTargetManager;
 
 		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
 		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
@@ -276,29 +239,14 @@ namespace EngineCore::Render {
 		void CleanUpRenderTarget();
 		void Resize(unsigned int Width, unsigned int Height);
 
-		void SetCurrentTarget(RENDER_TARGET_TYPE targetType) { m_CurrentTargetType = targetType; }
-		RENDER_TARGET_TYPE GetCurrentTarget() const { return m_CurrentTargetType; }
+		void SetCurrentTarget(RENDER_TARGET_TYPE targetType) { m_RenderTargetManager.SetCurrentTarget(targetType); }
+		RENDER_TARGET_TYPE GetCurrentTarget() const { return m_RenderTargetManager.GetCurrentTarget(); }
 
-		RENDER_TARGET* GetGameViewTarget() const { return m_GameViewTarget.get(); }
-		RENDER_TARGET* GetSceneViewTarget() const { return m_SceneViewTarget.get(); }
+		RENDER_TARGET* GetGameViewTarget() const { return m_RenderTargetManager.GetGameViewTarget(); }
+		RENDER_TARGET* GetSceneViewTarget() const { return m_RenderTargetManager.GetSceneViewTarget(); }
 
 		void GetActiveTargetSize(unsigned int& width, unsigned int& height) {
-			if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
-				width = m_BackBufferWidth;
-				height = m_BackBufferHeight;
-			}
-			else {
-				RENDER_TARGET* target = (m_CurrentTargetType == RENDER_TARGET_TYPE::GAME_VIEW) ? m_GameViewTarget.get() : m_SceneViewTarget.get();
-				if (target && target->Resource) {
-					D3D12_RESOURCE_DESC desc = target->Resource->GetDesc();
-					width = static_cast<unsigned int>(desc.Width);
-					height = static_cast<unsigned int>(desc.Height);
-				}
-				else {
-					width = m_BackBufferWidth;
-					height = m_BackBufferHeight;
-				}
-			}
+			m_RenderTargetManager.GetActiveTargetSize(width, height, m_BackBufferWidth, m_BackBufferHeight);
 		}
 
 		void ResizeTarget(RENDER_TARGET_TYPE type, unsigned int width, unsigned int height);
@@ -372,13 +320,13 @@ namespace EngineCore::Render {
 		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart(); }
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
 
-		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
-		RENDER_TARGET* GetNormalBuffer() { return m_NormalBuffer.get(); }
-        RENDER_TARGET *GetPositionBuffer() { return m_PositionBuffer.get(); }
-		RENDER_TARGET* GetMaterialBuffer() { return m_MaterialBuffer.get(); }
-		RENDER_TARGET* GetEmissionBuffer() { return m_EmissionBuffer.get(); }
-		RENDER_TARGET* GetPostProcessBuffer() { return m_PostProcessBuffer1.get(); }
-		RENDER_TARGET* GetLightedColorBuffer() { return m_LightedColorBuffer.get(); }
+		RENDER_TARGET* GetColorBuffer() { return m_RenderTargetManager.GetColorBuffer(); }
+		RENDER_TARGET* GetNormalBuffer() { return m_RenderTargetManager.GetNormalBuffer(); }
+        RENDER_TARGET *GetPositionBuffer() { return m_RenderTargetManager.GetPositionBuffer(); }
+		RENDER_TARGET* GetMaterialBuffer() { return m_RenderTargetManager.GetMaterialBuffer(); }
+		RENDER_TARGET* GetEmissionBuffer() { return m_RenderTargetManager.GetEmissionBuffer(); }
+		RENDER_TARGET* GetPostProcessBuffer() { return m_RenderTargetManager.GetPostProcessBuffer(); }
+		RENDER_TARGET* GetLightedColorBuffer() { return m_RenderTargetManager.GetLightedColorBuffer(); }
 	private:
 		struct ActivePostProcessPass {
 			std::string name;

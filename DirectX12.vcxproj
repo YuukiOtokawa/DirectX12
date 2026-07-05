@@ -175,6 +175,7 @@
     <ClCompile Include="Code\Render\TextureLoader.cpp" />
     <ClCompile Include="Code\Render\RenderTargetFactory.cpp" />
     <ClCompile Include="Code\Render\GraphicsDevice.cpp" />
+    <ClCompile Include="Code\Render\RenderTargetManager.cpp" />
     <ClCompile Include="Code\Render\Material.cpp" />
     <ClCompile Include="Code\Object.cpp" />
     <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
@@ -222,6 +223,8 @@
     <ClInclude Include="Code\Render\TextureLoader.h" />
     <ClInclude Include="Code\Render\RenderTargetFactory.h" />
     <ClInclude Include="Code\Render\GraphicsDevice.h" />
+    <ClInclude Include="Code\Render\RenderTargetType.h" />
+    <ClInclude Include="Code\Render\RenderTargetManager.h" />
     <ClInclude Include="Code\Render\Material.h" />
     <ClInclude Include="Code\Object.h" />
     <ClInclude Include="Code\Component\Polygon\Renderer.h" />
