@@ -3,7 +3,7 @@
 `Code/` 以下の自作ソース（`assimp` / `ImGui` などの外部ライブラリは除く）を一通り読んで、
 リファクタリングでやれそうなことを洗い出した。優先度順（上が高い）。
 
-> **進捗（最終更新: 2026-07-04）**
+> **進捗（最終更新: 2026-07-06）**
 > - ✅ **#4 文字コード崩れ … 対応済み**。自作189ファイル全てが「化け0・有効UTF-8」になったことを確認。
 > - 🔄 commit `e88c42a`（テクスチャ差し替え時クラッシュ修正）を取り込み済み。RenderManager / Material に
 >   テクスチャの**遅延解放機構**が追加され、本書の #3 / #6 に反映した。
@@ -17,6 +17,12 @@
 >   構造体を**メンバとして保持**するか、GPU転送用に構造体を**その場で組み立てて使う**だけで、構造体自体は
 >   現役。コメントは「移行済み」という誤った印象を与えるだけだったので、本項の内容そのものを見直す必要がある
 >   （詳細は #2 節を参照）。
+> - ✅ **#3 に着手（Stage 0〜5 完了、一区切り）**：`RenderManager`（当初約1900行）から
+>   `DeferredReleaseQueue`/`DescriptorAllocator`/`ConstantBufferRing`/`TextureLoader`/
+>   `RenderTargetFactory`/`GraphicsDevice` の6クラスを段階的に切り出し、**1714行まで縮小**。
+>   全段階で外部呼び出し元（MeshRenderer/SpriteRenderer/Light/Camera等）は無改修、各段階でDebug x64
+>   ビルド通過＋実行確認済み。**G-Buffer所有権・バックバッファ/深度バッファ・`ApplyPendingResizes`
+>   （リサイズ機構）は最もリスクが高い部分としてあえて未着手**（詳細は #3 節参照）。
 
 ---
 
@@ -72,7 +78,7 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 
 ---
 
-## 3. 神クラス RenderManager の分割
+## 3. 神クラス RenderManager の分割 🔄 Stage 0〜5 完了・一区切り
 
 `RenderManager.cpp` が **1903 行**で全描画処理を抱えている（[RenderManager.cpp](Code/Render/RenderManager.cpp)）。1クラスに以下が混在：
 
@@ -89,14 +95,32 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 さらに「フェンス通過まで保持してから解放する」遅延解放が **PSO 用・テクスチャ用と別々に2系統**生えてきており
 （今後バッファ等でも増えそう）、`DeferredReleaseQueue` のような**汎用の遅延解放キュー1本**に寄せる余地がある。
 
-**やること（分割案）**:
-- `GraphicsDevice` … デバイス・キュー・スワップチェーン・フェンス
-- `DescriptorAllocator` … SRV/RTV プール（`CreateShaderResourceView` 等）
-- `ConstantBufferRing` … 定数バッファのリング管理
-- `RenderTargetManager` … RT 生成・リサイズ・pending
+**分割方針**: 外部40箇所超の呼び出し元（`RenderManager::GetInstance()->X()`）への影響を避けるため、
+`RenderManager` を薄いファサードとして残し、既存 public API のシグネチャは変えずに内部実装だけ新クラスへ
+委譲する形で、段階的に・都度ビルド確認しながら進めた（自動テストが無くDX12ネイティブウィンドウの
+描画結果は目視でしか確認できないため、各段階でユーザーが実行して確認）。
+
+**進捗（2026-07-06 時点、Stage 0〜5 完了）**:
+- ✅ `DeferredReleaseQueue<T>`（[DeferredReleaseQueue.h](Code/Render/DeferredReleaseQueue.h)）… PSO/テクスチャの遅延解放を1本化
+- ✅ `DescriptorAllocator`（[DescriptorAllocator.h](Code/Render/DescriptorAllocator.h)/[.cpp](Code/Render/DescriptorAllocator.cpp)）… SRV/RTVヒープ生成＋フリーリスト（SRV用・RTV用で2インスタンス）
+- ✅ `ConstantBufferRing`（[ConstantBufferRing.h](Code/Render/ConstantBufferRing.h)/[.cpp](Code/Render/ConstantBufferRing.cpp)）… 2フレーム分の定数バッファリング
+- ✅ `TextureLoader`（[TextureLoader.h](Code/Render/TextureLoader.h)/[.cpp](Code/Render/TextureLoader.cpp)）… `LoadTexture`のDDS読込・SRV作成ロジック（`TEXTURE`構造体自体は外部8ファイルがフル修飾参照しているため`Types`名前空間に残置）
+- ✅ `RenderTargetFactory`（[RenderTargetFactory.h](Code/Render/RenderTargetFactory.h)/[.cpp](Code/Render/RenderTargetFactory.cpp)）… `CreateRenderTarget(width,height,format,...)`の生成ロジック（`RENDER_TARGET`構造体自体は外部から型名で参照されていないと確認済みだが、所有権はまだRenderManager側）
+- ✅ `GraphicsDevice`（[GraphicsDevice.h](Code/Render/GraphicsDevice.h)/[.cpp](Code/Render/GraphicsDevice.cpp)）… Factory/Adapter/Device/CommandQueue/Fence/CommandAllocator×2/CommandList/SwapChainの生成。`RenderManager`側の`m_Device`等は型を変えずInit直後にコピーするだけにして、他の全既存コードを無改修に保った
+- → `RenderManager.cpp` は **1903行→1714行** に縮小。全段階でDebug x64ビルド通過・実行確認済み。
+
+**あえて未着手（最もリスクが高い部分）**:
+- **G-Buffer（Color/Normal/Position/Material/Emission/LightedColor/PostProcess）・バックバッファ・深度バッファの所有権**
+- **`ApplyPendingResizes()`**（スワップチェーンリサイズ/ゲームビュー・シーンビューリサイズのpending機構。コマンドリストのClose/Reset・`WaitGPU`・コマンドアロケータリセットと密結合していて、単純な「生成ロジックの切り出し」パターンが通用しない）
+- **`DrawBegin`/`DrawEnd`/`ResolveDeferredLighting`/`BeginForwardPass`/`ApplyPostProcess`**（高レベルのレンダーグラフ）
+
+これらは描画ループの中核で、壊れた場合に画面が黒くなる・G-Bufferが化ける等、目視確認でしか検知できない
+バグを埋め込むリスクが高い。ユーザーと相談の上、**このパスでは着手を見送り**、`RenderTargetManager`
+（本格版）と`RenderPipeline`/`RenderGraph`は別パスとして仕切り直す判断とした。
+
+**残タスク（次回以降）**:
+- `RenderTargetManager` … G-Buffer/バックバッファ/深度バッファの所有権、`ApplyPendingResizes`の移行
 - `RenderPipeline` / `RenderGraph` … Deferred/Forward/PostProcess のパス制御
-- `TextureLoader` … `LoadTexture`
-- `DeferredReleaseQueue` … フェンス通過後に解放する遅延解放を一元化（現状 PSO/テクスチャで重複）
 
 ---
 
@@ -201,11 +225,12 @@ struct CAMERA_CONSTANT, OBJECT_CONSTANT, TEXTURE,
 ## 補足：着手順のおすすめ
 
 0. ~~**#4 文字コード**~~ … ✅ 対応済み
-1. **#5 バグ/デッドコード** … 機械的・低リスク・差分が読みやすい（次はここが楽）
-2. **#1 命名規則**と**#9 名前空間** … 一括置換系、早めにやると後続が楽
-3. **#2 構造体のクラス化** … #1 と連動
-4. **#6 Material 二重管理** … 局所的で効果大
-5. **#3 RenderManager 分割** … 最大の山。上記が片付いてから腰を据えて
+1. ~~**#5 バグ/デッドコード**~~ … ✅ ほぼ対応済み
+2. ~~**#1 命名規則**~~ / ~~**#9 名前空間**~~ … ✅ メンバ変数・Render名前空間は対応済み
+3. **#2 構造体のクラス化** … 🔄 死んでいた2件は削除済み。残りは #3 の続きと連動
+4. **#6 Material 二重管理** … 局所的で効果大（未着手）
+5. **#3 RenderManager 分割** … 🔄 Stage 0〜5 完了・一区切り。G-Buffer所有権/`ApplyPendingResizes`/
+   `RenderPipeline`が残タスク（最大の山の本体はここから）
 6. **#7/#8 所有権・シングルトン** と **#11 シーン外部化** … 設計寄り。TODO の他項目（シーン機能・スクリプト）と合わせて進める
 
 ---

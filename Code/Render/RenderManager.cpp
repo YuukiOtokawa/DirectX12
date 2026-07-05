@@ -93,121 +93,20 @@ void RenderManager::Init()
 
 
 
-#if defined(_DEBUG)
+	m_GraphicsDevice.Init(m_WindowHandle, m_WindowMode, m_BackBufferWidth, m_BackBufferHeight);
 
-	// DebugLayer
-	{
-		ComPtr<ID3D12Debug1>	debugController;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-		{
-			debugController->EnableDebugLayer();
-			//debugController->SetEnableGPUBasedValidation(true);
-		}
-	}
+	m_Factory = m_GraphicsDevice.GetFactory();
+	m_Adapter = m_GraphicsDevice.GetAdapter();
+	m_Device = m_GraphicsDevice.GetDevice();
+	m_CommandQueue = m_GraphicsDevice.GetCommandQueue();
+	m_Fence = m_GraphicsDevice.GetFence();
+	m_FenceEvent = m_GraphicsDevice.GetFenceEvent();
+	m_SwapChain = m_GraphicsDevice.GetSwapChain();
+	m_GraphicsCommandList = m_GraphicsDevice.GetGraphicsCommandList();
+	m_GraphicsCommandAllocator[0] = m_GraphicsDevice.GetCommandAllocator(0);
+	m_GraphicsCommandAllocator[1] = m_GraphicsDevice.GetCommandAllocator(1);
 
-	
-/*	
-	//DRED
-	{
-		ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> d3dDredSettings1;
-		if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&d3dDredSettings1))))
-		{
-			d3dDredSettings1->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-			d3dDredSettings1->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-			d3dDredSettings1->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-		}
-	}
-*/
-#endif
-
-
-	// DXGI Factory
-	{
-		UINT flag{};
-		hr = CreateDXGIFactory2(flag, IID_PPV_ARGS(&m_Factory));
-		assert(SUCCEEDED(hr));
-
-		hr = m_Factory->EnumAdapters(0, (IDXGIAdapter**)m_Adapter.GetAddressOf());
-		assert(SUCCEEDED(hr));
-
-		hr = D3D12CreateDevice(m_Adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_Device));
-		assert(SUCCEEDED(hr));
-	}
-
-
-
-
-	// CommandQueue
-	{
-		D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
-
-		commandQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-		commandQueueDesc.Priority = 0;
-		commandQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-		commandQueueDesc.NodeMask = 0;
-
-		hr = m_Device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_CommandQueue));
-		assert(SUCCEEDED(hr));
-
-		m_FenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-		assert(m_FenceEvent);
-
-		hr = m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
-		assert(SUCCEEDED(hr));
-	}
-
-
-
-	// CommandAllocator
-	{
-		hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_GraphicsCommandAllocator[0]));
-		assert(SUCCEEDED(hr));
-		m_GraphicsCommandAllocator[0]->SetName(L"GraphicsCommandAllocator[0]");
-
-		hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_GraphicsCommandAllocator[1]));
-		assert(SUCCEEDED(hr));
-		m_GraphicsCommandAllocator[1]->SetName(L"GraphicsCommandAllocator[1]");
-
-		hr = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_GraphicsCommandAllocator[0].Get(), nullptr, IID_PPV_ARGS(&m_GraphicsCommandList));
-		assert(SUCCEEDED(hr));
-		m_GraphicsCommandList->SetName(L"GraphicsCommandList");
-	}
-
-
-
-
-
-
-	// SwapChain
-	{
-		DXGI_SWAP_CHAIN_DESC swapChainDesc{};
-		ComPtr<IDXGISwapChain> swapChain{};
-
-		swapChainDesc.BufferDesc.Width = m_BackBufferWidth;
-		swapChainDesc.BufferDesc.Height = m_BackBufferHeight;
-		swapChainDesc.OutputWindow = m_WindowHandle;
-		swapChainDesc.Windowed = m_WindowMode;
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = 2;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		swapChainDesc.Flags = 0;
-		swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
-		swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
-		swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-		swapChainDesc.SampleDesc.Count = 1;
-		swapChainDesc.SampleDesc.Quality = 0;
-
-
-		hr = m_Factory->CreateSwapChain(m_CommandQueue.Get(), &swapChainDesc, &swapChain);
-		assert(SUCCEEDED(hr));
-
-		hr = swapChain.As(&m_SwapChain);
-		assert(SUCCEEDED(hr));
-
-		m_RTIndex = m_SwapChain->GetCurrentBackBufferIndex();
-	}
+	m_RTIndex = m_SwapChain->GetCurrentBackBufferIndex();
 
 
 
@@ -311,17 +210,8 @@ void RenderManager::Init()
 
 	// ShaderVisibleDescriptorHeap
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc;
-		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		desc.NumDescriptors = SRV_DESCRIPTOR_MAX;
-		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		desc.NodeMask = 0;
-
-		m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_SRVDescriptorHeap));
-
 		// 汎用プールは予約領域(MATERIAL_BLOCK_REGION_BASE)の手前まで
-		for (unsigned int i = 0; i < MATERIAL_BLOCK_REGION_BASE; i++)
-			m_SRVDescriptorPool.push_back(i);
+		m_SRVAllocator.Init(m_Device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, SRV_DESCRIPTOR_MAX, MATERIAL_BLOCK_REGION_BASE, true);
 
 		// マテリアルブロック専用領域を8枠刻みでブロックプールへ
 		for (unsigned int b = 0; b < MATERIAL_BLOCK_MAX; b++)
@@ -329,83 +219,14 @@ void RenderManager::Init()
 	}
 
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc;
-		desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		desc.NumDescriptors = RTV_DESCRIPTOR_MAX;
-		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		desc.NodeMask = 0;
-
-		m_Device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_RTVDescriptorHeap));
-
-		for (int i = 0; i < RTV_DESCRIPTOR_MAX; i++)
-			m_RTVDescriptorPool.push_back(i);
+		m_RTVAllocator.Init(m_Device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, RTV_DESCRIPTOR_MAX, RTV_DESCRIPTOR_MAX, false);
 	}
 
 
 
 
 	// ConstantBuffer
-	for (int i = 0; i < 2; i++)
-	{
-		{
-			D3D12_HEAP_PROPERTIES properties{};
-			properties.Type = D3D12_HEAP_TYPE_UPLOAD;
-			properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-			properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-			properties.CreationNodeMask = 0;
-			properties.VisibleNodeMask = 0;
-
-			D3D12_RESOURCE_DESC desc{};
-			desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-			desc.Height = 1;
-			desc.DepthOrArraySize = 1;
-			desc.MipLevels = 1;
-			desc.Format = DXGI_FORMAT_UNKNOWN;
-			desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-			desc.SampleDesc.Count = 1;
-			desc.SampleDesc.Quality = 0;
-			desc.Width = CONSTANT_BUFFER_SIZE * CONSTANT_BUFFER_MAX;
-
-
-			HRESULT hr = m_Device->CreateCommittedResource(&properties,
-				D3D12_HEAP_FLAG_NONE,
-				&desc,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				nullptr,
-				IID_PPV_ARGS(&m_ConstantBuffer[i]));
-			assert(SUCCEEDED(hr));
-		}
-
-
-		hr = m_ConstantBuffer[i]->Map(0, nullptr, (void**)&m_ConstantBufferPointer[i]);
-		assert(SUCCEEDED(hr));
-
-
-		for (int j = 0; j < CONSTANT_BUFFER_MAX; j++)
-		{
-			unsigned int index = m_SRVDescriptorPool.front();
-			m_SRVDescriptorPool.pop_front();
-
-
-
-
-			D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
-			desc.BufferLocation = m_ConstantBuffer[i]->GetGPUVirtualAddress() + j * CONSTANT_BUFFER_SIZE;
-			desc.SizeInBytes = CONSTANT_BUFFER_SIZE;
-
-
-
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			handle.ptr += size * index;
-
-			m_Device->CreateConstantBufferView(&desc, handle);
-
-			m_ConstantBufferView[i][j] = index;
-		}
-
-		m_ConstantBufferIndex[i] = 0;
-	}
+	m_ConstantBufferRing.Init(m_Device.Get(), m_SRVAllocator);
 
 
 
@@ -655,7 +476,7 @@ void RenderManager::WaitGPU()
 void RenderManager::DrawBegin()
 {
 	// Descriptor heaps
-	ID3D12DescriptorHeap* dh[] = { m_SRVDescriptorHeap.Get() };
+	ID3D12DescriptorHeap* dh[] = { m_SRVAllocator.GetHeap() };
 	m_GraphicsCommandList->SetDescriptorHeaps(_countof(dh), dh);
 
 	// Root signature
@@ -665,7 +486,7 @@ void RenderManager::DrawBegin()
 	EnsureMaterialTextureSetup();
 
 	// Constant buffer index reset
-	m_ConstantBufferIndex[m_RTIndex] = 0;
+	m_ConstantBufferRing.ResetFrame(m_RTIndex);
 
 	if (m_CurrentTargetType == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		m_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
@@ -1090,24 +911,10 @@ void RenderManager::FrameEnd() {
 			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 		}
 
-		// GPU側で実行が完了したPSOを解放する
+		// GPU側で実行が完了したPSO/テクスチャを解放する
 		UINT64 completedValue = m_Fence->GetCompletedValue();
-		m_PendingReleasePSOs.erase(
-			std::remove_if(m_PendingReleasePSOs.begin(), m_PendingReleasePSOs.end(),
-				[completedValue](const PendingReleasePSO& pending) {
-					return completedValue >= pending.fenceValue;
-				}),
-			m_PendingReleasePSOs.end()
-		);
-
-		// GPU側で実行が完了したテクスチャを解放する
-		m_PendingReleaseTextures.erase(
-			std::remove_if(m_PendingReleaseTextures.begin(), m_PendingReleaseTextures.end(),
-				[completedValue](const PendingReleaseTexture& pending) {
-					return completedValue >= pending.fenceValue;
-				}),
-			m_PendingReleaseTextures.end()
-		);
+		m_PendingReleasePSOs.ReleaseCompleted(completedValue);
+		m_PendingReleaseTextures.ReleaseCompleted(completedValue);
 	}
 
 
@@ -1146,78 +953,7 @@ void RenderManager::DrawScreen()
 
 std::unique_ptr<TEXTURE> RenderManager::LoadTexture(const char* FileName)
 {
-	std::unique_ptr<TEXTURE> texture = std::make_unique<TEXTURE>();
-
-
-	std::unique_ptr<uint8_t[]> ddsData;
-	std::vector<D3D12_SUBRESOURCE_DATA> subresouceData;
-
-	wchar_t wFileName[MAX_PATH];
-	size_t size;
-	mbstowcs_s(&size, wFileName, FileName, MAX_PATH);
-
-	HRESULT hr = LoadDDSTextureFromFile(m_Device.Get(), wFileName, &texture->Resource, ddsData, subresouceData);
-	assert(SUCCEEDED(hr));
-
-	texture->Resource->SetName(wFileName);
-
-
-
-	D3D12_RESOURCE_DESC desc = texture->Resource->GetDesc();
-
-	unsigned int bpp, block;
-
-	if (desc.Format == DXGI_FORMAT_BC1_UNORM)
-	{
-		bpp = 4;
-		block = 4;
-	}
-	else if (desc.Format == DXGI_FORMAT_BC6H_UF16)
-	{
-		bpp = 8;
-		block = 4;
-	}
-	else
-	{
-		bpp = 32;
-		block = 1;
-	}
-	
-
-
-
-
-	for (unsigned int a = 0; a < desc.DepthOrArraySize; a++)
-	{
-		for (unsigned int m = 0; m < desc.MipLevels; m++)
-		{
-			unsigned int s = a * desc.MipLevels + m;
-
-			unsigned int width = (unsigned int)subresouceData[s].RowPitch * 8 / bpp / block;
-			unsigned int height = (unsigned int)subresouceData[s].SlicePitch / (unsigned int)subresouceData[s].RowPitch * block;
-
-			D3D12_BOX box = { 0, 0, 0, width, height, 1 };
-
-			hr = texture->Resource->WriteToSubresource(s, &box, subresouceData[s].pData, (UINT)subresouceData[s].RowPitch, (UINT)subresouceData[s].SlicePitch);
-			assert(SUCCEEDED(hr));
-		}
-	}
-
-	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-		texture->Resource.Get(),
-		D3D12_RESOURCE_STATE_COPY_DEST,
-		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	m_GraphicsCommandList->ResourceBarrier(1, &trans);
-
-
-
-
-
-	texture->SRVIndex = CreateShaderResourceView(texture->Resource.Get());
-
-
-
-	return std::move(texture);
+	return TextureLoader::Load(m_Device.Get(), m_GraphicsCommandList.Get(), m_SRVAllocator, FileName);
 }
 
 
@@ -1404,12 +1140,11 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 unsigned int RenderManager::CreateShaderResourceView(ID3D12Resource* Resource)
 {
 
-	unsigned int index = m_SRVDescriptorPool.front();
-	m_SRVDescriptorPool.pop_front();
+	unsigned int index = m_SRVAllocator.Allocate();
 
 
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * index;
 
@@ -1439,7 +1174,7 @@ void RenderManager::CreateShaderResourceViewAt(unsigned int index, ID3D12Resourc
 {
 	if (!Resource) return;
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * index;
 
@@ -1487,7 +1222,7 @@ void RenderManager::SetMaterialBlockSlot(unsigned int blockBase, unsigned int sl
 // space1テーブルをバインド（ブロック先頭ハンドルを丸ごと）
 void RenderManager::SetMaterialTextureTable(unsigned int blockBase)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * blockBase;
 
@@ -1544,13 +1279,13 @@ void RenderManager::DeferReleaseTexture(std::shared_ptr<Types::TEXTURE> tex)
 {
 	if (!tex) return;
 	// 記録中フレーム＋飛行中フレームをまたいで安全に保持するため +2 のマージン
-	m_PendingReleaseTextures.push_back({ std::move(tex), m_FenceValue + 2 });
+	m_PendingReleaseTextures.Push(std::move(tex), m_FenceValue + 2);
 }
 
 
 D3D12_GPU_DESCRIPTOR_HANDLE RenderManager::GetShaderResourceViewHandle(unsigned int SRVIndex)
 {
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * SRVIndex;
 
@@ -1560,7 +1295,7 @@ D3D12_GPU_DESCRIPTOR_HANDLE RenderManager::GetShaderResourceViewHandle(unsigned 
 
 void RenderManager::ReleaseShaderResourceView(unsigned int SRVIndex)
 {
-	m_SRVDescriptorPool.push_front(SRVIndex);
+	m_SRVAllocator.Free(SRVIndex);
 }
 
 
@@ -1569,12 +1304,11 @@ void RenderManager::ReleaseShaderResourceView(unsigned int SRVIndex)
 
 unsigned int RenderManager::CreateRenderTargetView(ID3D12Resource* Resource, unsigned int MipLevel)
 {
-	unsigned int index = m_RTVDescriptorPool.front();
-	m_RTVDescriptorPool.pop_front();
+	unsigned int index = m_RTVAllocator.Allocate();
 
 
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	handle.ptr += size * index;
 
@@ -1589,7 +1323,7 @@ unsigned int RenderManager::CreateRenderTargetView(ID3D12Resource* Resource, uns
 D3D12_CPU_DESCRIPTOR_HANDLE RenderManager::GetRenderTargetViewHandle(unsigned int RTVIndex)
 {
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handle = m_RTVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	handle.ptr += size * RTVIndex;
 
@@ -1600,7 +1334,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderManager::GetRenderTargetViewHandle(unsigned in
 
 void RenderManager::ReleaseRenderTargetView(unsigned int SRVIndex)
 {
-	m_RTVDescriptorPool.push_front(SRVIndex);
+	m_RTVAllocator.Free(SRVIndex);
 }
 
 
@@ -1609,60 +1343,7 @@ void RenderManager::ReleaseRenderTargetView(unsigned int SRVIndex)
 
 std::unique_ptr<RENDER_TARGET> RenderManager::CreateRenderTarget(unsigned int Width, unsigned int Height, DXGI_FORMAT Format, const FLOAT* ClearColor, unsigned int MipLeve)
 {
-
-	D3D12_HEAP_PROPERTIES properties{};
-	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	properties.CreationNodeMask = 0;
-	properties.VisibleNodeMask = 0;
-
-	D3D12_RESOURCE_DESC desc{};
-	desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	desc.Width = Width;
-	desc.Height = Height;
-	desc.DepthOrArraySize = 1;
-	desc.MipLevels = MipLeve;
-	desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
-	desc.SampleDesc.Count = 1;
-	desc.SampleDesc.Quality = 0;
-	desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-	desc.Format = Format;
-
-	D3D12_CLEAR_VALUE clearValue{};
-	if (ClearColor) {
-		clearValue.Color[0] = ClearColor[0];
-		clearValue.Color[1] = ClearColor[1];
-		clearValue.Color[2] = ClearColor[2];
-		clearValue.Color[3] = ClearColor[3];
-	} else {
-		clearValue.Color[0] = 0.0f;
-		clearValue.Color[1] = 0.0f;
-		clearValue.Color[2] = 0.0f;
-		clearValue.Color[3] = 1.0f;
-	}
-	clearValue.Format = Format;
-
-
-	std::unique_ptr<RENDER_TARGET> renderTarget = std::make_unique<RENDER_TARGET>();
-
-	HRESULT hr = m_Device->CreateCommittedResource(&properties,
-													D3D12_HEAP_FLAG_NONE,
-													&desc,
-													D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-													&clearValue,
-													IID_PPV_ARGS(&renderTarget->Resource));
-	assert(SUCCEEDED(hr));
-
-
-	renderTarget->SRVIndex = CreateShaderResourceView(renderTarget->Resource.Get());
-	renderTarget->SRVHandle = GetShaderResourceViewHandle(renderTarget->SRVIndex);
-
-	renderTarget->RTVIndex = CreateRenderTargetView(renderTarget->Resource.Get());
-	renderTarget->RTVHandle = GetRenderTargetViewHandle(renderTarget->RTVIndex);
-
-
-	return std::move(renderTarget);
+	return RenderTargetFactory::Create(m_Device.Get(), m_SRVAllocator, m_RTVAllocator, Width, Height, Format, ClearColor, MipLeve);
 }
 
 void EngineCore::Render::RenderManager::CreateRenderTarget() {
@@ -1684,20 +1365,8 @@ void EngineCore::Render::RenderManager::CreateRenderTarget() {
 
 void RenderManager::SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size)
 {
-	assert(m_ConstantBufferIndex[m_RTIndex] < CONSTANT_BUFFER_MAX);
-
-
-	memcpy(m_ConstantBufferPointer[m_RTIndex] + CONSTANT_BUFFER_SIZE * m_ConstantBufferIndex[m_RTIndex], Constant, Size);
-
-
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	handle.ptr += size * m_ConstantBufferView[m_RTIndex][m_ConstantBufferIndex[m_RTIndex]];
-
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_ConstantBufferRing.Write(m_RTIndex, Constant, Size);
 	m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)Type, handle);
-
-
-	m_ConstantBufferIndex[m_RTIndex]++;
 }
 
 
@@ -1707,7 +1376,7 @@ void RenderManager::SetConstant(CONSTANT_TYPE Type, const void* Constant, unsign
 void RenderManager::SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture)
 {
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * Texture->SRVIndex;
 
@@ -1720,7 +1389,7 @@ void RenderManager::SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture)
 void RenderManager::SetTexture(TEXTURE_TYPE Type, const RENDER_TARGET* Texture)
 {
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart();
 	unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	handle.ptr += size * Texture->SRVIndex;
 
@@ -1819,7 +1488,7 @@ void RenderManager::RegisterPipelineState(const std::string& name, ComPtr<ID3D12
 	auto it = m_PipelineState.find(name);
 	if (it != m_PipelineState.end()) {
 		// 次に提出される予定のフェンス値を紐付けて退避させる
-		m_PendingReleasePSOs.push_back({ it->second, m_FenceValue + 1 });
+		m_PendingReleasePSOs.Push(it->second, m_FenceValue + 1);
 	}
 	m_PipelineState[name] = pipelineState;
 }

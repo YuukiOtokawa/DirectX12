@@ -5,6 +5,12 @@
 #include "../Utility/VectorClass.h"
 #include "Material.h"
 #include "ShaderMetadata.h"
+#include "DescriptorAllocator.h"
+#include "DeferredReleaseQueue.h"
+#include "ConstantBufferRing.h"
+#include "TextureLoader.h"
+#include "RenderTargetFactory.h"
+#include "GraphicsDevice.h"
 #include <memory>
 
 namespace EngineCore::Render {
@@ -121,6 +127,8 @@ namespace EngineCore::Render {
 		UINT64								m_FenceValue;
 		UINT								m_RTIndex;
 
+		GraphicsDevice						m_GraphicsDevice;
+
 		ComPtr<IDXGIFactory4>				m_Factory;
 		ComPtr<IDXGIAdapter3>				m_Adapter;
 		ComPtr<ID3D12Device>				m_Device;
@@ -143,8 +151,7 @@ namespace EngineCore::Render {
 		D3D12_RECT							m_ScissorRect;
 		D3D12_VIEWPORT						m_Viewport;
 
-		ComPtr<ID3D12DescriptorHeap>		m_SRVDescriptorHeap;
-		std::list<unsigned int>				m_SRVDescriptorPool;
+		DescriptorAllocator					m_SRVAllocator;
 		static const unsigned int			SRV_DESCRIPTOR_MAX = 10000;
 
 		// --- マテリアルテクスチャ（register space1 の連続ディスクリプタテーブル）---
@@ -153,34 +160,20 @@ namespace EngineCore::Render {
 		static const unsigned int			MATERIAL_TEX_ROOT_PARAM = 12;  // ルートパラメータ番号（CBV4+SRV8の次）
 		static const unsigned int			MATERIAL_BLOCK_REGION_BASE = SRV_DESCRIPTOR_MAX - MATERIAL_TEX_SLOTS * MATERIAL_BLOCK_MAX; // = 9488
 
-		ComPtr<ID3D12DescriptorHeap>		m_RTVDescriptorHeap;
-		std::list<unsigned int>				m_RTVDescriptorPool;
+		DescriptorAllocator					m_RTVAllocator;
 		static const unsigned int			RTV_DESCRIPTOR_MAX = 1000;
 
-		static const unsigned int			CONSTANT_BUFFER_SIZE = 512;
-		static const unsigned int			CONSTANT_BUFFER_MAX = 1000;
-		ComPtr<ID3D12Resource>				m_ConstantBuffer[2];
-		byte* m_ConstantBufferPointer[2];
-		unsigned int						m_ConstantBufferView[2][CONSTANT_BUFFER_MAX];
-		unsigned int						m_ConstantBufferIndex[2];
+		ConstantBufferRing					m_ConstantBufferRing;
 
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
 
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
 		std::unordered_map<std::string, ShaderMetadata>					m_ShaderMetadataMap;
 
-		struct PendingReleasePSO {
-			ComPtr<ID3D12PipelineState> pso;
-			UINT64 fenceValue;
-		};
-		std::vector<PendingReleasePSO>									m_PendingReleasePSOs;
+		DeferredReleaseQueue<ComPtr<ID3D12PipelineState>>				m_PendingReleasePSOs;
 
 		// GPU使用中の可能性があるテクスチャを、フェンス通過まで保持してから解放する
-		struct PendingReleaseTexture {
-			std::shared_ptr<Types::TEXTURE> tex;
-			UINT64 fenceValue;
-		};
-		std::vector<PendingReleaseTexture>								m_PendingReleaseTextures;
+		DeferredReleaseQueue<std::shared_ptr<Types::TEXTURE>>			m_PendingReleaseTextures;
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
@@ -248,7 +241,7 @@ namespace EngineCore::Render {
 		D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetViewHandle(unsigned int RTVIndex);
 
 		UINT GetShaderResourceViewIndex(D3D12_CPU_DESCRIPTOR_HANDLE CPUHandle) {
-			D3D12_CPU_DESCRIPTOR_HANDLE startHandle = m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			D3D12_CPU_DESCRIPTOR_HANDLE startHandle = m_SRVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 			unsigned int size = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			return (unsigned int)((CPUHandle.ptr - startHandle.ptr) / size);
 		}
@@ -372,11 +365,11 @@ namespace EngineCore::Render {
 			return nullptr;
 		}
 
-		ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return m_SRVDescriptorHeap.Get(); }
+		ID3D12DescriptorHeap* GetSRVDescriptorHeap() { return m_SRVAllocator.GetHeap(); }
 		D3D12_CPU_DESCRIPTOR_HANDLE GetSRVDescriptorCPUHandle() {
-			return m_SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			return m_SRVAllocator.GetHeap()->GetCPUDescriptorHandleForHeapStart();
 		}
-		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(); }
+		D3D12_GPU_DESCRIPTOR_HANDLE GetSRVDescriptorGPUHandle() { return m_SRVAllocator.GetHeap()->GetGPUDescriptorHandleForHeapStart(); }
 		ID3D12CommandQueue* GetCommandQueue() { return m_CommandQueue.Get(); }
 
 		RENDER_TARGET* GetColorBuffer() { return m_ColorBuffer.get(); }
