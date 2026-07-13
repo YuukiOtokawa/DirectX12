@@ -1,5 +1,5 @@
 #include "SpriteRenderer.h"
-#include "Main.h"
+#include "../../Manager/Main.h"
 
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;

@@ -21,6 +21,9 @@ void MeshRenderer::Draw() {
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	if (!renderManager) return;
 
+	// 影を落とさないオブジェクトはシャドウパスでは描かない
+	if (renderManager->IsShadowPass() && !m_CastShadows) return;
+
 	auto transform = GetOwner()->GetComponent<Transform>();
 	if (!transform) return;
 
@@ -47,14 +50,16 @@ void MeshRenderer::Draw() {
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(meshFilter->GetPrimitiveTopology());
 
 	// Bind Pipeline State (Dynamic or Legacy)
-	if (!m_Material.GetShaderName().empty()) {
+    if (renderManager->IsShadowPass()) {
+        renderManager->SetPipelineState("Shadow");
+    } else if (!m_Material.GetShaderName().empty()) {
 		renderManager->SetPipelineState(m_Material.GetShaderName().c_str());
 	} else {
 		renderManager->SetPipelineState("Geometry");
 	}
 
 	// Bind Material Constant Buffer (Dynamic or Legacy)
-	if (!m_Material.GetShaderName().empty()) {
+    if (renderManager->IsShadowPass() || !m_Material.GetShaderName().empty()) {
 		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
 	} else {
 		EngineCore::Render::MaterialConstant constData = m_Material.GetConstantData();
@@ -89,7 +94,9 @@ void MeshRenderer::Draw() {
 
 void MeshRenderer::Inspector() {
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
-	
+
+	ImGui::Checkbox("Cast Shadows", &m_CastShadows);
+
 	// --- Render Pass Picker ---
 	ImGui::Text("Render Pass");
 	ImGui::SameLine();

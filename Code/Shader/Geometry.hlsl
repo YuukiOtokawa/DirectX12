@@ -20,6 +20,7 @@ float3 PerturbNormal(float3 N, float3 worldPos, float2 uv, float3 tn)
 
 // register space1 の法線マップ。未割当時は白(1,1,1)ダミーが入る。
 Texture2D _NormalMap : register(t0, space1);  // [Texture] "Normal Map"
+Texture2D _ArmMap : register(t1, space1); // [Texture] "ARM Map"
 
 PS_INPUT vtx(VS_INPUT input)
 {
@@ -45,9 +46,12 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     float origLen = length(input.Normal.xyz); // 元の長さ（Deferredのシルエット減衰用）を保持
 
     // 法線マップ（未割当=白ダミーのときはフラット法線として素通し）
+    // ダミーは非圧縮1x1で必ず厳密に(1,1,1)になるため、圧縮アーティファクトによる
+    // 誤判定を避けるためイコール判定にしている（>0.99fだとBC1等の量子化誤差で
+    // 白に近い実データを未割当と誤認する場合がある）
     float3 raw = _NormalMap.Sample(Sampler, input.TexCoord).xyz;
     float3 worldN = N;
-    if (!(raw.r > 0.99f && raw.g > 0.99f && raw.b > 0.99f))
+    if (!(raw.r == 1.0f && raw.g == 1.0f && raw.b == 1.0f))
     {
         float3 tn = raw * 2.0f - 1.0f;
         tn.xy *= Material.NormalWeight;   // NormalWeight を法線強度として流用
@@ -60,7 +64,8 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     output.Position = input.WorldPosition;
 
     // G-Bufferにマテリアル属性を書き込む
-    output.Material = float4(Material.Metallic, Material.Specular, Material.Roughness, Material.NormalWeight);
+    output.Material = _ArmMap.Sample(Sampler, input.TexCoord);
+    output.Material *= float4(Material.Metallic, Material.Specular, Material.Roughness, Material.NormalWeight);
     output.Emission = Material.EmissionColor;
 
     return output;

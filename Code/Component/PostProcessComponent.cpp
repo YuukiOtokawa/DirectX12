@@ -2,6 +2,7 @@
 #include "RenderManager.h"
 #include "../../ImGui/Code/imgui.h"
 #include "../Utility/FilePicker.h"
+#include "../Utility/ResourcePath.h"
 #include "MaterialPropertyInspector.h"
 #include <cstring>
 #include <filesystem>
@@ -13,7 +14,7 @@ PostProcessComponent::PostProcessComponent() {
 	m_NewShaderPath[0] = '\0';
 	
 	// デフォルトで InvertColor を登録しておく
-	m_Passes.push_back({ "InvertColor", "Code/Shader/InvertColor.hlsl" });
+	m_Passes.push_back({ "InvertColor", SHADER_DIR "InvertColor.hlsl" });
 }
 
 void PostProcessComponent::Start() {

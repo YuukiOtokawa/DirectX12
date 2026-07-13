@@ -1,8 +1,9 @@
-#include "Main.h"
+#include "../Manager/Main.h"
 #include "RenderManager.h"
 
 #include "D3DX12.h"
-#include "DDSTextureLoader12.h"
+#include "../Utility/DDSTextureLoader12.h"
+#include "../Utility/ResourcePath.h"
 #include "dxgiformat.h"
 #include <d3dcompiler.h>
 #include <algorithm>
@@ -269,21 +270,27 @@ void RenderManager::Init()
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
-		m_PipelineState["Unlit"] = CreatePipeline("Code/Shader/Unlit.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::ForwardOpaque);
+		m_PipelineState["Unlit"] = CreatePipeline(SHADER_DIR "Unlit.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::ForwardOpaque);
 
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
-		m_PipelineState["Screen"] = CreatePipeline("Code/Shader/Screen.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["Screen"] = CreatePipeline(SHADER_DIR "Screen.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["Deferred"] = CreatePipeline("Code/Shader/Deferred.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["Deferred"] = CreatePipeline(SHADER_DIR "Deferred.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+	}
+
+	{
+        DXGI_FORMAT RTVFormats[] = {DXGI_FORMAT_R16G16B16A16_FLOAT};
+		// 深度テスト必須（PostProcessだとDepthEnable=FALSEになり、描画順で深度が上書きされる）
+		m_PipelineState["Shadow"] = CreatePipeline(SHADER_DIR "Shadow.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::DeferredOpaque);
 	}
 
 	{
@@ -294,22 +301,22 @@ void RenderManager::Init()
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT
 		};
-		m_PipelineState["Geometry"] = CreatePipeline("Code/Shader/Geometry.hlsl", RTVFormats, _countof(RTVFormats));
+		m_PipelineState["Geometry"] = CreatePipeline(SHADER_DIR "Geometry.hlsl", RTVFormats, _countof(RTVFormats));
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["PostProcess"] = CreatePipeline("Code/Shader/PostProcess.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["PostProcess"] = CreatePipeline(SHADER_DIR "PostProcess.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["InvertColor"] = CreatePipeline("Code/Shader/InvertColor.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["InvertColor"] = CreatePipeline(SHADER_DIR "InvertColor.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	m_RenderTargetManager.InitGBuffers(m_Device.Get(), m_SRVAllocator, m_RTVAllocator);
 
-	m_EnvTexture = LoadTexture("Assets\\charolettenbrunn_park_2k.dds");
+	m_EnvTexture = LoadTexture(ASSET_DIR "charolettenbrunn_park_2k.dds");
 }
 
 
@@ -343,20 +350,23 @@ void RenderManager::WaitGPU()
 // Begin drawing
 //==================================================
 
-void RenderManager::DrawBegin()
-{
-	// Descriptor heaps
-	ID3D12DescriptorHeap* dh[] = { m_SRVAllocator.GetHeap() };
-	m_GraphicsCommandList->SetDescriptorHeaps(_countof(dh), dh);
+
+void RenderManager::DrawGeometryBegin() {
+    // Descriptor heaps
+    ID3D12DescriptorHeap *dh[] = {m_SRVAllocator.GetHeap()};
+    m_GraphicsCommandList->SetDescriptorHeaps(_countof(dh), dh);
 
 	// Root signature
-	m_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    m_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
 
 	// マテリアルテクスチャ（space1）の初期化を保証（初回のみ実行）
 	EnsureMaterialTextureSetup();
 
-	// Constant buffer index reset
-	m_ConstantBufferRing.ResetFrame(m_RTIndex);
+	// 定数バッファリングのリセットはここでは行わない。
+	// 1フレームに複数パス（シャドウ→GameView→SceneView→BackBuffer）が
+	// 同じコマンドリストへ記録され、GPU実行はFrameEnd後のため、
+	// パスごとにリセットすると後のパスが前のパスの定数を上書きしてしまう。
+	// リセットはFrameEndでフェンス通過後に1回だけ行う。
 
 	if (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		D3D12_VIEWPORT viewport = m_RenderTargetManager.GetViewport();
@@ -380,6 +390,57 @@ void RenderManager::DrawBegin()
 		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_GraphicsCommandList->ClearRenderTargetView(backBufferHandle, clearColor, 0, nullptr);
 		m_GraphicsCommandList->ClearDepthStencilView(depthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+    } else if (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::SHADOW_BUFFER) {
+        RENDER_TARGET *shadowMapBuffer =
+            m_RenderTargetManager.GetShadowMapBuffer();
+
+        // シャドウアトラス専用の深度バッファ（メイン深度は1920x1080でアトラスに足りない）
+        D3D12_CPU_DESCRIPTOR_HANDLE depthBufferHandle =
+            m_RenderTargetManager.GetShadowDepthBufferHandle();
+
+        // クリア用にアトラス全面のビューポート/シザーを設定
+        // （カスケードごとの枠は BeginShadowCascade で改めて設定する）
+        const float atlasSize = (float)RenderTargetManager::SHADOW_ATLAS_SIZE;
+        D3D12_VIEWPORT atlasViewport{};
+        atlasViewport.TopLeftX = 0.0f;
+        atlasViewport.TopLeftY = 0.0f;
+        atlasViewport.Width = atlasSize;
+        atlasViewport.Height = atlasSize;
+        atlasViewport.MinDepth = 0.0f;
+        atlasViewport.MaxDepth = 1.0f;
+
+        D3D12_RECT atlasScissor{};
+        atlasScissor.left = 0;
+        atlasScissor.top = 0;
+        atlasScissor.right = (LONG)RenderTargetManager::SHADOW_ATLAS_SIZE;
+        atlasScissor.bottom = (LONG)RenderTargetManager::SHADOW_ATLAS_SIZE;
+
+        m_GraphicsCommandList->RSSetViewports(1, &atlasViewport);
+        m_GraphicsCommandList->RSSetScissorRects(1, &atlasScissor);
+
+        // Transition G-Buffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
+        {
+            D3D12_RESOURCE_BARRIER barriers[1];
+            barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+                shadowMapBuffer->Resource.Get(),
+                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+                D3D12_RESOURCE_STATE_RENDER_TARGET);
+            m_GraphicsCommandList->ResourceBarrier(1, barriers);
+        }
+
+        D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] = {
+            shadowMapBuffer->RTVHandle};
+        m_GraphicsCommandList->OMSetRenderTargets(
+            _countof(renderTargets), renderTargets, false, &depthBufferHandle);
+
+        FLOAT clearColor[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+        m_GraphicsCommandList->ClearRenderTargetView(shadowMapBuffer->RTVHandle, clearColor, 0, nullptr);
+
+        m_GraphicsCommandList->ClearDepthStencilView(
+            depthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+		m_IsShadowPass = true;
 	}
 	else {
 		RENDER_TARGET* colorBuffer = m_RenderTargetManager.GetColorBuffer();
@@ -407,6 +468,7 @@ void RenderManager::DrawBegin()
 		m_GraphicsCommandList->RSSetViewports(1, &gbufferViewport);
 		m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
 
+		// Resource barriers for G-Buffer transition
 		// Transition G-Buffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
 		{
 			D3D12_RESOURCE_BARRIER barriers[5];
@@ -455,6 +517,36 @@ void RenderManager::DrawBegin()
 	}
 }
 
+// カスケードの枠（アトラス2x2グリッドのcascadeIndex番）へ描画先を切り替える。
+// DrawGeometryBegin(SHADOW_BUFFER)の後、カスケードごとに呼ぶ。
+void RenderManager::BeginShadowCascade(unsigned int cascadeIndex)
+{
+	RENDER_TARGET* shadowMapBuffer = m_RenderTargetManager.GetShadowMapBuffer();
+	D3D12_CPU_DESCRIPTOR_HANDLE shadowDepthHandle = m_RenderTargetManager.GetShadowDepthBufferHandle();
+
+	// DrawObjects中にRTVが差し替わる可能性があるので、カスケードごとに再バインドする
+	m_GraphicsCommandList->OMSetRenderTargets(1, &shadowMapBuffer->RTVHandle, FALSE, &shadowDepthHandle);
+
+	// 2x2グリッドの cascadeIndex 枠へビューポートを移す
+	const float tile = (float)RenderTargetManager::SHADOW_CASCADE_TILE;
+	D3D12_VIEWPORT viewport{};
+	viewport.TopLeftX = (cascadeIndex % 2) * tile;
+	viewport.TopLeftY = (cascadeIndex / 2) * tile;
+	viewport.Width = tile;
+	viewport.Height = tile;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	D3D12_RECT scissor{};
+	scissor.left   = (LONG)viewport.TopLeftX;
+	scissor.top    = (LONG)viewport.TopLeftY;
+	scissor.right  = (LONG)(viewport.TopLeftX + tile);
+	scissor.bottom = (LONG)(viewport.TopLeftY + tile);
+
+	m_GraphicsCommandList->RSSetViewports(1, &viewport);
+	m_GraphicsCommandList->RSSetScissorRects(1, &scissor);
+}
+
 //==================================================
 // End drawing
 //==================================================
@@ -463,7 +555,20 @@ void RenderManager::DrawEnd()
 {
 	if (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::BACK_BUFFER) {
 		// BackBuffer path: ImGui will render onto it, so we do nothing here.
-	}
+    } else if (m_RenderTargetManager.GetCurrentTarget() ==
+               RENDER_TARGET_TYPE::SHADOW_BUFFER) {
+        // Transition back buffer: PRESENT -> PIXEL_SHADER_RESOURCE
+        {
+            auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+                GetShadowMapBuffer()->Resource.Get(),
+                D3D12_RESOURCE_STATE_RENDER_TARGET,
+                D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
+                );
+            m_GraphicsCommandList->ResourceBarrier(1, &trans);
+        }
+
+		m_IsShadowPass = false;
+    }
 	else {
 		RENDER_TARGET* lightedColorBuffer = m_RenderTargetManager.GetLightedColorBuffer();
 		RENDER_TARGET* target = (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::GAME_VIEW) ? m_RenderTargetManager.GetGameViewTarget() : m_RenderTargetManager.GetSceneViewTarget();
@@ -610,6 +715,7 @@ void RenderManager::ResolveDeferredLighting()
 		SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, materialBuffer);
 		SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, emissionBuffer);
 		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::SHADOW, m_RenderTargetManager.GetShadowMapBuffer());
 		DrawScreen();
 	}
 }
@@ -821,6 +927,9 @@ void RenderManager::FrameEnd() {
 	hr = m_GraphicsCommandList->Reset(m_GraphicsCommandAllocator[m_RTIndex].Get(), m_PipelineState["Deferred"].Get());
 	assert(SUCCEEDED(hr));
 
+	// このバッファ(m_RTIndex)を使う前フレームのGPU実行はフェンスで完了済みなので、
+	// ここで1回だけ定数バッファリングを巻き戻す（フレーム内の全パスで共有）
+	m_ConstantBufferRing.ResetFrame(m_RTIndex);
 }
 
 void RenderManager::DrawScreen()

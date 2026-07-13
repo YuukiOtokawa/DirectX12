@@ -5,6 +5,11 @@ cbuffer EnvConstantBuffer : register(b0)
 {
     float4 LightDirection;
     float4 LightColor;
+    float Exposure;
+    float3 Padding;
+    float4x4 LightView;
+    float4x4 LightProjection;             // シャドウパス用（今描いているカスケードの射影）
+    float4x4 CascadeProjection[3];        // Deferredサンプリング用（全カスケード、近→遠）
 };
 
 
@@ -85,7 +90,9 @@ Texture2D<float4> TexturePosition : register(t2);
 Texture2D<float4> TextureMaterial : register(t3);
 Texture2D<float4> TextureEmission : register(t4);
 Texture2D<float4> TextureEnviroment : register(t5);
+Texture2D<float4> TextureShadow : register(t6);
 
 SamplerState Sampler : register(s0);
+SamplerState SamplerClamp : register(s1); // シャドウマップ用（WRAPだと範囲外で影が繰り返す）
 
 static float PI = 3.14159265359f;

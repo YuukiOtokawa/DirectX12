@@ -1,12 +1,16 @@
 #include "ImGuiController.h"
 
-#include "../../Main.h"
+#include "../Manager/Main.h"
 
 #include "../../ImGui/Code/imgui.h"
 #include "../../ImGui/Code/imgui_impl_win32.h"
 #include "../../ImGui/Code/imgui_impl_dx12.h"
 
+#ifdef _DEBUG
 #pragma comment(lib, "x64/Debug/imgui.lib")
+#else
+#pragma comment(lib, "x64/Release/imgui.lib")
+#endif
 
 #include "RenderManager.h"
 
@@ -71,7 +75,9 @@ void ImGuiController::Initialize() {
     };
 
     initInfo.SrvDescriptorHeap = renderManager->GetSRVDescriptorHeap();
-    assert(ImGui_ImplDX12_Init(&initInfo));
+    // assert の中で呼ぶと Release (NDEBUG) で呼び出しごと消えるため、必ず外で呼ぶ
+    bool imguiInitialized = ImGui_ImplDX12_Init(&initInfo);
+    assert(imguiInitialized);
 }
 
 void ImGuiController::BeginFrame() {

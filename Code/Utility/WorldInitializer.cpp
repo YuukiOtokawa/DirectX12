@@ -10,6 +10,7 @@
 #include "../Render/RenderManager.h"
 
 #include "FilePicker.h"
+#include "ResourcePath.h"
 #include "FBXLoader.h"
 #include "OBJLoader.h"
 
@@ -56,7 +57,7 @@ namespace EngineCore::Utility {
         // テクスチャのロードと設定
         auto renderManager = EngineCore::Render::RenderManager::GetInstance();
         if (renderManager) {
-            auto texture = renderManager->LoadTexture("Assets/field004.dds");
+            auto texture = renderManager->LoadTexture(ASSET_DIR "field004.dds");
             if (texture) {
                 std::vector<std::unique_ptr<EngineCore::Render::Types::TEXTURE>> textures;
                 textures.push_back(std::move(texture));
@@ -73,7 +74,7 @@ namespace EngineCore::Utility {
         auto meshRenderer = planeObj->AddComponent<General::MeshRenderer>();
         meshRenderer->SetShader("Geometry"); // デフォルトのジオメトリシェーダーを使用)
         meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::DeferredOpaque);
-        meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Geometry.hlsl");
+        meshRenderer->GetMaterial().SetShaderFilePath(SHADER_DIR "Geometry.hlsl");
 
         {
             // 2. 天球
@@ -91,7 +92,7 @@ namespace EngineCore::Utility {
             }
 
             auto skyVertexData = new VertexData();
-            LoadObjToVertexData("Assets\\sky.obj", skyVertexData);
+            LoadObjToVertexData(ASSET_DIR "sky.obj", skyVertexData);
 
 
             // MeshFilter と MeshRenderer の追加
@@ -104,7 +105,8 @@ namespace EngineCore::Utility {
             }
             meshRenderer->SetShader("Unlit"); // スカイドーム用のシェーダーを使用
             meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::ForwardOpaque);
-            meshRenderer->GetMaterial().SetShaderFilePath("Code/Shader/Unlit.hlsl");
+            meshRenderer->GetMaterial().SetShaderFilePath(SHADER_DIR "Unlit.hlsl");
+            meshRenderer->SetCastShadows(false); // 天球は影を落とさない
         }
 
         // 3. ライトオブジェクト

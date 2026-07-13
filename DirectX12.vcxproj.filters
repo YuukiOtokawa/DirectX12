@@ -15,13 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DDSTextureLoader12.cpp">
+    <ClCompile Include="Code\Utility\DDSTextureLoader12.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="GameManager.cpp">
+    <ClCompile Include="Code\Manager\GameManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Main.cpp">
+    <ClCompile Include="Code\Manager\Main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Code\Render\RenderManager.cpp">
@@ -66,7 +66,7 @@
     <ClCompile Include="Code\GUIController\WindowManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="YamlConfigLoader.cpp">
+    <ClCompile Include="Code\Manager\YamlConfigLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Code\Component\Component.cpp">
@@ -143,13 +143,13 @@
     <ClInclude Include="Code\Render\D3DX12.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="DDSTextureLoader12.h">
+    <ClInclude Include="Code\Utility\DDSTextureLoader12.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="GameManager.h">
+    <ClInclude Include="Code\Manager\GameManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Main.h">
+    <ClInclude Include="Code\Manager\Main.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Code\Render\RenderManager.h">
@@ -206,7 +206,7 @@
     <ClInclude Include="Code\Render\RenderSystem.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="YamlConfigLoader.h">
+    <ClInclude Include="Code\Manager\YamlConfigLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Code\Utility\VectorClass.h">
@@ -299,5 +299,6 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Code\Shader\GrayScale.hlsl" />
+    <FxCompile Include="Code\Shader\Shadow.hlsl" />
   </ItemGroup>
 </Project>

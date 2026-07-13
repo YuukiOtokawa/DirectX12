@@ -1,4 +1,4 @@
-#include "Main.h"
+#include "../Manager/Main.h"
 #include "RenderTargetManager.h"
 #include "RenderManager.h"
 #include "RenderTargetFactory.h"
@@ -46,10 +46,10 @@ namespace EngineCore::Render {
 		m_BackBuffer[0]->SetName(L"RenderTarget");
 		m_BackBuffer[1]->SetName(L"RenderTarget");
 
-		// DepthBufferDescriptorHeap
+		// DepthBufferDescriptorHeap（0: メイン深度, 1: シャドウアトラス深度）
 		{
 			D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-			descriptorHeapDesc.NumDescriptors = 1;
+			descriptorHeapDesc.NumDescriptors = 2;
 			descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 			descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 			descriptorHeapDesc.NodeMask = 0;
@@ -60,6 +60,9 @@ namespace EngineCore::Render {
 
 		CreateDepthBuffer(device, backBufferWidth, backBufferHeight);
 		m_DepthBuffer->SetName(L"DepthBuffer");
+
+		CreateShadowDepthBuffer(device);
+		m_ShadowDepthBuffer->SetName(L"ShadowDepthBuffer");
 	}
 
 	void RenderTargetManager::InitGBuffers(ID3D12Device* device, DescriptorAllocator& srvAllocator, DescriptorAllocator& rtvAllocator)
@@ -85,6 +88,11 @@ namespace EngineCore::Render {
 		m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_LightedColorBuffer->Resource->SetName(L"LightedColorBuffer");
 
+        FLOAT clearColor[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+		// カスケードアトラス（2x2グリッドに最大4カスケードを敷き詰める）
+		m_ShadowMapBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, SHADOW_ATLAS_SIZE, SHADOW_ATLAS_SIZE, DXGI_FORMAT_R16G16B16A16_FLOAT, clearColor);
+		m_ShadowMapBuffer->Resource->SetName(L"ShadowMapBuffer");
+
 		m_PostProcessBuffer1 = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_PostProcessBuffer1->Resource->SetName(L"PostProcessBuffer1");
 	}
@@ -101,7 +109,7 @@ namespace EngineCore::Render {
 		}
 	}
 
-	void RenderTargetManager::CreateDepthBuffer(ID3D12Device* device, unsigned int width, unsigned int height)
+	void RenderTargetManager::CreateDepthResource(ID3D12Device* device, unsigned int width, unsigned int height, ComPtr<ID3D12Resource>& outBuffer, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle)
 	{
 		D3D12_RESOURCE_DESC resourceDesc{};
 		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -127,7 +135,7 @@ namespace EngineCore::Render {
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&clearValue,
-			IID_PPV_ARGS(&m_DepthBuffer));
+			IID_PPV_ARGS(&outBuffer));
 		assert(SUCCEEDED(hr));
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
@@ -136,8 +144,21 @@ namespace EngineCore::Render {
 		dsvDesc.Texture2D.MipSlice = 0;
 		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
+		device->CreateDepthStencilView(outBuffer.Get(), &dsvDesc, dsvHandle);
+	}
+
+	void RenderTargetManager::CreateDepthBuffer(ID3D12Device* device, unsigned int width, unsigned int height)
+	{
 		m_DepthBufferHandle = m_DepthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-		device->CreateDepthStencilView(m_DepthBuffer.Get(), &dsvDesc, m_DepthBufferHandle);
+		CreateDepthResource(device, width, height, m_DepthBuffer, m_DepthBufferHandle);
+	}
+
+	void RenderTargetManager::CreateShadowDepthBuffer(ID3D12Device* device)
+	{
+		unsigned int increment = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+		m_ShadowDepthBufferHandle = m_DepthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+		m_ShadowDepthBufferHandle.ptr += increment; // ヒープ1番: シャドウアトラス深度
+		CreateDepthResource(device, SHADOW_ATLAS_SIZE, SHADOW_ATLAS_SIZE, m_ShadowDepthBuffer, m_ShadowDepthBufferHandle);
 	}
 
 	void RenderTargetManager::ResetBackBuffer()

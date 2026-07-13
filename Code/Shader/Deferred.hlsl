@@ -49,13 +49,58 @@ PS_OUTPUT pix(PS_INPUT input)
     float NoL = saturate(dot(norm, lightDirection));
     float VoH = saturate(dot(eye, halfv));
 
-    float roughness = max(0.01f, matParams.b); // b: Roughness
-    float metallic = matParams.r;              // r: Metallic
+    float ambientocclusion = matParams.r; // r: Ambient Occlusion
+    float roughness = max(0.01f, matParams.g); // g: Roughness
+    float metallic = matParams.b;              // b: Metallic
+
+    // Shadow mapping (CSM): 内側（高解像度）のカスケードから順に試し、範囲内の最初のものを使う
+    float shadowFactor = 1.0f;
+    {
+        // LightViewは全カスケード共通なので先に1回だけ掛ける
+        float4 lightViewPos = mul(float4(position.xyz, 1.0f), LightView);
+
+        for (int c = 0; c < 3; c++)
+        {
+            float4 shadowPos = mul(lightViewPos, CascadeProjection[c]);
+            float3 shadowNDC = shadowPos.xyz / shadowPos.w; // Directional(ortho)はw=1
+
+            // NDC(-1..+1, Yは上向き) -> UV(0..1, Vは下向き)
+            float2 shadowUV = shadowNDC.xy * float2(0.5f, -0.5f) + 0.5f;
+
+            // このカスケードの範囲外なら次の（より広い）カスケードへ。
+            // 枠の境界でPCFのタップが隣のカスケードを拾わないよう、少し内側までに制限
+            if (any(shadowUV < 0.002f) || any(shadowUV > 0.998f) || shadowNDC.z > 1.0f)
+                continue;
+
+            // 枠内UV(0..1) -> アトラス(2x2グリッド)上のUVへ
+            float2 atlasUV = shadowUV * 0.5f + float2((c % 2) * 0.5f, (c / 2) * 0.5f);
+
+            // PCF 3x3: 周囲9テクセルで「比較してから平均」して影の輪郭を柔らかくする
+            // （深度を平均してから比較すると、物体境界で無意味な中間深度になるのでNG）
+            const float atlasTexel = 1.0f / 2048.0f; // アトラス上の1テクセル（=枠1024pxの1テクセル）
+
+            float sum = 0.0f;
+            [unroll]
+            for (int y = -1; y <= 1; y++)
+            {
+                [unroll]
+                for (int x = -1; x <= 1; x++)
+                {
+                    float mapDepth = TextureShadow.Sample(SamplerClamp, atlasUV + float2(x, y) * atlasTexel).r;
+                    // バイアスで自己遮蔽の縞（シャドウアクネ）を防ぐ
+                    sum += (shadowNDC.z - 0.005f) > mapDepth ? 0.0f : 1.0f;
+                }
+            }
+            shadowFactor = sum / 9.0f;
+            break;
+        }
+    }
 
     float3 diffuse = 0.0f;
     {
-        float4 light = LightColor * saturate(dot(lightDirection, norm));
-        
+        // 直接光のみ影で遮る（IBLは環境光なのでそのまま）
+        float4 light = LightColor * saturate(dot(lightDirection, norm)) * shadowFactor;
+
         //IBL
         float2 iblTexcoord;
         iblTexcoord.x = -atan2(normal.x, normal.z) / (PI * 2);
@@ -88,8 +133,9 @@ PS_OUTPUT pix(PS_INPUT input)
         // Smoothly fade specular intensity at silhouette edges to prevent halo artifacts
         specular = specular * smoothstep(0.1f, 0.9f, normalLength);
     }
-
-    output.Color.xyz = diffuse + specular + emission.xyz;
+    
+    // スペキュラも直接光由来なので影で遮る。emissionは自己発光なので影の影響を受けない
+    output.Color.xyz = diffuse + specular * shadowFactor + emission.xyz;
     output.Color.a = 1.0f;
 
     return output;

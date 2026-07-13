@@ -48,7 +48,7 @@ namespace EngineCore::RenderSystem {
 			component->Draw();
 		}
 
-		if (renderManager) {
+		if (renderManager && !renderManager->IsShadowPass()) {
 			// 4. Resolve Deferred Lighting (composite G-Buffer to final color target)
 			renderManager->ResolveDeferredLighting();
 

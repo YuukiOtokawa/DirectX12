@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Main.h"
+#include "../Manager/Main.h"
 
 #include "../Utility/VectorClass.h"
 #include "Material.h"
@@ -34,13 +34,20 @@ namespace EngineCore::Render {
 
 
 
+		// シャドウカスケード数（Light::CASCADE_COUNT・Common.hlsliの配列数と一致させること）
+		static const unsigned int SHADOW_CASCADE_COUNT = 3;
+
 		// 16*4バイト境界///////////////////////
 		// 光源データ Lightクラスに移動
 		struct ENV_CONSTANT
 		{
 			Vector4		LightDirection;
 			Vector4		LightColor;
-
+            float		Exposure;
+            Vector3		Padding; // 16バイト境界に合わせるためのパディング
+            XMFLOAT4X4 LightView;
+            XMFLOAT4X4 LightProjection;                          // シャドウパス用（今描いているカスケードの射影）
+            XMFLOAT4X4 CascadeProjection[SHADOW_CASCADE_COUNT]; // Deferredサンプリング用（全カスケードの射影）
 		};
 
 		// カメラデータ Cameraクラスに移動
@@ -177,6 +184,7 @@ namespace EngineCore::Render {
 		unsigned int				m_DefaultMaterialBlock = 0; // ステップ1検証用の既定ブロック
 		bool						m_MaterialTexInitialized = false;
 
+		bool						m_IsShadowPass = false;
 		void Init();
 
 	public:
@@ -222,7 +230,9 @@ namespace EngineCore::Render {
 
 		void WaitGPU();
 
-		void DrawBegin();
+		void DrawGeometryBegin();
+		// シャドウパス中、アトラス上のカスケード枠へビューポート/RTVを切り替える
+		void BeginShadowCascade(unsigned int cascadeIndex);
 		void DrawEnd();
 		void FrameEnd();
 
@@ -271,6 +281,7 @@ namespace EngineCore::Render {
 			MATERIAL,
 			EMISSION,
 			ENVIRONMENT,
+			SHADOW,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -326,7 +337,10 @@ namespace EngineCore::Render {
 		RENDER_TARGET* GetMaterialBuffer() { return m_RenderTargetManager.GetMaterialBuffer(); }
 		RENDER_TARGET* GetEmissionBuffer() { return m_RenderTargetManager.GetEmissionBuffer(); }
 		RENDER_TARGET* GetPostProcessBuffer() { return m_RenderTargetManager.GetPostProcessBuffer(); }
+        RENDER_TARGET *GetShadowMapBuffer() { return m_RenderTargetManager.GetShadowMapBuffer(); }
 		RENDER_TARGET* GetLightedColorBuffer() { return m_RenderTargetManager.GetLightedColorBuffer(); }
+
+		bool IsShadowPass() const { return m_IsShadowPass; }
 	private:
 		struct ActivePostProcessPass {
 			std::string name;

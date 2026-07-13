@@ -140,7 +140,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>yaml-cpp.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>yaml-cpp.lib;assimp-vc145-mtd.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\$(Configuration);$(SolutionDir)Code\assimp\lib;$(SolutionDir)Code\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -159,16 +159,16 @@
     <ClCompile Include="Code\Utility\FBXLoader.cpp" />
     <ClCompile Include="Code\Utility\FilePicker.cpp" />
     <ClCompile Include="Code\Utility\OBJLoader.cpp" />
-    <ClCompile Include="DDSTextureLoader12.cpp" />
+    <ClCompile Include="Code\Utility\DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="Code\GUIController\GameViewWindowController.cpp" />
     <ClCompile Include="Code\GUIController\SceneViewWindowController.cpp" />
-    <ClCompile Include="GameManager.cpp" />
+    <ClCompile Include="Code\Manager\GameManager.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
     <ClCompile Include="Code\GameObject\GameObject.cpp" />
     <ClCompile Include="Code\GUIController\HierarchyWindowController.cpp" />
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Code\Manager\Main.cpp" />
     <ClCompile Include="Code\Render\RenderManager.cpp" />
     <ClCompile Include="Code\Render\DescriptorAllocator.cpp" />
     <ClCompile Include="Code\Render\ConstantBufferRing.cpp" />
@@ -181,7 +181,7 @@
     <ClCompile Include="Code\Component\Polygon\SpriteRenderer.cpp" />
     <ClCompile Include="Code\Component\Polygon\Renderer.cpp" />
     <ClCompile Include="Code\Manager\ObjectManager.cpp" />
-    <ClCompile Include="YamlConfigLoader.cpp" />
+    <ClCompile Include="Code\Manager\YamlConfigLoader.cpp" />
     <ClCompile Include="Code\GUIController\WindowManager.cpp" />
     <ClCompile Include="Code\Render\RenderSystem.cpp" />
     <ClCompile Include="Code\Utility\WorldInitializer.cpp" />
@@ -206,16 +206,16 @@
     <ClInclude Include="Code\Render\D3DX12.h" />
     <ClInclude Include="Code\Component\Component.h" />
     <ClInclude Include="Code\Utility\VertexData.h" />
-    <ClInclude Include="DDSTextureLoader12.h" />
+    <ClInclude Include="Code\Utility\DDSTextureLoader12.h" />
     <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
     <ClInclude Include="Code\GUIController\GameViewWindowController.h" />
     <ClInclude Include="Code\GUIController\SceneViewWindowController.h" />
-    <ClInclude Include="GameManager.h" />
+    <ClInclude Include="Code\Manager\GameManager.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
     <ClInclude Include="Code\GameObject\GameObject.h" />
     <ClInclude Include="Code\GUIController\HierarchyWindowController.h" />
-    <ClInclude Include="Main.h" />
+    <ClInclude Include="Code\Manager\Main.h" />
     <ClInclude Include="Code\Render\RenderManager.h" />
     <ClInclude Include="Code\Render\DescriptorAllocator.h" />
     <ClInclude Include="Code\Render\DeferredReleaseQueue.h" />
@@ -231,7 +231,7 @@
     <ClInclude Include="Code\Manager\ObjectManager.h" />
     <ClInclude Include="Resource\resource.h" />
     <ClInclude Include="Code\Component\Polygon\SpriteRenderer.h" />
-    <ClInclude Include="YamlConfigLoader.h" />
+    <ClInclude Include="Code\Manager\YamlConfigLoader.h" />
     <ClInclude Include="Code\GUIController\WindowManager.h" />
     <ClInclude Include="Code\Render\RenderSystem.h" />
     <ClInclude Include="Code\Utility\WorldInitializer.h" />
@@ -273,6 +273,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Code\Shader\Shadow.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

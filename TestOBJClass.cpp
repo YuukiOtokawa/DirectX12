@@ -1,7 +1,8 @@
 #include "TestOBJClass.h"
+#include "Code/Utility/ResourcePath.h"
 
 TestOBJClass::TestOBJClass() {
-	model.Load("Assets\\torus.obj");
+	model.Load(ASSET_DIR "torus.obj");
 }
 
 void TestOBJClass::Update() {

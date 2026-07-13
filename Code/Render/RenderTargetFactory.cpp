@@ -1,4 +1,4 @@
-#include "Main.h"
+#include "../Manager/Main.h"
 #include "RenderTargetFactory.h"
 #include "RenderManager.h"
 #include <cassert>

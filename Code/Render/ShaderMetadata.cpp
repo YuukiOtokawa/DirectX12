@@ -1,4 +1,5 @@
 #include "ShaderMetadata.h"
+#include "../Utility/ResourcePath.h"
 #include <fstream>
 #include <sstream>
 #include <regex>
@@ -164,7 +165,7 @@ namespace EngineCore::Render {
 
         // 2. If cbuffer body not found in shader, check Common.hlsli if included
         if (cbufferContent.empty()) {
-            std::string commonPath = "Code/Shader/Common.hlsli";
+            std::string commonPath = SHADER_DIR "Common.hlsli";
             if (lastSlash != std::string::npos) {
                 commonPath = filePath.substr(0, lastSlash + 1) + "Common.hlsli";
             }

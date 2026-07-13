@@ -1,13 +1,53 @@
-#include "Main.h"
+#include "../Manager/Main.h"
 #include "TextureLoader.h"
 #include "RenderManager.h"
 #include "D3DX12.h"
-#include "DDSTextureLoader12.h"
+#include "../Utility/DDSTextureLoader12.h"
 #include <cassert>
 
 using namespace DirectX;
 
 namespace EngineCore::Render {
+
+	// ブロック圧縮フォーマットの bits-per-pixel / ブロックサイズ(px)を判定
+	// （BC1系=4bpp, BC2/3/5/6H/7系=8bpp、いずれも4x4ブロック。非圧縮は32bpp/block=1として扱う）
+	static void GetBlockCompressionInfo(DXGI_FORMAT format, unsigned int& bpp, unsigned int& block)
+	{
+		switch (format)
+		{
+		case DXGI_FORMAT_BC1_TYPELESS:
+		case DXGI_FORMAT_BC1_UNORM:
+		case DXGI_FORMAT_BC1_UNORM_SRGB:
+		case DXGI_FORMAT_BC4_TYPELESS:
+		case DXGI_FORMAT_BC4_UNORM:
+		case DXGI_FORMAT_BC4_SNORM:
+			bpp = 4;
+			block = 4;
+			break;
+		case DXGI_FORMAT_BC2_TYPELESS:
+		case DXGI_FORMAT_BC2_UNORM:
+		case DXGI_FORMAT_BC2_UNORM_SRGB:
+		case DXGI_FORMAT_BC3_TYPELESS:
+		case DXGI_FORMAT_BC3_UNORM:
+		case DXGI_FORMAT_BC3_UNORM_SRGB:
+		case DXGI_FORMAT_BC5_TYPELESS:
+		case DXGI_FORMAT_BC5_UNORM:
+		case DXGI_FORMAT_BC5_SNORM:
+		case DXGI_FORMAT_BC6H_TYPELESS:
+		case DXGI_FORMAT_BC6H_UF16:
+		case DXGI_FORMAT_BC6H_SF16:
+		case DXGI_FORMAT_BC7_TYPELESS:
+		case DXGI_FORMAT_BC7_UNORM:
+		case DXGI_FORMAT_BC7_UNORM_SRGB:
+			bpp = 8;
+			block = 4;
+			break;
+		default:
+			bpp = 32;
+			block = 1;
+			break;
+		}
+	}
 
 	std::unique_ptr<Types::TEXTURE> TextureLoader::Load(ID3D12Device* device, ID3D12GraphicsCommandList* cmdList, DescriptorAllocator& srvAllocator, const char* fileName)
 	{
@@ -28,22 +68,7 @@ namespace EngineCore::Render {
 		D3D12_RESOURCE_DESC desc = texture->Resource->GetDesc();
 
 		unsigned int bpp, block;
-
-		if (desc.Format == DXGI_FORMAT_BC1_UNORM)
-		{
-			bpp = 4;
-			block = 4;
-		}
-		else if (desc.Format == DXGI_FORMAT_BC6H_UF16)
-		{
-			bpp = 8;
-			block = 4;
-		}
-		else
-		{
-			bpp = 32;
-			block = 1;
-		}
+		GetBlockCompressionInfo(desc.Format, bpp, block);
 
 		for (unsigned int a = 0; a < desc.DepthOrArraySize; a++)
 		{
