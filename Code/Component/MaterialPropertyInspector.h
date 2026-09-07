@@ -20,6 +20,11 @@ namespace GUIHelper {
             // ラベルは表示名優先（無ければ変数名）
             const char* label = prop.displayName.empty() ? prop.name.c_str() : prop.displayName.c_str();
 
+            // [HDR] が付いていれば 0..1 のクランプを外す。ImGui は HDR と Float をセットで指定する必要がある。
+            const ImGuiColorEditFlags colorFlags = prop.isHDR
+                ? (ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float)
+                : ImGuiColorEditFlags_None;
+
             // [Header(...)] が指定されていれば区切りを出す
             if (!prop.header.empty()) {
                 ImGui::SeparatorText(prop.header.c_str());
@@ -29,7 +34,7 @@ namespace GUIHelper {
                 Vector4 val = mat.GetVector(prop.name);
                 float v[4] = { val.x, val.y, val.z, val.w };
                 bool edited = prop.isColor
-                    ? ImGui::ColorEdit4(label, v)
+                    ? ImGui::ColorEdit4(label, v, colorFlags)
                     : ImGui::DragFloat4(label, v, 0.01f);
                 if (edited) {
                     mat.SetVector(prop.name, Vector4(v[0], v[1], v[2], v[3]));
@@ -40,7 +45,7 @@ namespace GUIHelper {
                 Vector4 val = mat.GetVector(prop.name);
                 float v[3] = { val.x, val.y, val.z };
                 bool edited = prop.isColor
-                    ? ImGui::ColorEdit3(label, v)
+                    ? ImGui::ColorEdit3(label, v, colorFlags)
                     : ImGui::DragFloat3(label, v, 0.01f);
                 if (edited) {
                     mat.SetVector(prop.name, Vector4(v[0], v[1], v[2], 0.0f));
