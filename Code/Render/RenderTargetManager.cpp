@@ -4,6 +4,7 @@
 #include "RenderTargetFactory.h"
 #include "D3DX12.h"
 #include <cassert>
+#include <cstdio>
 
 namespace EngineCore::Render {
 
@@ -92,6 +93,33 @@ namespace EngineCore::Render {
 		// カスケードアトラス（2x2グリッドに最大4カスケードを敷き詰める）
 		m_ShadowMapBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, SHADOW_ATLAS_SIZE, SHADOW_ATLAS_SIZE, DXGI_FORMAT_R16G16B16A16_FLOAT, clearColor);
 		m_ShadowMapBuffer->Resource->SetName(L"ShadowMapBuffer");
+
+		// ブルーム用ミップピラミッド（半解像度から半分ずつ、MipUp/MipDown の 2 本）
+		{
+			unsigned int w = 1920 / 2;
+			unsigned int h = 1080 / 2;
+			m_BloomMipCount = 0;
+			for (unsigned int i = 0; i < BLOOM_MAX_MIPS; ++i) {
+				// 2px を切るとブラーのタップが意味を成さないので打ち切る
+				if (w < 2 || h < 2) break;
+
+				m_BloomMipDown[i] = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, w, h, DXGI_FORMAT_R16G16B16A16_FLOAT);
+				m_BloomMipUp[i]   = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, w, h, DXGI_FORMAT_R16G16B16A16_FLOAT);
+
+				wchar_t nameDown[32];
+				wchar_t nameUp[32];
+				swprintf_s(nameDown, L"BloomMipDown%u", i);
+				swprintf_s(nameUp,   L"BloomMipUp%u",   i);
+				m_BloomMipDown[i]->Resource->SetName(nameDown);
+				m_BloomMipUp[i]->Resource->SetName(nameUp);
+
+				++m_BloomMipCount;
+
+				// 奇数解像度は切り捨てで縮む。テクセルサイズは必ず RENDER_TARGET::Size から引くこと
+				w = (w > 1) ? (w / 2) : 1;
+				h = (h > 1) ? (h / 2) : 1;
+			}
+		}
 
 		m_PostProcessBuffer1 = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
 		m_PostProcessBuffer1->Resource->SetName(L"PostProcessBuffer1");

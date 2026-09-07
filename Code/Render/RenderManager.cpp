@@ -314,6 +314,18 @@ void RenderManager::Init()
 		m_PipelineState["InvertColor"] = CreatePipeline(SHADER_DIR "InvertColor.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
+	// Bloom : 1ファイル5エントリポイント。エントリ名だけ変えて PSO を作り分ける。
+	{
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+		const char* bloomShader = SHADER_DIR "Bloom.hlsl";
+
+		m_PipelineState["BloomPrefilter"] = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixPrefilter");
+		m_PipelineState["BloomBlurH"]     = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurH");
+		m_PipelineState["BloomBlurV"]     = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurV");
+		m_PipelineState["BloomUpsample"]  = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixUpsample");
+		m_PipelineState["BloomComposite"] = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixComposite");
+	}
+
 	m_RenderTargetManager.InitGBuffers(m_Device.Get(), m_SRVAllocator, m_RTVAllocator);
 
 	m_EnvTexture = LoadTexture(ASSET_DIR "charolettenbrunn_park_2k.dds");
@@ -841,6 +853,233 @@ void RenderManager::ApplyPostProcess()
 }
 
 //==================================================
+// Full-screen pass helper
+//==================================================
+
+void RenderManager::DrawFullScreenPass(const char* psoName,
+                                       const RENDER_TARGET* input,
+                                       const RENDER_TARGET* inputLow,
+                                       RENDER_TARGET* output,
+                                       const void* constantData,
+                                       unsigned int constantSize)
+{
+	// 全レンダーターゲットの待機状態は PIXEL_SHADER_RESOURCE。描く直前だけ上げて、描き終えたら戻す。
+	{
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			output->Resource.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+		m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+	}
+
+	// ビューポートは出力RTの実サイズから引く（ミップごとに変わるので固定値にできない）
+	D3D12_VIEWPORT viewport{};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Width    = output->Size.x;
+	viewport.Height   = output->Size.y;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	D3D12_RECT scissor{};
+	scissor.left   = 0;
+	scissor.top    = 0;
+	scissor.right  = (LONG)output->Size.x;
+	scissor.bottom = (LONG)output->Size.y;
+
+	m_GraphicsCommandList->RSSetViewports(1, &viewport);
+	m_GraphicsCommandList->RSSetScissorRects(1, &scissor);
+
+	m_GraphicsCommandList->OMSetRenderTargets(1, &output->RTVHandle, TRUE, nullptr);
+
+	FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	m_GraphicsCommandList->ClearRenderTargetView(output->RTVHandle, clearColor, 0, nullptr);
+
+	SetPipelineState(psoName);
+
+	if (input)    SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR,  input);
+	if (inputLow) SetTexture(RenderManager::TEXTURE_TYPE::SCENE_COLOR, inputLow);
+
+	if (constantData && constantSize > 0) {
+		SetConstant(RenderManager::CONSTANT_TYPE::SUBSET, constantData, constantSize);
+	}
+
+	DrawScreen();
+
+	{
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			output->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+	}
+}
+
+
+
+//==================================================
+// Apply Bloom
+//==================================================
+
+namespace {
+
+	// Bloom.hlsl の cbuffer BloomConstantBuffer (b3) と同じレイアウト。
+	// float4 境界を跨がないよう 32 バイトぴったりに収めてある。
+	struct BloomConstants {
+		float Threshold;
+		float Knee;
+		float Intensity;
+		float Scatter;
+		float InputTexel[2];
+		float LowMipTexel[2];
+	};
+
+	// テクセルサイズは必ず「入力側」かつ「実際に確保したサイズ」から引く。
+	// 奇数解像度は切り捨てで縮むので、2の累乗で割った想定値を使うとズレる。
+	inline void SetTexel(float (&dst)[2], const Types::RENDER_TARGET* rt)
+	{
+		dst[0] = 1.0f / ((rt->Size.x > 0.0f) ? rt->Size.x : 1.0f);
+		dst[1] = 1.0f / ((rt->Size.y > 0.0f) ? rt->Size.y : 1.0f);
+	}
+
+}
+
+void RenderManager::ApplyBloom()
+{
+	if (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::BACK_BUFFER) {
+		return;
+	}
+	if (!m_BloomSettings.Enabled) {
+		return;
+	}
+
+	const unsigned int mipCount = m_RenderTargetManager.GetBloomMipCount();
+	if (mipCount == 0) {
+		return;
+	}
+
+	RENDER_TARGET* lightedColorBuffer = m_RenderTargetManager.GetLightedColorBuffer();
+	RENDER_TARGET* postProcessBuffer  = m_RenderTargetManager.GetPostProcessBuffer();
+
+	// 入口契約: lightedColorBuffer は RENDER_TARGET 状態で合成済みの絵を持っている。
+	// Prefilter と Composite の2回サンプルするので、ここで PSR に落として最後まで維持する。
+	// ブルームチェーンは lightedColorBuffer に一度も書き込まないため、元絵の退避コピーは不要。
+	{
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			lightedColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+	}
+
+	BloomConstants cb{};
+	cb.Threshold = m_BloomSettings.Threshold;
+	cb.Knee      = (m_BloomSettings.Knee > 1e-4f) ? m_BloomSettings.Knee : 1e-4f;  // 0除算回避
+	cb.Intensity = m_BloomSettings.Intensity;
+	cb.Scatter   = m_BloomSettings.Scatter;
+
+	// --- 1) Prefilter : LightedColor -> MipDown[0] (1/2) ---
+	{
+		RENDER_TARGET* dst = m_RenderTargetManager.GetBloomMipDown(0);
+		SetTexel(cb.InputTexel,  lightedColorBuffer);
+		SetTexel(cb.LowMipTexel, lightedColorBuffer);
+		DrawFullScreenPass("BloomPrefilter", lightedColorBuffer, nullptr, dst, &cb, (unsigned int)sizeof(cb));
+	}
+
+	// --- 2) 下り : BlurH で半分に縮めつつ横ブラー、BlurV で縦ブラー ---
+	for (unsigned int i = 1; i < mipCount; ++i) {
+		RENDER_TARGET* src = m_RenderTargetManager.GetBloomMipDown(i - 1);
+		RENDER_TARGET* mid = m_RenderTargetManager.GetBloomMipUp(i);
+		RENDER_TARGET* dst = m_RenderTargetManager.GetBloomMipDown(i);
+
+		SetTexel(cb.InputTexel, src);
+		DrawFullScreenPass("BloomBlurH", src, nullptr, mid, &cb, (unsigned int)sizeof(cb));
+
+		SetTexel(cb.InputTexel, mid);
+		DrawFullScreenPass("BloomBlurV", mid, nullptr, dst, &cb, (unsigned int)sizeof(cb));
+	}
+
+	// --- 3) 上り : 低ミップを tent で拡大しながら1段上へ混ぜる ---
+	for (int i = (int)mipCount - 2; i >= 0; --i) {
+		RENDER_TARGET* high = m_RenderTargetManager.GetBloomMipDown(i);
+		RENDER_TARGET* low  = (i == (int)mipCount - 2)
+			? m_RenderTargetManager.GetBloomMipDown(i + 1)   // 最下段だけ MipDown を読む
+			: m_RenderTargetManager.GetBloomMipUp(i + 1);
+		RENDER_TARGET* dst  = m_RenderTargetManager.GetBloomMipUp(i);
+
+		SetTexel(cb.InputTexel,  high);
+		SetTexel(cb.LowMipTexel, low);
+		DrawFullScreenPass("BloomUpsample", high, low, dst, &cb, (unsigned int)sizeof(cb));
+	}
+
+	// mipCount == 1 のときは上りループが回らないので Prefilter の結果がそのまま最終になる
+	RENDER_TARGET* bloomResult = (mipCount >= 2)
+		? m_RenderTargetManager.GetBloomMipUp(0)
+		: m_RenderTargetManager.GetBloomMipDown(0);
+
+	// --- デバッグ表示 : 中間バッファをそのまま画面に出して確認する ---
+	if (m_BloomSettings.DebugView != 0) {
+		RENDER_TARGET* debugSrc = bloomResult;
+		switch (m_BloomSettings.DebugView) {
+		case 1:  debugSrc = m_RenderTargetManager.GetBloomMipDown(0); break;             // Prefilter の結果
+		case 2:  debugSrc = m_RenderTargetManager.GetBloomMipDown(mipCount - 1); break;  // 最小ミップ
+		default: debugSrc = bloomResult; break;                                          // 合成前の最終ブルーム
+		}
+
+		// lightedColorBuffer は PSR。中身を捨てて上書きするので、そのまま出力先に使える。
+		DrawFullScreenPass("PostProcess", debugSrc, nullptr, lightedColorBuffer);
+
+		// 出口契約に合わせて RENDER_TARGET へ戻す
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				lightedColorBuffer->Resource.Get(),
+				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+				D3D12_RESOURCE_STATE_RENDER_TARGET);
+			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
+		}
+		return;
+	}
+
+	// --- 4) Composite : LightedColor(t0) + bloom(t7) -> PostProcessBuffer1 ---
+	// 読みながら同じバッファには書けないので PostProcessBuffer1 を経由する。
+	// ApplyPostProcess がこの後 PostProcessBuffer1 を scratch に使うが、時間的に重ならない。
+	SetTexel(cb.InputTexel,  lightedColorBuffer);
+	SetTexel(cb.LowMipTexel, bloomResult);
+	DrawFullScreenPass("BloomComposite", lightedColorBuffer, bloomResult, postProcessBuffer, &cb, (unsigned int)sizeof(cb));
+
+	// --- 5) 結果を LightedColor へ戻す ---
+	{
+		D3D12_RESOURCE_BARRIER barriers[2];
+		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+			lightedColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_COPY_DEST);
+		barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+			postProcessBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_COPY_SOURCE);
+		m_GraphicsCommandList->ResourceBarrier(2, barriers);
+	}
+
+	m_GraphicsCommandList->CopyResource(lightedColorBuffer->Resource.Get(), postProcessBuffer->Resource.Get());
+
+	// 出口契約: LightedColor は RENDER_TARGET、PostProcessBuffer1 は PSR（待機状態）
+	{
+		D3D12_RESOURCE_BARRIER barriers[2];
+		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
+			lightedColorBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_RENDER_TARGET);
+		barriers[1] = CD3DX12_RESOURCE_BARRIER::Transition(
+			postProcessBuffer->Resource.Get(),
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		m_GraphicsCommandList->ResourceBarrier(2, barriers);
+	}
+}
+
+
+//==================================================
 // Begin Forward Pass
 //==================================================
 
@@ -965,7 +1204,7 @@ std::unique_ptr<TEXTURE> RenderManager::LoadTexture(const char* FileName)
 
 
 
-ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType)
+ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType, const char* vsEntry, const char* psEntry)
 {
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pipelineStateDesc{};
@@ -1009,9 +1248,9 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	ComPtr<ID3DBlob> psBlob;
 
 	// register space を使うため Shader Model 5.1 でコンパイル（5.0の上位互換）
-	bool vsSuccess = compileShader(ShaderFile, "vtx", "vs_5_1", &vsBlob);
+    bool vsSuccess = compileShader(ShaderFile, vsEntry, "vs_5_1", &vsBlob);
 	if (!vsSuccess) return nullptr;
-	bool psSuccess = compileShader(ShaderFile, "pix", "ps_5_1", &psBlob);
+	bool psSuccess = compileShader(ShaderFile, psEntry, "ps_5_1", &psBlob);
 	if (!psSuccess) return nullptr;
 
 	pipelineStateDesc.VS.pShaderBytecode = vsBlob->GetBufferPointer();
