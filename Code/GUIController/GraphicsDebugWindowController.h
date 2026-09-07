@@ -11,6 +11,9 @@ namespace GUIController::Window {
 			m_WindowName = "Graphics Debug Window";
 		}
 		void Draw() override;
+
+	private:
+		void DrawBloom();
     };
 
 }

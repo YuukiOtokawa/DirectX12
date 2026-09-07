@@ -63,6 +63,7 @@ namespace EngineCore::RenderSystem {
 
 		// 7. Apply Post-Process to the fully composited image (deferred + forward)
 		if (renderManager) {
+		    renderManager->ApplyBloom();
 			renderManager->ApplyPostProcess();
 		}
 	}

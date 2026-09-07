@@ -7,12 +7,13 @@
 //   "..."            表示名
 //   [Range(min,max)] スライダー範囲（float）
 //   [Color]/[Vector] float3/float4 のUI切り替え
+//   [HDR]            カラーのまま 0..1 のクランプを外す（自己発光など）
 //   [Header(...)]    区切りヘッダ
 //   [Default(...)]   初期値（HLSLのcbufferメンバは初期化子を書けないため）
 cbuffer MaterialProperties : register(b3)
 {
     float4 _BaseColor;   // [Header(Surface)] [Color] [Default(1,1,1,1)] "Base Color"
-    float4 _Emission;    // [Color] [Default(0,0,0,1)] "Emission"
+    float4 _Emission;    // [HDR] [Default(0,0,0,1)] "Emission"
     float  _Metallic;    // [Range(0,1)] "Metallic"
     float  _Roughness;   // [Range(0,1)] [Default(0.5)] "Roughness"
     float3 _Tint;        // [Vector] [Default(1,1,1)] "Tint (RGB)"

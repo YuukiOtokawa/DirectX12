@@ -300,5 +300,6 @@
   <ItemGroup>
     <FxCompile Include="Code\Shader\GrayScale.hlsl" />
     <FxCompile Include="Code\Shader\Shadow.hlsl" />
+    <FxCompile Include="Code\Shader\Bloom.hlsl" />
   </ItemGroup>
 </Project>

@@ -37,7 +37,7 @@ cbuffer SubsetConstantBuffer : register(b3)
     struct MATERIAL
     {
         float4 BaseColor;
-        float4 EmissionColor;
+        float4 EmissionColor; // [HDR] "Emission Color"
         float Metallic;
         float Specular;
         float Roughness;
@@ -91,6 +91,7 @@ Texture2D<float4> TextureMaterial : register(t3);
 Texture2D<float4> TextureEmission : register(t4);
 Texture2D<float4> TextureEnviroment : register(t5);
 Texture2D<float4> TextureShadow : register(t6);
+Texture2D<float4> TextureSceneColor : register(t7);
 
 SamplerState Sampler : register(s0);
 SamplerState SamplerClamp : register(s1); // シャドウマップ用（WRAPだと範囲外で影が繰り返す）

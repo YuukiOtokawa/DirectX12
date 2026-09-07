@@ -16,6 +16,9 @@ namespace EngineCore::Render {
 		static const unsigned int SHADOW_ATLAS_SIZE = 2048;
 		static const unsigned int SHADOW_CASCADE_TILE = 1024;
 
+		// ブルームのミップピラミッド段数の上限（実際の段数は解像度から決まる）
+		static const unsigned int BLOOM_MAX_MIPS = 5;
+
 		~RenderTargetManager();
 
 		void InitBackBufferAndDepth(ID3D12Device* device, IDXGISwapChain3* swapChain, int backBufferWidth, int backBufferHeight);
@@ -39,6 +42,9 @@ namespace EngineCore::Render {
 		Types::RENDER_TARGET* GetPostProcessBuffer() const { return m_PostProcessBuffer1.get(); }
         Types::RENDER_TARGET *GetShadowMapBuffer() const { return m_ShadowMapBuffer.get(); }
 		Types::RENDER_TARGET* GetLightedColorBuffer() const { return m_LightedColorBuffer.get(); }
+		Types::RENDER_TARGET* GetBloomMipUp(unsigned int index) const { return m_BloomMipUp[index].get(); }
+		Types::RENDER_TARGET* GetBloomMipDown(unsigned int index) const { return m_BloomMipDown[index].get(); }
+		unsigned int GetBloomMipCount() const { return m_BloomMipCount; }
 		Types::RENDER_TARGET* GetGameViewTarget() const { return m_GameViewTarget.get(); }
 		Types::RENDER_TARGET* GetSceneViewTarget() const { return m_SceneViewTarget.get(); }
 
@@ -83,6 +89,11 @@ namespace EngineCore::Render {
 		std::unique_ptr<Types::RENDER_TARGET>	m_LightedColorBuffer;
 		std::unique_ptr<Types::RENDER_TARGET>	m_PostProcessBuffer1;
         std::unique_ptr<Types::RENDER_TARGET>	m_ShadowMapBuffer;
+		// ブルーム用ミップピラミッド。ブラーが H/V で ping-pong するため 2 本必要
+		// （BlurH: MipDown[i-1] -> MipUp[i] / BlurV: MipUp[i] -> MipDown[i]）
+		std::unique_ptr<Types::RENDER_TARGET>	m_BloomMipUp[BLOOM_MAX_MIPS];
+		std::unique_ptr<Types::RENDER_TARGET>	m_BloomMipDown[BLOOM_MAX_MIPS];
+		unsigned int							m_BloomMipCount = 0;
 
 		std::unique_ptr<Types::RENDER_TARGET>	m_GameViewTarget;
 		std::unique_ptr<Types::RENDER_TARGET>	m_SceneViewTarget;

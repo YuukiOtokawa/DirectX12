@@ -57,6 +57,8 @@ namespace EngineCore::Render {
 			IID_PPV_ARGS(&renderTarget->Resource));
 		assert(SUCCEEDED(hr));
 
+		renderTarget->Size = Vector2((float)width, (float)height);
+
 		renderTarget->SRVIndex = srvAllocator.Allocate();
 		{
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};

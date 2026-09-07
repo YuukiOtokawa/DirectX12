@@ -80,6 +80,7 @@ namespace EngineCore::Render {
 			unsigned int			RTVIndex;
 			D3D12_GPU_DESCRIPTOR_HANDLE SRVHandle;
 			D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle;
+		    Vector2 Size;
 			~RENDER_TARGET();
 		};
 
@@ -282,6 +283,7 @@ namespace EngineCore::Render {
 			EMISSION,
 			ENVIRONMENT,
 			SHADOW,
+			SCENE_COLOR,
 		};
 		std::unique_ptr<TEXTURE> LoadTexture(const char* FileName);
 		void SetTexture(TEXTURE_TYPE Type, const TEXTURE* Texture);
@@ -298,10 +300,34 @@ namespace EngineCore::Render {
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
 		void SetPipelineState(const char* PiplineName);
-		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque);
+		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque, const char* vsEntry = "vtx", const char* psEntry = "pix");
 		void ResolveDeferredLighting();
 		void BeginForwardPass();
 		void ApplyPostProcess();
+		void ApplyBloom();
+
+		// フルスクリーン1パス分の定型（バリア／ビューポート／テクスチャ／定数／Draw）。
+		// output の待機状態は PIXEL_SHADER_RESOURCE であることが前提で、呼び出し後も同じ状態に戻る。
+		// inputLow は t7(SCENE_COLOR) に入る2枚目の入力。不要なら nullptr。
+		void DrawFullScreenPass(const char* psoName,
+		                        const RENDER_TARGET* input,
+		                        const RENDER_TARGET* inputLow,
+		                        RENDER_TARGET* output,
+		                        const void* constantData = nullptr,
+		                        unsigned int constantSize = 0);
+
+		// ブルームのパラメータ。BloomComponent を作るまではここを直接いじる。
+		struct BloomSettings {
+			bool  Enabled   = true;
+			float Threshold = 1.0f;  // これを超えた輝度がブルームになる（HDRなので1.0超えが取れる）
+			float Knee      = 0.5f;  // 閾値の立ち上がりの緩さ
+			float Intensity = 1.0f;  // 合成時の強さ
+			float Scatter   = 0.7f;  // 広がり（大きいほど低ミップ寄り＝ぼんやり広がる）
+
+			// 0:通常 / 1:Prefilter結果 / 2:最小ミップ / 3:最終ブルーム(合成前)
+			int   DebugView = 0;
+		};
+		BloomSettings& GetBloomSettings() { return m_BloomSettings; }
 		// data/size を渡すと、そのパス描画時に SUBSET(b3) として定数バッファをバインドする
 		void AddPostProcessPass(const std::string& psoName, const void* data = nullptr, size_t size = 0) {
 			ActivePostProcessPass pass;
@@ -339,6 +365,9 @@ namespace EngineCore::Render {
 		RENDER_TARGET* GetPostProcessBuffer() { return m_RenderTargetManager.GetPostProcessBuffer(); }
         RENDER_TARGET *GetShadowMapBuffer() { return m_RenderTargetManager.GetShadowMapBuffer(); }
 		RENDER_TARGET* GetLightedColorBuffer() { return m_RenderTargetManager.GetLightedColorBuffer(); }
+		RENDER_TARGET* GetBloomMipUp(unsigned int index) { return m_RenderTargetManager.GetBloomMipUp(index); }
+		RENDER_TARGET* GetBloomMipDown(unsigned int index) { return m_RenderTargetManager.GetBloomMipDown(index); }
+		unsigned int GetBloomMipCount() const { return m_RenderTargetManager.GetBloomMipCount(); }
 
 		bool IsShadowPass() const { return m_IsShadowPass; }
 	private:
@@ -347,6 +376,8 @@ namespace EngineCore::Render {
 			std::vector<uint8_t> propertyBuffer; // 空ならcbufferバインドなし
 		};
 		std::vector<ActivePostProcessPass> m_ActivePostProcessPasses;
+
+		BloomSettings m_BloomSettings;
 	};
 
 #pragma endregion RenderManager

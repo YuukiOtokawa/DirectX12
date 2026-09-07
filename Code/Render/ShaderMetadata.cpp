@@ -65,6 +65,13 @@ namespace EngineCore::Render {
         if (std::regex_search(comment, std::regex(R"(\[\s*[Vv]ector\s*\])"))) {
             prop.isColor = false;
         }
+
+        // [HDR]: カラーピッカーのまま 0..1 のクランプを外す（Unity の [HDR] 属性と同じ）。
+        // 自己発光のように 1.0 を超える放射輝度を入れたいプロパティに付ける。
+        if (std::regex_search(comment, std::regex(R"(\[\s*[Hh][Dd][Rr]\s*\])"))) {
+            prop.isHDR = true;
+            prop.isColor = true;   // HDR はカラー前提
+        }
     }
 
     static Vector4 ParseDefaultValue(const std::string& type, std::string valStr) {
