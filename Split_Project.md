@@ -17,6 +17,7 @@
 | ライブラリ形態 | **まず静的lib → スクリプトDLL着手時に EngineCore を DLL 化** | export マクロと設計分離を同時にやらない。Phase 3 で設計を、Phase 6 でリンクを検証する |
 | exe 構成 | `AsteroidEditor.exe` / `AsteroidPlayer.exe` / ツールexe 2本 | → 5章 |
 | スクリプトDLL・ホットリロード | **今回のスコープ外**。ただし後で困らない制約だけ先に守る | → 4-3, 4-4, 7章 |
+| スクリプト公開ヘッダ | **`<Windows.h>` / `<d3d12.h>` に到達させない**。推移的閉包で機械検証する | ホットリロードの反復時間（＝スクリプト1本の再コンパイル時間）を直接決めるため（→ 2-1 ①） |
 | ディレクトリ再配置 | **分割が動いてから、純粋な rename コミットとして実施**（Phase 5） | ファイル移動とビルド構成変更を同じコミットに混ぜると事故る |
 
 ---
@@ -128,23 +129,93 @@ renderSystem->Submit(DrawItem{...});
 
 ## 2. なぜ分割するのか
 
-### 2-1. コンパイル時間（正直な見積もり）
+### 2-1. ホットリロードの反復時間を決めるもの
 
-**分割そのものの効果は控えめ**。MSBuild は既に .cpp 単位でコンパイルしていて、ImGui と yaml-cpp は
-別 lib に出ているので、そこはもう分かれている。
+ここで言うコンパイル時間は **エンジン自体のビルド時間ではなく、スクリプトを1行変えてから
+エディタに反映されるまでの時間**。目標サイクルはこうなる:
 
-分割で実際に効くのはこの3つ:
+```
+スクリプト .cpp を保存
+  → ① 変更した TU をコンパイル
+  → ② GameScripts.dll をリンク
+  → ③ 状態をシリアライズ → DLL 解放 → ロード → 復元
+  → エディタに反映
+```
 
-1. **製品ビルドで Editor の TU をそもそもコンパイルしない** — `GUIController` 10本 + Inspector 実装 + **ImGui 本体（約6万行）** が丸ごと消える。約 25% の TU 削減 + ImGui 分
-2. **Editor の .cpp を触っても `EngineCore.lib` が再ビルドされない** — リンクだけになる。DLL 化すればリンクも分離される
-3. **スクリプトDLL が入った後**、スクリプト変更でリンクされるのが DLL 1つだけになる（本命）
+**①と②は今回の分割の設計で決まってしまう**。③は反射／シリアライズの話で今回のスコープ外
+（ただし 2-2 #3 の通り、無いと即クラッシュする）。
 
-一方、**今のコンパイル時間の主犯は分割では消えない**:
+#### ① コンパイル — スクリプトが引きずり込むヘッダの量で決まる
 
-- `Manager/Main.h` が事実上の PCH（`Windows.h` + `d3d12.h` + `DirectXMath.h` + STL 12種）で、これを **12ファイル**が include している
-- `Render/RenderManager.h` が 385 行の全部入りヘッダで、これを Component / Utility / GUIController から広く include している
+自作ヘッダの推移的閉包と、そこから到達する重量級システムヘッダを実測した:
 
-→ **PCH の正式導入とヘッダ整理を Phase 0 に入れる**（→ 6章）。分割の恩恵とは独立に効く。
+| スクリプトが include するもの | 自作ヘッダ数 | 自作行数 | 到達する重量級システムヘッダ |
+|---|---:|---:|---|
+| `Component.h` | 3 | 115 | — |
+| `GameObject.h` | 2 | 102 | — |
+| `Transform.h` | 5 | 304 | `DirectXMath.h` |
+| `Camera.h` | 5 | 319 | `DirectXMath.h` |
+| `Light.h` | 5 | 337 | `DirectXMath.h` |
+| `MeshRenderer.h` | 7 | 436 | `DirectXMath.h` |
+| **`MeshFilter.h`** | **18** | **1270** | **`Windows.h` / `d3d12.h` / `d3d12shader.h` / `dxgi1_4.h` / `Xinput.h` / `mmsystem.h` / `DirectXMath.h`** |
+| `RenderManager.h` | 13 | 1061 | 同上 |
+
+**大半は既に十分薄い。壊しているのは `MeshFilter.h` 1本だけ。**
+
+`MeshFilter.h` → `RenderManager.h` → `Manager/Main.h` → `Windows.h` + `d3d12.h`。
+つまりスクリプトに `GetComponent<MeshFilter>()` と1回書いた瞬間、その TU は `Windows.h` と `d3d12.h` を
+フルパースする。この2つはプリプロセス後に数十万行規模になるので、**1 TU あたり秒単位**を持っていく。
+スクリプト1本の再コンパイルが体感で刺さるかどうかは、ここでほぼ決まる。
+
+原因は実質3行（`MeshFilter.h:4,16-19`）:
+
+```cpp
+#include <d3d12.h>
+#include "RenderManager.h"                     // VERTEX_BUFFER / INDEX_BUFFER の定義目当て
+D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;  // d3d12 の enum を値で保持
+```
+
+**`Material.h` は全く同じ状況で正解を出している**（`Material.h:18` で `struct TEXTURE;` と前方宣言し、
+`shared_ptr` / 生ポインタ越しにしか触らない）。だから `MeshRenderer.h` は `d3d12.h` を引かずに済んでいる。
+`MeshFilter` も同じ形にできる:
+
+- `VERTEX_BUFFER` / `INDEX_BUFFER` を前方宣言にする（`unique_ptr` で持つだけなので、デストラクタを .cpp に出せば成立する）
+- `D3D12_PRIMITIVE_TOPOLOGY` をエンジン独自の `enum class PrimitiveTopology` に置き換え、`RenderManager` の境界で D3D の値に変換する
+
+**方針として、スクリプトから見える公開ヘッダから `<Windows.h>` / `<d3d12.h>` に到達させない。**
+これは推移的閉包を取れば機械的に検証できるので、各フェーズの完了条件に入れる（→ 6章 Phase 0 / Phase 3）。
+
+#### ② リンク — `EngineCore` が静的lib のままだと詰む
+
+`GameScripts.dll` が `EngineCore.lib`（静的）をリンクすると、**スクリプト1行の変更ごとにエンジン全体を
+リンクし直す**ことになる。EngineCore は 29 TU で、`RenderManager.cpp`(1806行) /
+`DDSTextureLoader12.cpp`(1575行) / `OBJLoader.cpp`(528行) を含む。さらに静的lib では
+`/WHOLEARCHIVE` を付ける必要がある（→ 4-4）ので、全 .obj が強制的に引き込まれて最悪になる。
+
+→ **ホットリロードを入れる前に `EngineCore` を DLL 化するのは必須**（Phase 6）。
+DLL ならスクリプト側がリンクするのは**インポートlib（シンボル表）だけ**で、実際のリンク対象は
+変更したスクリプトの .obj のみになる。
+
+> 3-3 では「シングルトンが二重化するから DLL」と書いたが、**反復時間の観点ではこちらの方が重い理由**。
+> 「静的lib のままでも動くから後回しでいいか」という判断は、ホットリロードに関しては成り立たない。
+
+あわせて②で効くこと:
+
+- `GameScripts.dll` の依存に **yaml-cpp / assimp / DirectXTex を入れない**。EngineCore のインポートlib だけを見る形にする
+- インクリメンタルリンク（`/INCREMENTAL`）を有効にする。無効だと毎回フルリンク
+- **DLL と PDB のロックがリンクそのものを失敗させる**。エディタが掴んだままだと `LNK1104` で止まる。ビルド出力を毎回ユニーク名にして、シャドウコピーを `LoadLibrary` する（Unreal の Live Coding など、各種ホットリロード実装の定番）
+
+#### ③（参考）状態の保存・復元
+
+オブジェクト数百規模なら時間的には誤差。ただし 2-2 #3 の通り、**やらないと即クラッシュ**するので
+速度ではなく正しさの問題。
+
+#### エンジン自体のビルド時間について
+
+今回の主目的ではないので、最適化対象にはしない。
+ただし①のヘッダ整理は副産物としてエンジン側の再ビルドにもそのまま効く
+（`Manager/Main.h` を **12ファイル**が include していて、`Windows.h` + `d3d12.h` + `DirectXMath.h` + STL 12種を
+撒いている状態が改善される）。PCH の導入はエンジンビルド向けの施策なので、Phase 0 の**任意項目**に落とす。
 
 ### 2-2. ホットリロードでリンクエラーが出る仕組み
 
@@ -241,6 +312,7 @@ TODO にこう書いてある:
 | `Code/GUIController/*` (9 .cpp) | **EngineEditor** | |
 | `Code/Shader/*.hlsl` | 共通アセット | |
 | `Resource/Resource.rc`, `resource.h` | **AsteroidEditor.exe** | メニューバーはエディタのもの |
+| **新規** `Engine/Public/*.h` | **EngineCore** | スクリプトから見える公開ヘッダの束。`<Windows.h>` / `<d3d12.h>` に到達させない（→ 2-1 ①） |
 | **新規** `Editor/Inspector/*Drawer.cpp` (7本) | **EngineEditor** | → 4-1 |
 | **新規** `Editor/Inspector/InspectorRegistry.cpp/.h` | **EngineEditor** | → 4-1 |
 | **新規** `Editor/EditorApp.cpp/.h` | **AsteroidEditor.exe** | → 4-2 |
@@ -260,7 +332,11 @@ TODO にこう書いてある:
 | 静的初期化の消失（2-2 #1） | **起きる** → `/WHOLEARCHIVE:EngineCore.lib` が要る | 起きない（DLL 内の .obj は全部リンクされる） |
 | シングルトン二重化（2-2 #2） | 起きない（1つの exe に1つ） | エクスポートしないと起きる |
 | スクリプトDLL からの利用 | 実質不可（exe のエクスポートlib経由になり、ビルド順が循環しがち） | 素直 |
+| **スクリプト1行変更時のリンク対象**（2-1 ②） | **エンジン全体（29 TU）を毎回リンクし直す**。`/WHOLEARCHIVE` 併用で最悪 | 変更した .obj のみ。EngineCore はインポートlib（シンボル表）を見るだけ |
 | C4251（`std::vector` メンバの警告） | 出ない | 出る。全モジュールを同一コンパイラ・同一 `/MD` でビルドする前提で抑止する |
+
+**ホットリロードを入れる時点では DLL が必須**（2-1 ②）。静的lib はあくまで Phase 3-5 の足場で、
+「動いているから静的lib のままでいい」という判断はホットリロードに関しては成り立たない。
 
 2段階にする理由は、**設計の分離（Phase 1-2）とリンクの分離（Phase 6）を同時に検証しないため**。
 Phase 3 の時点で「Core から Editor への参照ゼロ」が達成できていれば、DLL 化は
@@ -584,13 +660,16 @@ TODO の「assertを避ける・クラッシュさせない」と関係する論
 - [ ] `assimp-vc145-mtd.dll` を `ThirdParty/assimp/bin/` に移してビルド後コピーにする（21MB をルートから退かす）
 - [ ] **Release 構成の assimp lib 誤リンクを修正**（4-7 #1）
 - [ ] 相対 include（`../../../ImGui/...`）を `AdditionalIncludeDirectories` 経由に統一（4-7 #3）
-- [ ] PCH を正式導入（`Manager/Main.h` の中身をベースに）
+- [ ] **`MeshFilter.h` から `<d3d12.h>` / `RenderManager.h` を外す**（2-1 ①）— `VERTEX_BUFFER` / `INDEX_BUFFER` を前方宣言にし（デストラクタを .cpp へ）、`D3D12_PRIMITIVE_TOPOLOGY` を `enum class PrimitiveTopology` に置き換える。`Material.h:18` が同じ問題の正解例
 - [ ] 死んだファイルの処遇を決める（`Model.cpp` / `TestOBJClass.cpp` / `OldShaders/`）
 - [ ] `RenderManager.h:177-178` の未使用 `m_ImGui*DescHandles` を削除
 - [ ] 使っていない `Win32`(x86) 構成を削除
+- [ ] （任意）PCH を正式導入（`Manager/Main.h` の中身をベースに）— エンジンビルド向けなので優先度低
 
 **完了条件**: Debug x64 / Release x64 ともにビルド通過、起動して従来通り動く。
-ビルド時間を before/after で計測して記録（Phase 6 の効果測定の基準にする）。
+かつ **`Component.h` / `GameObject.h` / `Transform.h` / `Camera.h` / `Light.h` / `MeshRenderer.h` /
+`MeshFilter.h` の推移的閉包から `Windows.h` と `d3d12.h` に到達しないこと**（2-1 ① の表を再計測して確認）。
+現状はこのうち `MeshFilter.h` だけが到達している。
 
 ### Phase 1 — Inspector を Core から追い出す ★山場
 
@@ -636,9 +715,11 @@ grep -rn "GUIController" Code/Render Code/Component Code/Manager Code/GameObject
 - [ ] `.slnx` に Core / Editor を追加
 - [ ] `/WHOLEARCHIVE:EngineCore.lib` を Editor exe のリンカオプションに追加（4-4）
 - [ ] 4-3 のシングルトン `GetInstance()` を .cpp へ移す
+- [ ] **スクリプト公開ヘッダの置き場を決める**（`Engine/Public/` 等）。将来 `GameScripts.dll` が include するのは
+      ここだけ、というルールにする。中身は当面 `Component.h` / `GameObject.h` / `Transform.h` などを束ねるだけでよい
 
 **完了条件**: ビルド通過 + 起動して従来通り動く + **Add Component ポップアップに全コンポーネントが並ぶ**
-（4-4 の静的初期化が生きている証明）。
+（4-4 の静的初期化が生きている証明）+ 公開ヘッダ群の推移的閉包に `Windows.h` / `d3d12.h` が現れないこと。
 
 ### Phase 4 — `AsteroidPlayer.exe` を追加
 
@@ -646,8 +727,8 @@ grep -rn "GUIController" Code/Render Code/Component Code/Manager Code/GameObject
 - [ ] `ResourcePath.h` の分岐を `ASTEROID_EDITOR` / `ASTEROID_PLAYER` に（4-6）
 
 **完了条件**: `AsteroidPlayer.exe` が **ImGui を1バイトもリンクせずに**ビルドでき、
-起動してゲームカメラの絵がバックバッファに出ること。**ここが分割の本当のゴール。**
-Editor exe / Player exe のバイナリサイズと TU 数を記録する。
+起動してゲームカメラの絵がバックバッファに出ること。**ここが「設計としての分割」のゴール。**
+（ホットリロードの反復時間としてのゴールは Phase 6。）
 
 ### Phase 5 — ディレクトリ再配置
 
@@ -666,14 +747,19 @@ Assets/  Build/(ignored)
 
 ### Phase 6 — `EngineCore` を DLL 化
 
-スクリプト機能に着手する直前にやる。
+**ここがホットリロードの反復時間の本丸**（2-1 ②）。スクリプト機能に着手する直前にやる。
 
 - [ ] `ENGINE_API` マクロを定義し、公開クラス・公開関数に付与
 - [ ] C4251 の抑止（全モジュール同一コンパイラ・同一 `/MD` 前提を明記）
 - [ ] `/WHOLEARCHIVE` を外す（DLL では不要）
 - [ ] シングルトンのエクスポートを確認（4-3）
+- [ ] `/INCREMENTAL` を有効にする
+- [ ] **ダミーの `GameScripts.dll` を1本作って反復時間を実測する** — 空の `Component` 派生を1つ置き、
+      1行変更 → コンパイル → リンク の実測値を取る。ここで秒単位に収まらなければ、
+      ホットリロードの実装に進む前に②の対策（依存の削減・リンク設定）を詰める
 
-**完了条件**: 従来通り動く + Phase 0 で計測したビルド時間との比較。
+**完了条件**: 従来通り動く + **ダミー `GameScripts.dll` の1行変更ビルドが実用的な時間に収まること**。
+この数値がホットリロード実装の GO/NO-GO 判断になる。
 
 ### Phase 7 — ツールexe
 
@@ -695,6 +781,9 @@ Assets/  Build/(ignored)
 - [ ] **`/MD` の統一** — 全プロジェクトが `MultiThreadedDLL` / `MultiThreadedDebugDLL` であることを毎回確認。ここがずれると STL を跨いだ瞬間に壊れる（assimp の件も同根）
 - [ ] **ImGui の SRV ヒープ共有** — `ImGui_ImplDX12_Init` は `RenderManager` の SRV ディスクリプタヒープを共有している。SceneView は `sceneViewTarget->SRVHandle.ptr` を `ImTextureID` として渡す（`SceneViewWindowController.cpp:60`）。Editor→Core の正しい向きだが、Core 側の SRV ヒープ API が Editor から見えることを確認
 - [ ] **`Render` ⇄ `Component` の循環**（1-4）— Core を割りたくなったときに必ずここで止まる。今回は割らない
+- [ ] **公開ヘッダへの重量級ヘッダの再流入**（2-1 ①）— `MeshFilter.h` を直したあと、別の公開ヘッダが `<d3d12.h>` を引き戻していないか。**新しく Core の公開ヘッダを足すたびに推移的閉包を取り直す**。1本混ざるだけでスクリプトの再コンパイル時間が桁で変わる
+- [ ] **スクリプトDLL が静的lib をリンクしていないか**（2-1 ②）— Phase 6 以降、`GameScripts.dll` の依存に `EngineCore.lib`（静的）や yaml-cpp / assimp / DirectXTex が紛れ込んでいないか
+- [ ] **DLL / PDB のロック** — エディタ実行中はリンクが `LNK1104` で落ちる。シャドウコピー + ユニークな PDB 名で回避する
 - [ ] **`Resource.rc` / `resource.h`** — Player 側に持っていかない
 - [ ] **`DirectXTex_Debug.lib` / `_Release.lib`** — 構成ごとの切り替えが Core 側に移ることを確認
 
@@ -708,7 +797,8 @@ Assets/  Build/(ignored)
 | 2 | プロパティ反射（シリアライズ基盤）をいつ入れるか | Drawer 分離だけなら不要。ただし TODO「シーン機能の本格実装（保存・読み込み）」と「スクリプトのホットリロード時の状態保持」の**両方が同じものを要求する**ので、シーン機能に着手するタイミングで一緒に設計するのが得。既存の `ShaderMetadata` + `DrawMaterialProperties` がまさに同じ発想の先例になっている |
 | 3 | `EditorCameraController` を Editor 側に置くと Core のファクトリに Editor のコンポーネントが登録される件（4-1 末尾） | 動くが気持ち悪い。Input を Core 側に抽象化すれば Core に戻せる。TODO「デバッグ機能の拡充」あたりで入力周りを触るときに再検討 |
 | 4 | Play In Editor を別プロセスにするか（5-2） | 分割が済んでいれば後から選べる。今は決めない |
-| 5 | ビルド時間の目標値 | Phase 0 で before を計測してから設定する |
+| 5 | ホットリロードの反復時間の目標値 | Phase 6 のダミー `GameScripts.dll` で実測してから決める。実測値が想定より悪ければ、公開 API の粒度（スクリプトに何を見せるか）から見直す |
+| 6 | スクリプトから見せる API の範囲 | 薄く保つほど反復は速いが、できることが減る。`Transform` / `GameObject` / `Component` / 入力 / 時間くらいから始めて、必要になったら足すのが安全。Phase 3 の `Engine/Public/` を作るときに初版を決める |
 
 ---
 
@@ -727,6 +817,8 @@ Assets/  Build/(ignored)
 | `EngineCore::GetWindow()` グローバル | `Code/Manager/Main.h:55` / `Main.cpp:26-31` |
 | `Render` ⇄ `Component` の循環 | `Code/Render/RenderSystem.cpp:3,24-28` |
 | 未使用の ImGui ハンドル | `Code/Render/RenderManager.h:177-178` |
+| **公開ヘッダへの `d3d12.h` 流入** | `Code/Component/Polygon/MeshFilter.h:4,16-19` |
+| 前方宣言の正解例 | `Code/Render/Material.h:18` (`struct TEXTURE;`) |
 | 実行時シェーダコンパイル | `Code/Render/RenderManager.cpp:1225` |
 | Release の assimp 誤リンク | `DirectX12.vcxproj:143` |
 | `OutDir` がルート直下 | `DirectX12.vcxproj:74,77` |
