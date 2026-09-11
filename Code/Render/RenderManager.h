@@ -174,9 +174,6 @@ namespace EngineCore::Render {
 
 		RenderTargetManager					m_RenderTargetManager;
 
-		std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> m_ImGuiCPUDescHandles;
-		std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> m_ImGuiGPUDescHandles;
-
 		std::unique_ptr<TEXTURE> m_EnvTexture;
 
 		ComPtr<ID3D12Resource>		m_DummyTexture;          // 未割当スロット用の1x1ダミー
