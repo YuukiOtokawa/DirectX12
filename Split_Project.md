@@ -4,7 +4,15 @@
 > 実装しながら参照する用。
 > 作成: 2026-09-07 / 対象ブランチ: `claude/project-split-planning-jf2jnn`
 >
-> **状態: 計画のみ。コード変更は未着手。**
+> **進捗（最終更新: 2026-09-11）**
+> - 🔄 **Phase 0 に着手**。以下を実施済み（**いずれもビルド未検証** — 作業環境に MSVC / Windows SDK が無いため）:
+>   - 死んだファイル削除（`Model.*` / `TestOBJClass.*` / `OldShaders/`）、未使用メンバ削除
+>   - ビルド成果物を git から除外、`.gitignore` 整備
+>   - ✅ **公開ヘッダから `<d3d12.h>` / `<Windows.h>` への到達を断った**（2-1 ① 対応）。
+>     `Code/Render/RenderTypes.h` を新設し、`MeshFilter.h` は 18ヘッダ/1270行 → **7ヘッダ/397行**。
+>     公開ヘッダ 14 本すべてが重量級ヘッダ非到達になった
+> - ⚠️ **`Release` の assimp 誤リンクは vcxproj の編集では直せないことが判明**（→ 4-7 #1）
+> - ⬜ Phase 0 の残り: `OutDir` 移動 / 相対 include 統一 / `Win32`(x86) 構成削除
 
 ---
 
@@ -577,11 +585,28 @@ Release ビルドのエディタはリポジトリを見たい。
 
 | # | 問題 | 該当 |
 |---|---|---|
-| 1 | **Release 構成が Debug 版 assimp をリンクしている** | `DirectX12.vcxproj:143` の `assimp-vc145-mtd.lib`。`mtd` は MultiThreaded **Debug**。しかもプロジェクト本体は `/MD` なので、静的デバッグCRT前提の lib と CRT 種別が食い違っている |
+| 1 | **Release 構成が Debug 版 assimp をリンクしている**（vcxproj の編集だけでは直らない） | `DirectX12.vcxproj:143` の `assimp-vc145-mtd.lib`。`mtd` は MultiThreaded **Debug** 版。**リポジトリには Release 版の assimp が存在しない**（`Code/assimp/lib/` にあるのは `assimp-vc145-mtd.lib` / `.exp` のみ、DLL も `assimp-vc145-mtd.dll` のみ）ので、参照先を書き換えるだけでは解決しない → 下の囲みを参照 |
 | 2 | **ビルド成果物がリポジトリにコミットされている** | `OutDir` が `$(SolutionDir)`（`DirectX12.vcxproj:74,77`）なので出力がルート直下に落ち、`.gitignore` の `x64/` に引っかからない。`DirectX12.exe`(1.1MB) / `.lib` / `.exp` / `assimp-vc145-mtd.dll`(**21MB**) がコミット済み |
 | 3 | **相対 include 地獄** | `#include "../../../ImGui/Code/imgui.h"` のような相対パスが多数。**Phase 5 のディレクトリ再配置で全部壊れる**ので、その前に `AdditionalIncludeDirectories` 経由の書き方に統一しておく |
 | 4 | `Core.vcxproj` / `Editor.vcxproj` の `ConfigurationType` が `Application` | 空の雛形なので実害はないが、`StaticLibrary` に直して使う |
 | 5 | `Win32`(x86) 構成が残っているが中身が未整備 | 使っていないなら削除して構成数を半分にする |
+
+> **assimp の件の詳細（2026-09-11 調査）**
+>
+> Debug 版 assimp の DLL は **デバッグ CRT（`ucrtbased.dll` / `msvcp140d.dll`）に依存する**。
+> これらは Visual Studio 同梱の開発用ランタイムで **再配布が許可されていない**ため、
+> このまま Release をビルドしても **配布先のマシンでは起動しない**。
+> TODO の「デプロイ機能」に直接効いてくる。
+>
+> 取れる道は3つ:
+> 1. **Release 版 assimp を入手／ビルドする**（`assimp-vc145-mt.lib` + `assimp-vc145-mt.dll`）。
+>    構成ごとにリンク先を切り替える。一番素直だが、外部バイナリの調達なのでユーザー作業になる
+> 2. assimp を静的リンクする（`/MD` に揃えた静的ライブラリを自前でビルドする）
+> 3. **Phase 7 の `AssetImporter.exe` で問題自体を消す** — assimp をツール側だけに追い出し、
+>    ランタイムは変換済みバイナリを読む。そうなれば Release に assimp は1バイトも入らない
+>
+> **3 が本命**（→ 5-3）。それまでの間、Release ビルドは「手元では動くが配布できない」状態である
+> ことを認識しておく。1 を先にやっておくと Phase 4 の `AsteroidPlayer.exe` の検証が楽になる。
 
 ---
 
@@ -656,20 +681,25 @@ TODO の「assertを避ける・クラッシュさせない」と関係する論
 ### Phase 0 — 下ごしらえ（分割前にやる掃除）
 
 - [ ] `OutDir` / `IntDir` を `$(SolutionDir)Build\$(Platform)\$(Configuration)\` に変更
-- [ ] コミット済みビルド成果物（`DirectX12.exe` / `.lib` / `.exp`）を git から外し `.gitignore` へ
+- [x] コミット済みビルド成果物（`DirectX12.exe` / `.lib` / `.exp`）を git から外し `.gitignore` へ
 - [ ] `assimp-vc145-mtd.dll` を `ThirdParty/assimp/bin/` に移してビルド後コピーにする（21MB をルートから退かす）
-- [ ] **Release 構成の assimp lib 誤リンクを修正**（4-7 #1）
+- [ ] ⚠️ **Release 構成の assimp lib 誤リンク**（4-7 #1）— Release 版 assimp が無いため vcxproj の編集では直らない。**要ユーザー対応**、または Phase 7 まで持ち越し
 - [ ] 相対 include（`../../../ImGui/...`）を `AdditionalIncludeDirectories` 経由に統一（4-7 #3）
-- [ ] **`MeshFilter.h` から `<d3d12.h>` / `RenderManager.h` を外す**（2-1 ①）— `VERTEX_BUFFER` / `INDEX_BUFFER` を前方宣言にし（デストラクタを .cpp へ）、`D3D12_PRIMITIVE_TOPOLOGY` を `enum class PrimitiveTopology` に置き換える。`Material.h:18` が同じ問題の正解例
-- [ ] 死んだファイルの処遇を決める（`Model.cpp` / `TestOBJClass.cpp` / `OldShaders/`）
-- [ ] `RenderManager.h:177-178` の未使用 `m_ImGui*DescHandles` を削除
+- [x] **公開ヘッダから `<d3d12.h>` / `<Windows.h>` を外す**（2-1 ①）— `Code/Render/RenderTypes.h` を新設し、
+      `MeshFilter.h` / `VertexData.h` / `SpriteRenderer.h` の3本を是正。`D3D_PRIMITIVE_TOPOLOGY` は
+      `enum class PrimitiveTopology` に置き換え、D3D の値への変換は `ToD3DPrimitiveTopology()` の1箇所に閉じた。
+      **`VertexData.h` と `SpriteRenderer.h` は当初の調査で見落としていた2本目・3本目の漏れ**（`MeshFilter.h` だけではなかった）
+- [x] 死んだファイルを削除（`Model.cpp` / `TestOBJClass.cpp` / `OldShaders/`）
+- [x] `RenderManager.h` の未使用 `m_ImGui*DescHandles` を削除
 - [ ] 使っていない `Win32`(x86) 構成を削除
 - [ ] （任意）PCH を正式導入（`Manager/Main.h` の中身をベースに）— エンジンビルド向けなので優先度低
 
 **完了条件**: Debug x64 / Release x64 ともにビルド通過、起動して従来通り動く。
-かつ **`Component.h` / `GameObject.h` / `Transform.h` / `Camera.h` / `Light.h` / `MeshRenderer.h` /
-`MeshFilter.h` の推移的閉包から `Windows.h` と `d3d12.h` に到達しないこと**（2-1 ① の表を再計測して確認）。
-現状はこのうち `MeshFilter.h` だけが到達している。
+かつ **公開ヘッダの推移的閉包から `Windows.h` と `d3d12.h` に到達しないこと**。
+
+ヘッダ側は達成済み（`Component/` 配下・`GameObject.h`・`Object.h`・`VertexData.h`・`VectorClass.h` の
+計14本すべて非到達。唯一残る `MaterialPropertyInspector.h` は Phase 1 で Editor へ移すので対象外）。
+**ビルド通過の確認が未了**。
 
 ### Phase 1 — Inspector を Core から追い出す ★山場
 
