@@ -47,7 +47,8 @@ void MeshRenderer::Draw() {
 		renderManager->SetIndexBuffer(indexBuffer);
 	}
 
-	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(meshFilter->GetPrimitiveTopology());
+	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(
+		EngineCore::Render::ToD3DPrimitiveTopology(meshFilter->GetPrimitiveTopology()));
 
 	// Bind Pipeline State (Dynamic or Legacy)
     if (renderManager->IsShadowPass()) {

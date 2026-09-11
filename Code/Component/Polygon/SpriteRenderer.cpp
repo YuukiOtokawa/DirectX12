@@ -1,9 +1,15 @@
 #include "SpriteRenderer.h"
 #include "../../Manager/Main.h"
 
+// SpriteRenderer.h は VERTEX_BUFFER を前方宣言だけで扱っているため、
+// 完全型が必要な処理（unique_ptr の破棄、バッファ生成）はこの .cpp に置く。
+#include "../../Render/RenderManager.h"
+
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;
 using namespace DirectX;
+
+SpriteRenderer::~SpriteRenderer() = default;
 
 SpriteRenderer::SpriteRenderer() {
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();

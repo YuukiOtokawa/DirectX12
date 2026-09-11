@@ -16,6 +16,14 @@ using namespace EngineCore::Render;
 
 RenderManager* RenderManager::m_Instance = nullptr;
 
+D3D_PRIMITIVE_TOPOLOGY EngineCore::Render::ToD3DPrimitiveTopology(PrimitiveTopology topology) {
+	switch (topology) {
+	case PrimitiveTopology::TriangleList:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	case PrimitiveTopology::TriangleStrip: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+	}
+	return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+}
+
 
 
 

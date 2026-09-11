@@ -506,7 +506,7 @@ void LoadObjToVertexData(const char* FileName, VertexData* pOutVertexData) {
 
   pOutVertexData->SetVertices(vertices);
   pOutVertexData->SetIndices(indices);
-  pOutVertexData->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  pOutVertexData->SetPrimitiveTopology(EngineCore::Render::PrimitiveTopology::TriangleList);
   pOutVertexData->SetFilePath(FileName);
 
   // Load textures

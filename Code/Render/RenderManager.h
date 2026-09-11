@@ -13,20 +13,20 @@
 #include "GraphicsDevice.h"
 #include "RenderTargetType.h"
 #include "RenderTargetManager.h"
+#include "RenderTypes.h"
 #include <memory>
 
 namespace EngineCore::Render {
 
+	// PrimitiveTopology を D3D の値に変換する。
+	// エンジン側の公開ヘッダが <d3d12.h> を引かずに済むよう、
+	// D3D の型が出てくるのはこの境界だけに閉じている。
+	D3D_PRIMITIVE_TOPOLOGY ToD3DPrimitiveTopology(PrimitiveTopology topology);
+
 	namespace Types {
 
-		// 頂点データ VertexDataクラスに移動
-		struct VERTEX
-		{
-			Vector3 Position;
-			Vector3 Normal;
-			Vector2 TexCoord;
-			Vector4 Color;
-		};
+		// 頂点データ VERTEX は RenderTypes.h に移動
+		// （GPU リソースを持たないので、d3d12.h を必要としない側に置いた）
 
 		// マテリアルデータ Materialクラスに移動
 		using MATERIAL = EngineCore::Render::MaterialConstant;

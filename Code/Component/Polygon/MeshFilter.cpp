@@ -1,6 +1,10 @@
 #include "MeshFilter.h"
 #include "../../../ImGui/Code/imgui.h"
 
+// MeshFilter.h は VERTEX_BUFFER / INDEX_BUFFER を前方宣言だけで扱っているため、
+// 完全型が必要な処理（unique_ptr の破棄・reset、バッファ生成）はこの .cpp に置く。
+#include "../../Render/RenderManager.h"
+
 #include "../../Utility/FilePicker.h"
 #include "../../Utility/FBXLoader.h"
 #include "../../Utility/OBJLoader.h"
@@ -8,6 +12,23 @@
 
 #include "../../GameObject/GameObject.h"
 #include "../Transform/Transform.h"
+
+EngineCore::General::MeshFilter::MeshFilter() = default;
+
+EngineCore::General::MeshFilter::~MeshFilter() {
+	if (m_VertexData) {
+		delete m_VertexData;
+		m_VertexData = nullptr;
+	}
+}
+
+void EngineCore::General::MeshFilter::SetVertexBuffer(EngineCore::Render::Types::VERTEX_BUFFER* pVertexBuffer) {
+	m_VertexBuffer.reset(pVertexBuffer);
+}
+
+void EngineCore::General::MeshFilter::SetIndexBuffer(EngineCore::Render::Types::INDEX_BUFFER* pIndexBuffer) {
+	m_IndexBuffer.reset(pIndexBuffer);
+}
 
 void EngineCore::General::MeshFilter::Update() {}
 
