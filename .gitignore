@@ -364,3 +364,22 @@ FodyWeavers.xsd
 .idea/.idea.DirectX12/.idea/encodings.xml
 .idea/.idea.DirectX12/.idea/workspace.xml
 .idea
+
+# ==========================================
+# Asteroid Engine
+# ==========================================
+# ビルド成果物の出力先 (OutDir / IntDir)
+[Bb]uild/
+
+# ルート直下に落ちる成果物
+# (OutDir が $(SolutionDir) だった頃の名残。Build/ へ移した後も保険として残す)
+/DirectX12.exe
+/DirectX12.lib
+/DirectX12.exp
+/AsteroidEditor.exe
+/AsteroidEditor.lib
+/AsteroidEditor.exp
+/AsteroidPlayer.exe
+
+# NOTE: Code/DirectXTex/*.lib と Code/assimp/lib/* はビルド成果物ではなく
+#       リンクに必要な外部ライブラリなので追跡したままにする
