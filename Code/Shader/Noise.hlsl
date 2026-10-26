@@ -50,5 +50,19 @@ float perlinNoise2(in float2 vec) {
     
     fvec = smoothstep(0.0f, 1.0f, fvec);
     
-    return lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
+    return lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y); // -1 ~ 1
+}
+
+// Fractal perlin noise
+float fbm2(in float2 vec, int octave) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    
+    for (int i = 0; i < octave; i++) {
+        value += amplitude * perlinNoise2(vec);
+        vec *= 2.0; // x0.5 Texture size per loop
+        amplitude *= 0.5;
+    }
+
+    return value; // -1 ~ 1
 }
