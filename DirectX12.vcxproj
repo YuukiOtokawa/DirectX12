@@ -199,6 +199,7 @@
     <ClInclude Include="Code\Component\Transform\Transform.h" />
     <ClInclude Include="Code\GUIController\GraphicsDebugWindowController.h" />
     <ClInclude Include="Code\GUIController\InspectorWindowController.h" />
+    <ClInclude Include="Code\GUIController\ObjectNameEditor.h" />
     <ClInclude Include="Code\Manager\ComponentFactory.h" />
     <ClInclude Include="Code\Utility\FBXLoader.h" />
     <ClInclude Include="Code\Utility\FilePicker.h" />
