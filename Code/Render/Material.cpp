@@ -107,6 +107,13 @@ namespace EngineCore::Render {
         UpdateBufferFromLegacyMembers();
     }
 
+    void Material::SetShaderFile(const std::string& path) {
+        m_ShaderFilePath = path;
+        auto renderManager = RenderManager::GetInstance();
+        if (!renderManager) return;
+        SetShader(renderManager->LoadShaderMetadata(path)->shaderName);
+    }
+
     void Material::SetTextureBaseColor(std::shared_ptr<EngineCore::Render::Types::TEXTURE> texture) {
         m_TextureBaseColor = std::move(texture);
     }

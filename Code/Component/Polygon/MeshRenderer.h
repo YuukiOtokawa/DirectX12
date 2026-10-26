@@ -18,8 +18,8 @@ namespace EngineCore::General {
 		void Draw() override;
 		void Inspector() override;
 
-		void SetShader(const std::string &shaderName) {
-            m_Material.SetShader(shaderName);
+		void SetShaderFile(const std::string &shaderFile) {
+            m_Material.SetShaderFile(shaderFile);
         }
 
 		void SetCastShadows(bool castShadows) { m_CastShadows = castShadows; }

@@ -18,7 +18,7 @@ PostProcessComponent::PostProcessComponent() {
 }
 
 void PostProcessComponent::Start() {
-	// シェーダ登録済みのこのタイミングで各パスのマテリアルを構成
+	// 各パスのマテリアルを構成（PSO は描画時に初めて作られる）
 	for (auto& pass : m_Passes) {
 		SetupPassMaterial(pass);
 	}
@@ -29,10 +29,9 @@ void PostProcessComponent::Update() {
 }
 
 void PostProcessComponent::SetupPassMaterial(PostProcessPassInfo& pass) {
-	// SetShader が GetShaderMetadata でメタデータを引き、
+	// SetShaderFile がメタデータを読み込み、
 	// バッファサイズの確定とデフォルト値の初期化を行う
-	pass.material.SetShaderFilePath(pass.shaderPath);
-	pass.material.SetShader(pass.name);
+	pass.material.SetShaderFile(pass.shaderPath);
 }
 
 void PostProcessComponent::ApplyPassesToRenderManager() {
@@ -42,7 +41,7 @@ void PostProcessComponent::ApplyPassesToRenderManager() {
 	renderManager->ClearPostProcessPasses();
 	for (const auto& pass : m_Passes) {
 		// パス独自のプロパティバッファも一緒に渡す（b3にバインドされる）
-		renderManager->AddPostProcessPass(pass.name, pass.material.GetBufferData(), pass.material.GetBufferSize());
+		renderManager->AddPostProcessPass(pass.shaderPath, pass.material.GetBufferData(), pass.material.GetBufferSize());
 	}
 }
 
@@ -63,7 +62,7 @@ void PostProcessComponent::Inspector() {
 
 		// パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）を編集
 		if (renderManager) {
-			const EngineCore::Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].name);
+			const EngineCore::Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].material.GetShaderName());
 			if (meta && !meta->properties.empty()) {
 				ImGui::Indent();
 				if (GUIHelper::DrawMaterialProperties(m_Passes[i].material, meta)) {
@@ -107,10 +106,9 @@ void PostProcessComponent::Inspector() {
 		if (strlen(m_NewName) > 0 && strlen(m_NewShaderPath) > 0) {
 			auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
 			if (renderManager) {
-				// 動的に登録を試みる
-				if (renderManager->RegisterDynamicPostProcess(m_NewName, m_NewShaderPath)) {
+				// コンパイルできたときだけ追加する
+				if (renderManager->ReloadShader(m_NewShaderPath, EngineCore::Render::RenderPassType::PostProcess)) {
 					m_Passes.push_back({ m_NewName, m_NewShaderPath });
-					// 登録直後にメタデータが利用可能なのでマテリアルを構成
 					SetupPassMaterial(m_Passes.back());
 					ApplyPassesToRenderManager();
 					// クリア

@@ -72,9 +72,8 @@ namespace EngineCore::Utility {
             meshFilter->SetVertexData(vertexData);
         }
         auto meshRenderer = planeObj->AddComponent<General::MeshRenderer>();
-        meshRenderer->SetShader("Geometry"); // デフォルトのジオメトリシェーダーを使用)
+        meshRenderer->SetShaderFile(SHADER_DIR "Geometry.hlsl"); // デフォルトのジオメトリシェーダーを使用
         meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::DeferredOpaque);
-        meshRenderer->GetMaterial().SetShaderFilePath(SHADER_DIR "Geometry.hlsl");
 
         {
             // 2. 天球
@@ -103,9 +102,8 @@ namespace EngineCore::Utility {
                 meshFilter->SetVertexData(skyVertexData);
                 meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
             }
-            meshRenderer->SetShader("Unlit"); // スカイドーム用のシェーダーを使用
+            meshRenderer->SetShaderFile(SHADER_DIR "Unlit.hlsl"); // スカイドーム用のシェーダーを使用
             meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::ForwardOpaque);
-            meshRenderer->GetMaterial().SetShaderFilePath(SHADER_DIR "Unlit.hlsl");
             meshRenderer->SetCastShadows(false); // 天球は影を落とさない
         }
 
