@@ -62,9 +62,9 @@ namespace EngineCore::Manager {
 		return true;
 	}
 
-	bool ObjectManager::CheckObjectExists(const std::string& name) const {
+	bool ObjectManager::CheckObjectExists(const std::string& name, const General::GameObject* exclude) const {
 		for (const auto& object : m_Objects) {
-			if (object.object->GetName() == name) {
+			if (object.object && object.object.get() != exclude && object.object->GetName() == name) {
 				return true;
 			}
 		}

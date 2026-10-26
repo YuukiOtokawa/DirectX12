@@ -1,6 +1,7 @@
 #include "GameObject.h"
 
 #include "../../ImGui/Code/imgui.h"
+#include "../GUIController/ObjectNameEditor.h"
 
 #include "../Manager/ObjectManager.h"
 using namespace EngineCore::Manager;
@@ -23,8 +24,9 @@ void EngineCore::General::GameObject::DrawInspector() {
 	ImGui::Checkbox("###Active", &m_IsActive);
 
 	// GameObject Name
-	std::string name = GetName();
-	ImGui::Text("Name: %s", name.c_str());
+	ImGui::TextUnformatted("Name:");
+	ImGui::SameLine();
+	GUIController::Gui::ObjectNameEditor::Draw(*this);
 	ImGui::Separator();
 	
 	for (const auto& component : m_Components) {
@@ -70,9 +72,9 @@ void EngineCore::General::GameObject::SetName(const std::string& name) {
 		n = "object";
 	}
 
-	if (ObjectManager::GetInstance()->CheckObjectExists(n)) {
+	if (ObjectManager::GetInstance()->CheckObjectExists(n, this)) {
 		int i = 1;
-		while (ObjectManager::GetInstance()->CheckObjectExists(n + std::to_string(i))) {
+		while (ObjectManager::GetInstance()->CheckObjectExists(n + std::to_string(i), this)) {
 			i++;
 		}
 		n += std::to_string(i);

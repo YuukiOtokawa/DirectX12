@@ -1,4 +1,5 @@
 #include "HierarchyWindowController.h"
+#include "ObjectNameEditor.h"
 
 #include "../Manager/ObjectManager.h"
 using namespace EngineCore::Manager;
@@ -16,19 +17,19 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 
 	for (auto& object : objects) {
 		auto raw = object.object.get();
+		if (!raw) {
+			continue;
+		}
+		const auto objectKey = std::to_string(raw->GetID());
+		ImGui::PushID(objectKey.c_str());
 		auto isActive = raw->IsActive();
-		ImGui::Checkbox(("###Active" + raw->GetName()).c_str(), &isActive);
+		ImGui::Checkbox("##Active", &isActive);
 		raw->SetActive(isActive);
 		ImGui::SameLine();
-		if (raw == ObjectManager::GetInstance()->GetSelectedObject()) {
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
-		}
-		else {
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
-		}
-		if (ImGui::Button(raw->GetName().c_str())) {
+		const bool isSelected = raw == ObjectManager::GetInstance()->GetSelectedObject();
+		if (Gui::ObjectNameEditor::Draw(*raw, isSelected, isSelected)) {
 			ObjectManager::GetInstance()->SelectObject(raw);
 		}
-		ImGui::PopStyleColor();
+		ImGui::PopID();
 	}
 }

@@ -3,6 +3,7 @@
 #include "../../ImGui/Code/imgui.h"
 
 #include "ImGuiWindowController.h"
+#include "ObjectNameEditor.h"
 #include <Windows.h>
 
 #include "HierarchyWindowController.h"
@@ -46,6 +47,7 @@ void GUIController::Window::WindowManager::DrawWindows() {
 			window->DrawSystem();
 		}
 	}
+	ObjectNameEditor::EndFrame();
 }
 
 void WindowManager::Finalize() {}

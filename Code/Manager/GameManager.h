@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <optional>
+
 
 #include "RenderManager.h"
 #include "Code/GUIController/ImGuiController.h"
@@ -25,6 +28,7 @@ namespace EngineManager {
 		GUIController::Window::WindowManager  _WindowManager;
 
 		EngineCore::Manager::ObjectManager* _ObjectManager;
+		std::optional<std::uint64_t> m_EditorCameraID;
 
 	public:
 		static GameManager* GetInstance() { return m_Instance; }

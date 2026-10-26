@@ -31,6 +31,7 @@ namespace EngineManager {
 
 		// Create EditorCamera automatically at startup
 		auto editorCameraObj = _ObjectManager->CreateObject();
+		m_EditorCameraID = editorCameraObj->GetID();
 		editorCameraObj->SetName("EditorCamera");
 		editorCameraObj->AddComponent<EngineCore::General::Transform>();
 		editorCameraObj->AddComponent<EngineCore::General::Camera>();
@@ -61,7 +62,8 @@ namespace EngineManager {
 	EngineCore::General::Camera* GameManager::FindGameCamera() {
 		auto& objects = _ObjectManager->GetObjects();
 		for (const auto& entry : objects) {
-			if (entry.object && entry.object->IsActive() && entry.object->GetName() != "EditorCamera") {
+			if (entry.object && entry.object->IsActive() &&
+				(!m_EditorCameraID || entry.object->GetID() != *m_EditorCameraID)) {
 				auto camera = entry.object->GetComponent<EngineCore::General::Camera>();
 				if (camera) {
 					return camera;
@@ -72,9 +74,13 @@ namespace EngineManager {
 	}
 
 	EngineCore::General::Camera* GameManager::FindEditorCamera() {
+		if (!m_EditorCameraID) {
+			return nullptr;
+		}
+
 		auto& objects = _ObjectManager->GetObjects();
 		for (const auto& entry : objects) {
-			if (entry.object && entry.object->IsActive() && entry.object->GetName() == "EditorCamera") {
+			if (entry.object && entry.object->IsActive() && entry.object->GetID() == *m_EditorCameraID) {
 				auto camera = entry.object->GetComponent<EngineCore::General::Camera>();
 				if (camera) {
 					return camera;

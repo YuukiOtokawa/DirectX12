@@ -53,7 +53,7 @@ namespace EngineCore::Manager {
 			return m_Objects;
 		}
 
-		bool CheckObjectExists(const std::string& name) const;
+		bool CheckObjectExists(const std::string& name, const General::GameObject* exclude = nullptr) const;
 
 		void SelectObject(General::GameObject* object) {
 			m_SelectedObject = object;
