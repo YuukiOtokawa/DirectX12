@@ -1,6 +1,7 @@
 
 #include "Main.h"
 #include "GameManager.h"
+#include <exception>
 
 #include "Resource/resource.h"
 
@@ -142,7 +143,15 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 				if ((dwCurrentTime - dwExecLastTime) >= (1000 / 60 / 5))
 				{
 					g_GameManager->Update();
-					g_GameManager->Draw();
+					try {
+						g_GameManager->Draw();
+					}
+					catch (const std::exception& error) {
+						// Do not submit this partially recorded frame or draw with stale constants.
+						OutputDebugStringA(error.what());
+						MessageBoxA(g_Window, error.what(), "Rendering stopped", MB_OK | MB_ICONERROR);
+						break;
+					}
 
 					dwExecLastTime = dwCurrentTime;
 				}

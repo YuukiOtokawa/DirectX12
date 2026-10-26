@@ -1,6 +1,7 @@
 #pragma once
 #include "Renderer.h"
 #include "../../Render/Material.h"
+#include <DirectXMath.h>
 
 namespace EngineCore::General {
 
@@ -11,6 +12,10 @@ namespace EngineCore::General {
 		bool m_CastShadows = true;
 
 		REGISTER_COMPONENT(MeshRenderer)
+	protected:
+		// bindMaterial=false is valid only for consecutive draws of this same material/pass.
+		void DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial = true);
+
 	public:
 		MeshRenderer() = default;
 		~MeshRenderer() override = default;

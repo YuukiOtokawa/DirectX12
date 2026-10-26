@@ -150,6 +150,7 @@
     <ClCompile Include="Code\Component\Component.cpp" />
     <ClCompile Include="Code\Component\Polygon\MeshFilter.cpp" />
     <ClCompile Include="Code\Component\Polygon\MeshRenderer.cpp" />
+    <ClCompile Include="Code\Component\Polygon\FractalTreeRenderer.cpp" />
     <ClCompile Include="Code\Component\Polygon\Light.cpp" />
     <ClCompile Include="Code\Component\Polygon\EditorCameraController.cpp" />
     <ClCompile Include="Code\Component\Transform\Transform.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="Code\Component\PostProcessComponent.h" />
     <ClInclude Include="Code\Component\Polygon\MeshFilter.h" />
     <ClInclude Include="Code\Component\Polygon\MeshRenderer.h" />
+    <ClInclude Include="Code\Component\Polygon\FractalTreeRenderer.h" />
     <ClInclude Include="Code\Component\Polygon\Light.h" />
     <ClInclude Include="Code\Component\Polygon\EditorCameraController.h" />
     <ClInclude Include="Code\Component\Transform\Transform.h" />

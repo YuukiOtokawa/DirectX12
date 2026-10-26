@@ -1,4 +1,5 @@
 #include "DescriptorAllocator.h"
+#include <stdexcept>
 
 namespace EngineCore::Render {
 
@@ -20,6 +21,9 @@ namespace EngineCore::Render {
 
 	unsigned int DescriptorAllocator::Allocate()
 	{
+		if (m_Pool.empty()) {
+			throw std::runtime_error("DescriptorAllocator: descriptor pool exhausted.");
+		}
 		unsigned int index = m_Pool.front();
 		m_Pool.pop_front();
 		return index;

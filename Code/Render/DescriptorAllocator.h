@@ -15,6 +15,7 @@ namespace EngineCore::Render {
 		void Init(ID3D12Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int heapDescriptorCount, unsigned int poolDescriptorCount, bool shaderVisible);
 
 		unsigned int Allocate();
+		size_t GetAvailableCount() const { return m_Pool.size(); }
 		void Free(unsigned int index);
 
 		ID3D12DescriptorHeap* GetHeap() const { return m_Heap.Get(); }

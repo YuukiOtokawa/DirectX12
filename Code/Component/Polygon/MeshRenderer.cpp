@@ -11,6 +11,25 @@ using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;
 
 void MeshRenderer::Draw() {
+	auto* owner = GetOwner();
+	if (!owner) return;
+
+	auto* transform = owner->GetComponent<Transform>();
+	if (!transform) return;
+
+	const auto scale = transform->GetScale();
+	const auto rotation = transform->GetRotation();
+	const auto position = transform->GetPosition();
+	const XMMATRIX world =
+		XMMatrixScaling(scale.x, scale.y, scale.z) *
+		XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z) *
+		XMMatrixTranslation(position.x, position.y, position.z);
+
+	DrawMesh(world);
+}
+
+void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
+	if (!GetOwner()) return;
 	auto meshFilter = GetOwner()->GetComponent<MeshFilter>();
 	if (!meshFilter) return;
 
@@ -24,15 +43,8 @@ void MeshRenderer::Draw() {
 	// 影を落とさないオブジェクトはシャドウパスでは描かない
 	if (renderManager->IsShadowPass() && !m_CastShadows) return;
 
-	auto transform = GetOwner()->GetComponent<Transform>();
-	if (!transform) return;
-
-	// Calculate and send World Matrix
+	// Send the caller's World Matrix.
 	{
-		XMMATRIX world = XMMatrixIdentity();
-		world *= XMMatrixScaling(transform->GetScale().x, transform->GetScale().y, transform->GetScale().z);
-		world *= XMMatrixRotationRollPitchYaw(transform->GetRotation().x, transform->GetRotation().y, transform->GetRotation().z);
-		world *= XMMatrixTranslation(transform->GetPosition().x, transform->GetPosition().y, transform->GetPosition().z);
 		OBJECT_CONSTANT objectConstant{};
 		XMStoreFloat4x4(&objectConstant.World, XMMatrixTranspose(world));
 
@@ -58,12 +70,14 @@ void MeshRenderer::Draw() {
 		renderManager->SetPipelineState("Geometry");
 	}
 
-	// Bind Material Constant Buffer (Dynamic or Legacy)
-    if (renderManager->IsShadowPass() || !m_Material.GetShaderName().empty()) {
-		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
-	} else {
-		EngineCore::Render::MaterialConstant constData = m_Material.GetConstantData();
-		renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(EngineCore::Render::MaterialConstant));
+	// Reuse the material constant across consecutive branches of the same tree.
+	if (bindMaterial) {
+		if (renderManager->IsShadowPass() || !m_Material.GetShaderName().empty()) {
+			renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
+		} else {
+			EngineCore::Render::MaterialConstant constData = m_Material.GetConstantData();
+			renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(EngineCore::Render::MaterialConstant));
+		}
 	}
 
 	// Bind Material Textures
