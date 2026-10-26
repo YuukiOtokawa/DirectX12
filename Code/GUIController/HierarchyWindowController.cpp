@@ -46,4 +46,12 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 		}
 		ImGui::PopID();
 	}
+
+	// 項目の上では開かず、何もないところの右クリックだけで開く
+	if (ImGui::BeginPopupContextWindow("HierarchyContextMenu", ImGuiPopupFlags_NoOpenOverItems)) {
+		if (ImGui::MenuItem("New GameObject")) {
+			ObjectManager::GetInstance()->CreateObject();
+		}
+		ImGui::EndPopup();
+	}
 }
