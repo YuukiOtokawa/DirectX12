@@ -162,7 +162,10 @@ namespace EngineCore::Render {
 
 		ComPtr<ID3D12RootSignature>			m_RootSignature;
 
+		// エンジン内部パス用（起動時に生成）
 		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineState;
+		// マテリアル用（シェーダーファイル×パス種別×エントリで引き、初回要求時に生成）
+		std::unordered_map<std::string, ComPtr<ID3D12PipelineState>>	m_PipelineCache;
 		std::unordered_map<std::string, ShaderMetadata>					m_ShaderMetadataMap;
 
 		DeferredReleaseQueue<ComPtr<ID3D12PipelineState>>				m_PendingReleasePSOs;
@@ -300,6 +303,11 @@ namespace EngineCore::Render {
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
 		void SetPipelineState(const char* PiplineName);
+		void SetPipelineState(ID3D12PipelineState* pipeline);
+		// キャッシュから引き、無ければ生成する。コンパイル失敗時は nullptr（失敗もキャッシュされる）
+		ID3D12PipelineState* GetOrCreatePipeline(const std::string& shaderFile, RenderPassType passType, const char* vsEntry = "vtx", const char* psEntry = "pix");
+		// 再コンパイルし、成功したときだけ同じシェーダーファイルの既存PSOを全て差し替える
+		bool ReloadPipeline(const std::string& shaderFile, RenderPassType passType);
 		ComPtr<ID3D12PipelineState> CreatePipeline(const char* ShaderFile, const DXGI_FORMAT* RTVFormats, unsigned int NumRenderTargets, RenderPassType passType = RenderPassType::DeferredOpaque, const char* vsEntry = "vtx", const char* psEntry = "pix");
 		void ResolveDeferredLighting();
 		void BeginForwardPass();
@@ -329,9 +337,10 @@ namespace EngineCore::Render {
 		};
 		BloomSettings& GetBloomSettings() { return m_BloomSettings; }
 		// data/size を渡すと、そのパス描画時に SUBSET(b3) として定数バッファをバインドする
-		void AddPostProcessPass(const std::string& psoName, const void* data = nullptr, size_t size = 0) {
+		void AddPostProcessPass(const std::string& name, const std::string& shaderFile, const void* data = nullptr, size_t size = 0) {
 			ActivePostProcessPass pass;
-			pass.name = psoName;
+			pass.name = name;
+			pass.shaderFile = shaderFile;
 			if (data && size > 0) {
 				pass.propertyBuffer.assign(
 					reinterpret_cast<const uint8_t*>(data),
@@ -340,8 +349,8 @@ namespace EngineCore::Render {
 			m_ActivePostProcessPasses.push_back(std::move(pass));
 		}
 		void ClearPostProcessPasses() { m_ActivePostProcessPasses.clear(); }
-		bool RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile);
-		void RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState);
+		// 未登録ならHLSLをパースして登録する（PSO生成前にマテリアルを構成したいとき用）
+		const ShaderMetadata* EnsureShaderMetadata(const std::string& shaderFile);
 		const ShaderMetadata* GetShaderMetadata(const std::string& name) const {
 			auto it = m_ShaderMetadataMap.find(name);
 			if (it != m_ShaderMetadataMap.end()) {
@@ -373,9 +382,14 @@ namespace EngineCore::Render {
 	private:
 		struct ActivePostProcessPass {
 			std::string name;
+			std::string shaderFile;
 			std::vector<uint8_t> propertyBuffer; // 空ならcbufferバインドなし
 		};
 		std::vector<ActivePostProcessPass> m_ActivePostProcessPasses;
+
+		static std::string MakePipelineKey(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry);
+		// パス種別からRTV構成を決めてPSOを作る（キャッシュには触らない）
+		ComPtr<ID3D12PipelineState> CreatePipelineForPass(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry);
 
 		BloomSettings m_BloomSettings;
 	};

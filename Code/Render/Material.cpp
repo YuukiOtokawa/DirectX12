@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "RenderManager.h"
+#include <filesystem>
 
 namespace EngineCore::Render {
 
@@ -105,6 +106,16 @@ namespace EngineCore::Render {
         // Fallback
         m_PropertyBuffer.resize(sizeof(MaterialConstant));
         UpdateBufferFromLegacyMembers();
+    }
+
+    void Material::SetShaderFile(const std::string& path) {
+        m_ShaderFilePath = path;
+        // PSOより先にマテリアルを構成するので、メタデータだけ先に読んでおく
+        auto renderManager = RenderManager::GetInstance();
+        if (renderManager) {
+            renderManager->EnsureShaderMetadata(path);
+        }
+        SetShader(std::filesystem::path(path).stem().string());
     }
 
     void Material::SetTextureBaseColor(std::shared_ptr<EngineCore::Render::Types::TEXTURE> texture) {

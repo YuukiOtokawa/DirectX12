@@ -7,6 +7,7 @@
 #include "dxgiformat.h"
 #include <d3dcompiler.h>
 #include <algorithm>
+#include <filesystem>
 #pragma comment(lib, "d3dcompiler.lib")
 using namespace DirectX;
 
@@ -266,14 +267,7 @@ void RenderManager::Init()
 		m_VertexBuffer->Resource->Unmap(0, nullptr);
 	}
 
-	// PipelineState
-	{
-		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-
-		m_PipelineState["Unlit"] = CreatePipeline(SHADER_DIR "Unlit.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::ForwardOpaque);
-
-	}
-
+	// PipelineState（エンジン内部パス用のみ。マテリアル用は GetOrCreatePipeline で初回要求時に作る）
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
@@ -294,24 +288,8 @@ void RenderManager::Init()
 	}
 
 	{
-		DXGI_FORMAT RTVFormats[] = {
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT
-		};
-		m_PipelineState["Geometry"] = CreatePipeline(SHADER_DIR "Geometry.hlsl", RTVFormats, _countof(RTVFormats));
-	}
-
-	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 		m_PipelineState["PostProcess"] = CreatePipeline(SHADER_DIR "PostProcess.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
-	}
-
-	{
-		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["InvertColor"] = CreatePipeline(SHADER_DIR "InvertColor.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	// Bloom : 1ファイル5エントリポイント。エントリ名だけ変えて PSO を作り分ける。
@@ -786,6 +764,10 @@ void RenderManager::ApplyPostProcess()
 	for (size_t i = 0; i < m_ActivePostProcessPasses.size(); ++i) {
 		const auto& pass = m_ActivePostProcessPasses[i];
 
+		// コンパイル失敗中のパスは飛ばす（入力をそのまま次へ渡す）
+		ID3D12PipelineState* pipeline = GetOrCreatePipeline(pass.shaderFile, RenderPassType::PostProcess);
+		if (!pipeline) continue;
+
 		// Output must be in RENDER_TARGET state (both buffers rest in PIXEL_SHADER_RESOURCE).
 		{
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -799,7 +781,7 @@ void RenderManager::ApplyPostProcess()
 		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_GraphicsCommandList->ClearRenderTargetView(currentOutput->RTVHandle, clearColor, 0, nullptr);
 
-		SetPipelineState(pass.name.c_str());
+		SetPipelineState(pipeline);
 		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
 		// パス独自のマテリアルプロパティ(b3)があればバインド
 		if (!pass.propertyBuffer.empty()) {
@@ -1720,13 +1702,88 @@ void RenderManager::SetPipelineState(const char* PiplineName)
 	m_GraphicsCommandList->SetPipelineState(pipeline);
 }
 
-void RenderManager::RegisterPipelineState(const std::string& name, ComPtr<ID3D12PipelineState> pipelineState) {
-	auto it = m_PipelineState.find(name);
-	if (it != m_PipelineState.end()) {
-		// 次に提出される予定のフェンス値を紐付けて退避させる
-		m_PendingReleasePSOs.Push(it->second, m_FenceValue + 1);
+void RenderManager::SetPipelineState(ID3D12PipelineState* pipeline)
+{
+	assert(pipeline);
+
+	m_GraphicsCommandList->SetPipelineState(pipeline);
+}
+
+std::string RenderManager::MakePipelineKey(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry)
+{
+	return shaderFile + "|" + std::to_string(static_cast<int>(passType)) + "|" + vsEntry + "|" + psEntry;
+}
+
+ComPtr<ID3D12PipelineState> RenderManager::CreatePipelineForPass(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry)
+{
+	// G-Buffer へ書くパスだけMRT5枚、それ以外は1枚
+	if (passType == RenderPassType::DeferredOpaque) {
+		DXGI_FORMAT RTVFormats[] = {
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R16G16B16A16_FLOAT
+		};
+		return CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), passType, vsEntry, psEntry);
 	}
-	m_PipelineState[name] = pipelineState;
+
+	DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
+	return CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), passType, vsEntry, psEntry);
+}
+
+ID3D12PipelineState* RenderManager::GetOrCreatePipeline(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry)
+{
+	std::string key = MakePipelineKey(shaderFile, passType, vsEntry, psEntry);
+	auto it = m_PipelineCache.find(key);
+	if (it != m_PipelineCache.end()) {
+		return it->second.Get();
+	}
+
+	// 失敗(nullptr)もキャッシュして、毎フレームのコンパイルエラー連発を防ぐ
+	ComPtr<ID3D12PipelineState> pipeline = CreatePipelineForPass(shaderFile, passType, vsEntry, psEntry);
+	m_PipelineCache[key] = pipeline;
+	return pipeline.Get();
+}
+
+bool RenderManager::ReloadPipeline(const std::string& shaderFile, RenderPassType passType)
+{
+	// 失敗したときは既存PSOを残す（直すまで前の見た目で描き続ける）
+	ComPtr<ID3D12PipelineState> pipeline = CreatePipelineForPass(shaderFile, passType, "vtx", "pix");
+	if (!pipeline) {
+		return false;
+	}
+
+	// 同じファイルの他のパス種別も古いので捨てる。次の要求時に作り直される
+	const std::string prefix = shaderFile + "|";
+	for (auto it = m_PipelineCache.begin(); it != m_PipelineCache.end();) {
+		if (it->first.compare(0, prefix.size(), prefix) == 0) {
+			// 次に提出される予定のフェンス値を紐付けて退避させる
+			if (it->second) {
+				m_PendingReleasePSOs.Push(it->second, m_FenceValue + 1);
+			}
+			it = m_PipelineCache.erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	m_PipelineCache[MakePipelineKey(shaderFile, passType, "vtx", "pix")] = pipeline;
+	return true;
+}
+
+const ShaderMetadata* RenderManager::EnsureShaderMetadata(const std::string& shaderFile)
+{
+	const std::string name = std::filesystem::path(shaderFile).stem().string();
+	auto it = m_ShaderMetadataMap.find(name);
+	if (it != m_ShaderMetadataMap.end()) {
+		return &it->second;
+	}
+
+	ShaderMetadata meta = ParseShaderMetadata(shaderFile);
+	auto& slot = m_ShaderMetadataMap[meta.shaderName];
+	slot = std::move(meta);
+	return &slot;
 }
 
 void RenderManager::CleanUpRenderTarget() {
@@ -1792,15 +1849,5 @@ RENDER_TARGET::~RENDER_TARGET()
 	RenderManager::GetInstance()->ReleaseRenderTargetView(RTVIndex);
 }
 
-bool EngineCore::Render::RenderManager::RegisterDynamicPostProcess(const std::string& name, const std::string& shaderFile)
-{
-	DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-	ComPtr<ID3D12PipelineState> pipeline = CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
-	if (!pipeline) {
-		return false;
-	}
-	m_PipelineState[name] = pipeline;
-	return true;
-}
 
 

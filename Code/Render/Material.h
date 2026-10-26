@@ -90,7 +90,8 @@ namespace EngineCore::Render {
         void SetShader(const std::string& shaderName);
         const std::string& GetShaderName() const { return m_ShaderName; }
         
-        void SetShaderFilePath(const std::string& path) { m_ShaderFilePath = path; }
+        // パスを設定し、ファイル名(拡張子なし)をシェーダー名として SetShader する
+        void SetShaderFile(const std::string& path);
         const std::string& GetShaderFilePath() const { return m_ShaderFilePath; }
 
         const void* GetBufferData() const { return m_PropertyBuffer.data(); }

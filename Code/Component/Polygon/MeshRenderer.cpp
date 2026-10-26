@@ -5,6 +5,7 @@
 #include "../../GameObject/GameObject.h"
 #include "../../../ImGui/Code/imgui.h"
 #include "../../Utility/FilePicker.h"
+#include "../../Utility/ResourcePath.h"
 #include "../MaterialPropertyInspector.h"
 
 using namespace EngineCore::General;
@@ -61,13 +62,17 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(meshFilter->GetPrimitiveTopology());
 
-	// Bind Pipeline State (Dynamic or Legacy)
+	// Bind Pipeline State
     if (renderManager->IsShadowPass()) {
         renderManager->SetPipelineState("Shadow");
-    } else if (!m_Material.GetShaderName().empty()) {
-		renderManager->SetPipelineState(m_Material.GetShaderName().c_str());
-	} else {
-		renderManager->SetPipelineState("Geometry");
+    } else {
+		// シェーダーファイル×パス種別でPSOを引く（初回のみコンパイル）。未設定なら Geometry
+		const std::string& shaderFile = m_Material.GetShaderFilePath();
+		ID3D12PipelineState* pipeline = renderManager->GetOrCreatePipeline(
+			shaderFile.empty() ? SHADER_DIR "Geometry.hlsl" : shaderFile,
+			m_Material.GetRenderPassType());
+		if (!pipeline) return; // コンパイル失敗中は描かない
+		renderManager->SetPipelineState(pipeline);
 	}
 
 	// Reuse the material constant across consecutive branches of the same tree.
@@ -117,34 +122,8 @@ void MeshRenderer::Inspector() {
 	int currentPassType = static_cast<int>(m_Material.GetRenderPassType());
 	const char* passTypeNames[] = { "Deferred Opaque", "Forward Opaque", "Forward Transparent" };
 	if (ImGui::Combo("##RenderPass", &currentPassType, passTypeNames, _countof(passTypeNames))) {
-		EngineCore::Render::RenderPassType newPassType = static_cast<EngineCore::Render::RenderPassType>(currentPassType);
-		m_Material.SetRenderPassType(newPassType);
-		
-		// If shader path is set, automatically recompile PSO with the new configuration
-		std::string path = m_Material.GetShaderFilePath();
-		if (!path.empty() && renderManager) {
-			std::string shaderName = m_Material.GetShaderName();
-			ComPtr<ID3D12PipelineState> pso;
-			if (newPassType == EngineCore::Render::RenderPassType::DeferredOpaque) {
-				DXGI_FORMAT formats[] = {
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT
-				};
-				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), newPassType);
-			} else {
-				DXGI_FORMAT formats[] = {
-					DXGI_FORMAT_R16G16B16A16_FLOAT
-				};
-				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), newPassType);
-			}
-			
-			if (pso) {
-				renderManager->RegisterPipelineState(shaderName, pso);
-			}
-		}
+		// PSOは描画時にシェーダー×パス種別で引き直されるので、ここでは種別を変えるだけ
+		m_Material.SetRenderPassType(static_cast<EngineCore::Render::RenderPassType>(currentPassType));
 	}
 
 	// --- Shader Picker ---
@@ -153,33 +132,10 @@ void MeshRenderer::Inspector() {
 	if (ImGui::Button("Select Shader")) {
 		COMDLG_FILTERSPEC shaderFilter[] = { { L"HLSL Files (*.hlsl)", L"*.hlsl" }, { L"All Files", L"*.*" } };
 		std::string path = OpenFileDialog(shaderFilter, _countof(shaderFilter));
-		if (!path.empty() && renderManager) {
-			std::string shaderName = path.substr(path.find_last_of("\\/") + 1);
-			shaderName = shaderName.substr(0, shaderName.find_last_of("."));
-			
-			EngineCore::Render::RenderPassType passType = m_Material.GetRenderPassType();
-			ComPtr<ID3D12PipelineState> pso;
-			if (passType == EngineCore::Render::RenderPassType::DeferredOpaque) {
-				DXGI_FORMAT formats[] = {
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT,
-					DXGI_FORMAT_R16G16B16A16_FLOAT
-				};
-				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), passType);
-			} else {
-				DXGI_FORMAT formats[] = {
-					DXGI_FORMAT_R16G16B16A16_FLOAT
-				};
-				pso = renderManager->CreatePipeline(path.c_str(), formats, _countof(formats), passType);
-			}
-			
-			if (pso) {
-				renderManager->RegisterPipelineState(shaderName, pso);
-				m_Material.SetShader(shaderName);
-				m_Material.SetShaderFilePath(path);
-			}
+		// 同じファイルを選び直したときも再コンパイルされる（ホットリロード）
+		if (!path.empty() && renderManager &&
+			renderManager->ReloadPipeline(path, m_Material.GetRenderPassType())) {
+			m_Material.SetShaderFile(path);
 		}
 	}
 

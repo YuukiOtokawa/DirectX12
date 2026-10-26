@@ -1,5 +1,6 @@
 #include "SpriteRenderer.h"
 #include "../../Manager/Main.h"
+#include "../../Utility/ResourcePath.h"
 
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;
@@ -70,7 +71,9 @@ void SpriteRenderer::Draw() {
 	renderManager->SetVertexBuffer(m_VertexBuffer.get());
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	renderManager->SetPipelineState("unlit");
+	ID3D12PipelineState* pipeline = renderManager->GetOrCreatePipeline(SHADER_DIR "Unlit.hlsl", EngineCore::Render::RenderPassType::ForwardOpaque);
+	if (!pipeline) return;
+	renderManager->SetPipelineState(pipeline);
 
 	renderManager->GetGraphicsCommandList()->DrawInstanced(4, 1, 0, 0);
 }
