@@ -43,6 +43,7 @@ namespace EngineManager {
 		EngineCore::General::Camera* FindGameCamera();
 		EngineCore::General::Camera* FindEditorCamera();
         std::vector<EngineCore::General::Light*> FindLights();
+		const std::optional<std::uint64_t>& GetEditorCameraID() const { return m_EditorCameraID; }
 
 		LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 			if (m_ImGuiController.WindowProcHandler(hWnd, message, wParam, lParam))

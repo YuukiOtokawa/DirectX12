@@ -35,6 +35,11 @@ namespace EngineCore::General {
 		const XMMATRIX& GetViewMatrix() const { return m_ViewMatrix; }
 
 		Camera();
+		~Camera() override {
+			if (s_ActiveCamera == this) {
+				s_ActiveCamera = nullptr;
+			}
+		}
 
 		// Component のオーバーライド
 		void Draw() override;

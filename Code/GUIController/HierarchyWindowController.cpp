@@ -2,6 +2,7 @@
 #include "ObjectNameEditor.h"
 
 #include "../Manager/ObjectManager.h"
+#include "../Manager/GameManager.h"
 using namespace EngineCore::Manager;
 
 #include "../GameObject/GameObject.h"
@@ -14,6 +15,11 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 	}
 
 	auto& objects = ObjectManager::GetInstance()->GetObjects();
+
+	std::optional<uint64_t> editorCameraID;
+	if (auto gameManager = EngineManager::GameManager::GetInstance()) {
+		editorCameraID = gameManager->GetEditorCameraID();
+	}
 
 	for (auto& object : objects) {
 		auto raw = object.object.get();
@@ -29,6 +35,14 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 		const bool isSelected = raw == ObjectManager::GetInstance()->GetSelectedObject();
 		if (Gui::ObjectNameEditor::Draw(*raw, isSelected, isSelected)) {
 			ObjectManager::GetInstance()->SelectObject(raw);
+		}
+		if (ImGui::BeginPopupContextItem("ObjectContextMenu")) {
+			// EditorCameraを消すとシーンビューを復帰できないため削除不可にする
+			const bool canDelete = !editorCameraID || raw->GetID() != *editorCameraID;
+			if (ImGui::MenuItem("Delete", nullptr, false, canDelete)) {
+				ObjectManager::GetInstance()->RequestRemoveObject(raw->GetID());
+			}
+			ImGui::EndPopup();
 		}
 		ImGui::PopID();
 	}

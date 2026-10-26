@@ -38,7 +38,11 @@ namespace EngineCore::General {
 		static Light* s_ActiveLight;
 	public:
 		Light();
-		~Light() override = default;
+		~Light() override {
+			if (s_ActiveLight == this) {
+				s_ActiveLight = nullptr;
+			}
+		}
 
 		void Update() override;
 		void Draw() override;

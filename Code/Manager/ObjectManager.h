@@ -29,6 +29,7 @@ namespace EngineCore::Manager {
 
 		std::vector<GameObjectEntry> m_Objects;
 		std::vector<Index> m_FreeEntries;
+		std::vector<uint64_t> m_PendingRemoveIDs;
 
 		General::GameObject* m_SelectedObject = nullptr;
 
@@ -46,6 +47,10 @@ namespace EngineCore::Manager {
 		void AddObject(std::unique_ptr<General::GameObject> object);
 
 		void RemoveObject(const uint64_t id);
+
+		// 描画コマンド記録中でも安全に呼べる削除要求。実際の破棄はFlushRemovedObjectsで行う
+		void RequestRemoveObject(const uint64_t id);
+		void FlushRemovedObjects();
 
 		bool IsValid(const uint64_t id) const;
 

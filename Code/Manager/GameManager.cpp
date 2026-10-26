@@ -55,6 +55,9 @@ namespace EngineManager {
 	}
 
 	void GameManager::Update() {
+		// 前フレームのGUIで要求された削除を、コマンド記録前に処理する
+		_ObjectManager->FlushRemovedObjects();
+
 		// Update scene objects
 		_ObjectManager->UpdateObjects();
 	}

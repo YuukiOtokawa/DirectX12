@@ -3,6 +3,7 @@
 #include "Object.h"
 #include "GameObject/GameObject.h"
 #include "../Render/RenderSystem.h"
+#include "../Render/RenderManager.h"
 
 EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::m_Instance;
 
@@ -42,13 +43,38 @@ namespace EngineCore::Manager {
 	}
 
 	void ObjectManager::RemoveObject(const uint64_t id) {
-		auto index = GetIndex(id);
-		if ((index) >= m_Objects.size() || !m_Objects[index].object) {
+		// 世代も確認し、解放済みスロットを再利用した別オブジェクトを消さないようにする
+		if (!IsValid(id)) {
 			return;
+		}
+		auto index = GetIndex(id);
+		if (m_SelectedObject == m_Objects[index].object.get()) {
+			m_SelectedObject = nullptr;
 		}
 		m_Objects[index].object.reset();
 		m_Objects[index].generation++;
 		m_FreeEntries.push_back(index);
+	}
+
+	void ObjectManager::RequestRemoveObject(const uint64_t id) {
+		if (IsValid(id)) {
+			m_PendingRemoveIDs.push_back(id);
+		}
+	}
+
+	void ObjectManager::FlushRemovedObjects() {
+		if (m_PendingRemoveIDs.empty()) {
+			return;
+		}
+		// 実行中のコマンドが頂点バッファ等を参照しているため、GPU完了を待ってから破棄する
+		auto renderManager = EngineCore::Render::RenderManager::GetInstance();
+		if (renderManager) {
+			renderManager->WaitGPU();
+		}
+		for (auto id : m_PendingRemoveIDs) {
+			RemoveObject(id);
+		}
+		m_PendingRemoveIDs.clear();
 	}
 
 	bool ObjectManager::IsValid(const uint64_t id) const {
