@@ -1,4 +1,5 @@
 #include "Common.hlsli"
+#include "Noise.hlsl"
 
 // 画面空間微分から接線基底を作り、接線空間法線(tn)をワールド法線へ変換（Approach B）
 float3 PerturbNormal(float3 N, float3 worldPos, float2 uv, float3 tn)
@@ -58,7 +59,7 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
         tn = normalize(tn);
         worldN = PerturbNormal(N, input.WorldPosition.xyz, input.TexCoord, tn);
     }
-    output.Color.rgb = fmod(floor(input.TexCoord.y * 5.0), 2);
+    output.Color.rgb = random2(input.TexCoord);
     output.Color.a   = 1.0;
     output.Color     = output.Color * Material.BaseColor;
     output.Normal    = float4(worldN * origLen, 1.0f); // 未割当時は元の input.Normal と一致
