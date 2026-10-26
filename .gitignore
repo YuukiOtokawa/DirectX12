@@ -364,3 +364,12 @@ FodyWeavers.xsd
 .idea/.idea.DirectX12/.idea/encodings.xml
 .idea/.idea.DirectX12/.idea/workspace.xml
 .idea
+
+# Project build output (DirectX12.vcxproj OutDir/IntDir)
+[Bb]uild/
+# Legacy build output that used to land in the repository root
+/DirectX12.exe
+/DirectX12.exp
+/DirectX12.lib
+# ImGui window layout (written to the working directory at runtime)
+imgui.ini
