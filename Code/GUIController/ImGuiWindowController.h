@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
 #include <cstdint>
 #include <string>

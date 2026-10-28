@@ -1,6 +1,6 @@
 #include "ComponentFactory.h"
 
-#include "../Component/Component.h"
+#include "Code/Component/Component.h"
 
 
 std::unique_ptr<EngineCore::General::Component> EngineCore::Manager::ComponentFactory::CreateComponent(const std::string& name) {

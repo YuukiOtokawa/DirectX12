@@ -1,11 +1,11 @@
 #include "HierarchyWindowController.h"
 #include "ObjectNameEditor.h"
 
-#include "../Manager/ObjectManager.h"
-#include "../Manager/GameManager.h"
+#include "Code/Manager/ObjectManager.h"
+#include "Code/Manager/GameManager.h"
 using namespace EngineCore::Manager;
 
-#include "../GameObject/GameObject.h"
+#include "Code/GameObject/GameObject.h"
 using namespace EngineCore::General;
 
 void GUIController::Window::HierarchyWindowController::Draw() {

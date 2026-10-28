@@ -1,6 +1,6 @@
 #include "SceneViewWindowController.h"
 #include "Render/RenderManager.h"
-#include "../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
 using namespace GUIController::Window;
 

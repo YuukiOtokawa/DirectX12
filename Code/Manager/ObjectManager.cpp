@@ -2,8 +2,8 @@
 
 #include "Object.h"
 #include "GameObject/GameObject.h"
-#include "../Render/RenderSystem.h"
-#include "../Render/RenderManager.h"
+#include "Code/Render/RenderSystem.h"
+#include "Code/Render/RenderManager.h"
 
 EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::m_Instance;
 

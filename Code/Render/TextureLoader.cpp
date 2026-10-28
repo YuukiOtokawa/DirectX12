@@ -1,8 +1,8 @@
-#include "../Manager/Main.h"
+#include "Code/Manager/Main.h"
 #include "TextureLoader.h"
 #include "RenderManager.h"
 #include "D3DX12.h"
-#include "../Utility/DDSTextureLoader12.h"
+#include "Code/Utility/DDSTextureLoader12.h"
 #include <cassert>
 
 using namespace DirectX;

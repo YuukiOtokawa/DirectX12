@@ -1,12 +1,12 @@
 #include "GameObject.h"
 
-#include "../../ImGui/Code/imgui.h"
-#include "../GUIController/ObjectNameEditor.h"
+#include "ImGui/Code/imgui.h"
+#include "Code/GUIController/ObjectNameEditor.h"
 
-#include "../Manager/ObjectManager.h"
+#include "Code/Manager/ObjectManager.h"
 using namespace EngineCore::Manager;
 
-#include "../Component/Component.h"
+#include "Code/Component/Component.h"
 
 EngineCore::General::GameObject::GameObject() {}
 

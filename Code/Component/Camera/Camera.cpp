@@ -1,14 +1,14 @@
 #include "Camera.h"
 #include <cmath>
 
-#include "../Component.h"
+#include "Code/Component/Component.h"
 #include "RenderManager.h"
 
-#include "../../GameObject/GameObject.h"
-#include "../Transform/Transform.h"
+#include "Code/GameObject/GameObject.h"
+#include "Code/Component/Transform/Transform.h"
 
 // Include ImGui header
-#include "../../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;

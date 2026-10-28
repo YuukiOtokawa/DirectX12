@@ -1,6 +1,6 @@
 #pragma once
 #include "Renderer.h"
-#include "../../Render/Material.h"
+#include "Code/Render/Material.h"
 #include <DirectXMath.h>
 
 namespace EngineCore::General {

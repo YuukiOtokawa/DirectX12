@@ -1,8 +1,8 @@
 #include "Light.h"
-#include "../../../ImGui/Code/imgui.h"
-#include "../../GameObject/GameObject.h"
-#include "../Transform/Transform.h"
-#include "../Camera/Camera.h"
+#include "ImGui/Code/imgui.h"
+#include "Code/GameObject/GameObject.h"
+#include "Code/Component/Transform/Transform.h"
+#include "Code/Component/Camera/Camera.h"
 #include "Render/RenderManager.h"
 
 #include <cmath>

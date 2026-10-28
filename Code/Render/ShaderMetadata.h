@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "../Utility/VectorClass.h"
+#include "Code/Utility/VectorClass.h"
 
 namespace EngineCore::Render {
     struct ShaderProperty {

@@ -1,8 +1,8 @@
 #include "PostProcessComponent.h"
 #include "RenderManager.h"
-#include "../../ImGui/Code/imgui.h"
-#include "../Utility/FilePicker.h"
-#include "../Utility/ResourcePath.h"
+#include "ImGui/Code/imgui.h"
+#include "Code/Utility/FilePicker.h"
+#include "Code/Utility/ResourcePath.h"
 #include "MaterialPropertyInspector.h"
 #include <cstring>
 #include <filesystem>

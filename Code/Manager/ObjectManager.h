@@ -4,9 +4,9 @@
 #include <memory>
 #include <string>
 
-#include "../Utility/ObjectIDManipulator.h"
+#include "Code/Utility/ObjectIDManipulator.h"
 
-#include "../GameObject/GameObject.h"
+#include "Code/GameObject/GameObject.h"
 
 namespace EngineCore::General {
 	class GameObject;

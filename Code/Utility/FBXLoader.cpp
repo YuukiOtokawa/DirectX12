@@ -6,9 +6,9 @@ using namespace DirectX;
 
 #include <unordered_map>
 
-#include "../Utility/VectorClass.h"
+#include "Code/Utility/VectorClass.h"
 
-#include "../DirectXTex/DirectXTex.h"
+#include "Code/DirectXTex/DirectXTex.h"
 #include <D3DX12.h>
 //#pragma comment(lib, "../assimp/lib/assimp-vc145-mt.lib")
 

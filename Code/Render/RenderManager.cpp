@@ -1,9 +1,9 @@
-#include "../Manager/Main.h"
+#include "Code/Manager/Main.h"
 #include "RenderManager.h"
 
 #include "D3DX12.h"
-#include "../Utility/DDSTextureLoader12.h"
-#include "../Utility/ResourcePath.h"
+#include "Code/Utility/DDSTextureLoader12.h"
+#include "Code/Utility/ResourcePath.h"
 #include "dxgiformat.h"
 #include <d3dcompiler.h>
 #include <algorithm>

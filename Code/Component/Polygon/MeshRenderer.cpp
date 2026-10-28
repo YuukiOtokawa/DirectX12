@@ -1,12 +1,12 @@
 #include "MeshRenderer.h"
 #include "MeshFilter.h"
-#include "../Transform/Transform.h"
+#include "Code/Component/Transform/Transform.h"
 #include "RenderManager.h"
-#include "../../GameObject/GameObject.h"
-#include "../../../ImGui/Code/imgui.h"
-#include "../../Utility/FilePicker.h"
-#include "../../Utility/ResourcePath.h"
-#include "../MaterialPropertyInspector.h"
+#include "Code/GameObject/GameObject.h"
+#include "ImGui/Code/imgui.h"
+#include "Code/Utility/FilePicker.h"
+#include "Code/Utility/ResourcePath.h"
+#include "Code/Component/MaterialPropertyInspector.h"
 
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;

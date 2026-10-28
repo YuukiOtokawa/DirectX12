@@ -1,5 +1,5 @@
 #include "ShaderMetadata.h"
-#include "../Utility/ResourcePath.h"
+#include "Code/Utility/ResourcePath.h"
 #include <fstream>
 #include <sstream>
 #include <regex>

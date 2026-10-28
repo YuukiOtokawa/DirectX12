@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../ImGui/Code/imgui.h"
-#include "../Manager/ObjectManager.h"
+#include "ImGui/Code/imgui.h"
+#include "Code/Manager/ObjectManager.h"
 
 #include <optional>
 #include <string>

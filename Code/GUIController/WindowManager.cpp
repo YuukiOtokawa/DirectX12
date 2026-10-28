@@ -1,6 +1,6 @@
 #include "WindowManager.h"
 
-#include "../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
 #include "ImGuiWindowController.h"
 #include "ObjectNameEditor.h"

@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 
-#include "../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
 namespace GUIController::Gui {
 

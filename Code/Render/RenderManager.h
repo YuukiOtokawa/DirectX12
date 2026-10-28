@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Manager/Main.h"
+#include "Code/Manager/Main.h"
 
-#include "../Utility/VectorClass.h"
+#include "Code/Utility/VectorClass.h"
 #include "Material.h"
 #include "ShaderMetadata.h"
 #include "DescriptorAllocator.h"

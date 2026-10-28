@@ -3,7 +3,7 @@
 #include "Manager/ObjectManager.h"
 using namespace EngineCore::Manager;
 
-#include "../GameObject/GameObject.h"
+#include "Code/GameObject/GameObject.h"
 using namespace EngineCore::General;
 
 void GUIController::Window::InspectorWindowController::Draw() {

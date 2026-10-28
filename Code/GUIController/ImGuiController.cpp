@@ -1,10 +1,10 @@
 #include "ImGuiController.h"
 
-#include "../Manager/Main.h"
+#include "Code/Manager/Main.h"
 
-#include "../../ImGui/Code/imgui.h"
-#include "../../ImGui/Code/imgui_impl_win32.h"
-#include "../../ImGui/Code/imgui_impl_dx12.h"
+#include "ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui_impl_win32.h"
+#include "ImGui/Code/imgui_impl_dx12.h"
 
 #ifdef _DEBUG
 #pragma comment(lib, "x64/Debug/imgui.lib")

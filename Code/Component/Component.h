@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Object.h"
-#include "../Manager/ComponentFactory.h"
+#include "Code/Manager/ComponentFactory.h"
 
 namespace EngineCore::General {
 	class GameObject;

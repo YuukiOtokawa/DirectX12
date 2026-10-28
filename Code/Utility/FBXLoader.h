@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../assimp/cimport.h"
-#include "../assimp/scene.h"
-#include "../assimp/postprocess.h"
-#include "../assimp/matrix4x4.h"
+#include "Code/assimp/cimport.h"
+#include "Code/assimp/scene.h"
+#include "Code/assimp/postprocess.h"
+#include "Code/assimp/matrix4x4.h"
 
-#include "../Utility/VertexData.h"
+#include "Code/Utility/VertexData.h"
 
-#include "../Render/RenderManager.h"
+#include "Code/Render/RenderManager.h"
 
 using namespace EngineCore::Render::Types;
 

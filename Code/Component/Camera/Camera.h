@@ -3,7 +3,7 @@
 #pragma once
 #include "Component.h"
 
-#include "../../Utility/VectorClass.h"
+#include "Code/Utility/VectorClass.h"
 #include <DirectXMath.h>
 using namespace DirectX;
 

@@ -1,6 +1,6 @@
 #include "GraphicsDebugWindowController.h"
 
-#include "../Render/RenderManager.h"
+#include "Code/Render/RenderManager.h"
 
 void GUIController::Window::GraphicsDebugWindowController::Draw() {
 	ImGui::Text("Color Buffer");

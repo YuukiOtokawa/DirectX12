@@ -1,8 +1,8 @@
 #include "Component.h"
 
-#include "../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
-#include "../GameObject/GameObject.h"
+#include "Code/GameObject/GameObject.h"
 
 namespace EngineCore::General {
 

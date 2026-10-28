@@ -1,6 +1,6 @@
 #include "RenderSystem.h"
-#include "../Component/Component.h"
-#include "../Component/Polygon/MeshRenderer.h"
+#include "Code/Component/Component.h"
+#include "Code/Component/Polygon/MeshRenderer.h"
 #include "RenderManager.h"
 #include <algorithm>
 

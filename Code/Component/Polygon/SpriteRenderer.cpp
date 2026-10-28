@@ -1,6 +1,6 @@
 #include "SpriteRenderer.h"
-#include "../../Manager/Main.h"
-#include "../../Utility/ResourcePath.h"
+#include "Code/Manager/Main.h"
+#include "Code/Utility/ResourcePath.h"
 
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;

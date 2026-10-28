@@ -1,8 +1,8 @@
 #include "FractalTreeRenderer.h"
 #include "MeshFilter.h"
-#include "../Transform/Transform.h"
-#include "../../GameObject/GameObject.h"
-#include "../../../ImGui/Code/imgui.h"
+#include "Code/Component/Transform/Transform.h"
+#include "Code/GameObject/GameObject.h"
+#include "ImGui/Code/imgui.h"
 #include <cmath>
 
 using namespace DirectX;

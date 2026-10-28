@@ -1,13 +1,13 @@
 #include "MeshFilter.h"
-#include "../../../ImGui/Code/imgui.h"
+#include "ImGui/Code/imgui.h"
 
-#include "../../Utility/FilePicker.h"
-#include "../../Utility/FBXLoader.h"
-#include "../../Utility/OBJLoader.h"
+#include "Code/Utility/FilePicker.h"
+#include "Code/Utility/FBXLoader.h"
+#include "Code/Utility/OBJLoader.h"
 #include <algorithm>
 
-#include "../../GameObject/GameObject.h"
-#include "../Transform/Transform.h"
+#include "Code/GameObject/GameObject.h"
+#include "Code/Component/Transform/Transform.h"
 
 void EngineCore::General::MeshFilter::Update() {}
 
