@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "Engine/Public/EngineAPI.h"
+
 // アセット・シェーダーの参照先ディレクトリ
 // Repository  : リポジトリ内のフォルダを直接参照（エディタ用。Assets\ / Engine/Shader/）
 // Distribution: 実行フォルダ直下の Resource フォルダを参照（製品用。Resource\Asset\ / Resource/Shader/）
@@ -15,10 +17,10 @@ namespace EngineCore::ResourcePath {
 		Distribution,
 	};
 
-	void SetLayout(Layout layout);
-	Layout GetLayout();
+	ENGINE_API void SetLayout(Layout layout);
+	ENGINE_API Layout GetLayout();
 
 	// 参照先ディレクトリを前に付けたパスを返す
-	std::string Asset(const std::string& fileName);
-	std::string Shader(const std::string& fileName);
+	ENGINE_API std::string Asset(const std::string& fileName);
+	ENGINE_API std::string Shader(const std::string& fileName);
 }

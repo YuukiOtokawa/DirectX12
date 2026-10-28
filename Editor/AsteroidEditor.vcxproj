@@ -57,25 +57,15 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>/WHOLEARCHIVE:EngineCore.lib /WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalOptions>/WHOLEARCHIVE:EngineCore.lib /WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EditorApp.cpp" />
@@ -97,10 +87,6 @@
     </ProjectReference>
     <ProjectReference Include="Editor.vcxproj">
       <Project>{fab9ca40-055a-4e34-a8b7-b30ffa39f823}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\ThirdParty\yaml-cpp\yaml-cpp.vcxproj">
-      <Project>{1160a550-1277-485a-9893-ebecae3ca89a}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 
 
 #pragma once
+#include "Engine/Public/EngineAPI.h"
 #include "Component.h"
 
 #include "Engine/Source/Utility/VectorClass.h"
@@ -9,7 +10,7 @@ using namespace DirectX;
 
 namespace EngineCore::General {
 
-	class Camera : public Component {
+	class ENGINE_API Camera : public Component {
 		Vector3 m_TargetPosition;
 		float m_Fov;
 
@@ -59,4 +60,3 @@ namespace EngineCore::General {
 		static Camera* GetActiveCamera() { return s_ActiveCamera; }
 	};
 }
-

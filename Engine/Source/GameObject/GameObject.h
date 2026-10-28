@@ -1,5 +1,6 @@
 #pragma once
 #include "Object.h"
+#include "Engine/Public/EngineAPI.h"
 
 #include <string>
 #include <vector>
@@ -10,7 +11,7 @@ namespace EngineCore::General {
 }
 
 namespace EngineCore::General {
-    class GameObject :
+    class ENGINE_API GameObject :
         public Object {
 
 		bool m_IsStarted = false;
@@ -23,6 +24,8 @@ namespace EngineCore::General {
 
         GameObject();
 		~GameObject();
+		GameObject(const GameObject&) = delete;
+		GameObject& operator=(const GameObject&) = delete;
 
 		const std::vector<std::unique_ptr<Component>>& GetComponents() const;
 		void ExecUpdate() {
@@ -75,4 +78,3 @@ inline T* EngineCore::General::GameObject::GetComponent() {
 	}
 	return nullptr;
 }
-

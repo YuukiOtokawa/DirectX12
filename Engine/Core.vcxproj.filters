@@ -226,6 +226,9 @@
     <ClInclude Include="Public\ScriptAPI.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Public\EngineAPI.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Utility\ResourcePath.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>

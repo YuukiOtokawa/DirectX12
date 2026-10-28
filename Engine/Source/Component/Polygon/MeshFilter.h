@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Public/EngineAPI.h"
 #include "Component.h"
 
 #include "Engine/Source/Render/VertexTypes.h"
@@ -11,7 +12,7 @@
 
 namespace EngineCore::General {
 
-	class MeshFilter :
+	class ENGINE_API MeshFilter :
 		public Component {
 		REGISTER_COMPONENT(MeshFilter)
 

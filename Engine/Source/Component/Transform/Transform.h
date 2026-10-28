@@ -1,10 +1,11 @@
 #pragma once
 
+#include "Engine/Public/EngineAPI.h"
 #include "Component/Component.h"
 #include "Utility/VectorClass.h"
 
 namespace EngineCore::General {
-	class Transform : public Component {
+	class ENGINE_API Transform : public Component {
 		REGISTER_COMPONENT(Transform)
 	public:
 		Vector3 Position;

@@ -1,12 +1,13 @@
 #pragma once
 
+#include "Engine/Public/EngineAPI.h"
 #include "MeshRenderer.h"
 #include <algorithm>
 
 namespace EngineCore::General {
 
 	// The source mesh's branch axis is local +Y, centered on X=Z=0.
-	class FractalTreeRenderer : public MeshRenderer {
+	class ENGINE_API FractalTreeRenderer : public MeshRenderer {
 		REGISTER_COMPONENT(FractalTreeRenderer)
 
 	public:

@@ -15,6 +15,7 @@
 #include "RenderTargetManager.h"
 #include "VertexTypes.h"
 #include <memory>
+#include "Engine/Public/EngineAPI.h"
 
 namespace EngineCore::Render {
 
@@ -70,7 +71,7 @@ namespace EngineCore::Render {
 		};
 
 		// テクスチャデータ Textureクラスに移動
-		struct TEXTURE
+		struct ENGINE_API TEXTURE
 		{
 			ComPtr<ID3D12Resource>	Resource;
 			unsigned int			SRVIndex;
@@ -78,7 +79,7 @@ namespace EngineCore::Render {
 		};
 
 
-		struct RENDER_TARGET
+		struct ENGINE_API RENDER_TARGET
 		{
 			ComPtr<ID3D12Resource>	Resource;
 			unsigned int			SRVIndex;
@@ -120,7 +121,7 @@ namespace EngineCore::Render {
 	using Types::VERTEX_BUFFER;
 	using Types::INDEX_BUFFER;
 
-	class RenderManager
+	class ENGINE_API RenderManager
 	{
 	public:
 		using RENDER_TARGET_TYPE = RenderTargetType;

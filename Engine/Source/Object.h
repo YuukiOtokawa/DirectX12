@@ -1,11 +1,13 @@
 #pragma once
 #include <cstdint>
 
+#include "Engine/Public/EngineAPI.h"
+
 namespace EngineCore::Manager { class ObjectManager; }
 
 namespace EngineCore::General {
 
-	class Object {
+	class ENGINE_API Object {
 		uint64_t m_InstanceID = 0;
 
 		// ID(ハンドル) はオブジェクトの生成・登録を司る ObjectManager だけが設定する

@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Public/EngineAPI.h"
 #include "Component/Component.h"
 #include "Utility/VectorClass.h"
 #include <DirectXMath.h>
@@ -6,7 +7,7 @@ using namespace DirectX;
 
 namespace EngineCore::General {
 
-	class Light : public Component {
+	class ENGINE_API Light : public Component {
 		REGISTER_COMPONENT(Light)
 	public:
 		enum class LightType { Directional, Point, Spot };

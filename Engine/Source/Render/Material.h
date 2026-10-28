@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include "Engine/Public/EngineAPI.h"
 
 namespace EngineCore::Render {
 
@@ -29,7 +30,7 @@ namespace EngineCore::Render {
         float       NormalWeight; // HLSL 側とのアライメント統一用
     };
 
-    class Material
+    class ENGINE_API Material
     {
     private:
         std::string m_Name;

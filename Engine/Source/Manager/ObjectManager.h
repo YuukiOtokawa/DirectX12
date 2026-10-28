@@ -7,6 +7,7 @@
 #include "Engine/Source/Utility/ObjectIDManipulator.h"
 
 #include "Engine/Source/GameObject/GameObject.h"
+#include "Engine/Public/EngineAPI.h"
 
 namespace EngineCore::General {
 	class GameObject;
@@ -15,7 +16,7 @@ namespace EngineCore::General {
 namespace EngineCore::Manager {
 	using namespace General;
 
-	class ObjectManager {
+	class ENGINE_API ObjectManager {
 	public:
 		struct GameObjectEntry {
 			std::unique_ptr<General::GameObject> object;
@@ -34,6 +35,9 @@ namespace EngineCore::Manager {
 		General::GameObject* m_SelectedObject = nullptr;
 
 	public:
+		ObjectManager() = default;
+		ObjectManager(const ObjectManager&) = delete;
+		ObjectManager& operator=(const ObjectManager&) = delete;
 		
 		// 定義は .cpp に置く（モジュールをまたいでも実体が1つになるように）
 		static ObjectManager* GetInstance();
@@ -69,5 +73,3 @@ namespace EngineCore::Manager {
 	};
 
 }
-
-

@@ -3,11 +3,12 @@
 #include <vector>
 #include <string>
 
+#include "Engine/Public/EngineAPI.h"
 #include "Engine/Source/Render/VertexTypes.h"
 
 #include <memory>
 
-class VertexData {
+class ENGINE_API VertexData {
 	std::vector<EngineCore::Render::Types::VERTEX> m_Vertices;
 	std::vector<unsigned int> m_Indices;
 	std::string m_FilePath;
@@ -19,6 +20,8 @@ public:
 	VertexData();
 	VertexData(const char* FilePath, std::vector<EngineCore::Render::Types::VERTEX> vertices, std::vector<unsigned int> indices = {});
 	~VertexData();
+	VertexData(const VertexData&) = delete;
+	VertexData& operator=(const VertexData&) = delete;
 	void LoadFromFile(const char* FilePath);
 
 	const std::vector<EngineCore::Render::Types::VERTEX>& GetVertices() const { return m_Vertices; }

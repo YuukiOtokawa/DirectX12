@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Public/EngineAPI.h"
 #include "Object.h"
 #include "Engine/Source/Manager/ComponentFactory.h"
 
@@ -28,7 +29,7 @@ private: \
 		return true; \
 	 }();
 
-	class Component : public Object {
+	class ENGINE_API Component : public Object {
 		REGISTER_COMPONENT(Component)
 
 	protected:
@@ -47,4 +48,3 @@ private: \
 	};
 
 }
-

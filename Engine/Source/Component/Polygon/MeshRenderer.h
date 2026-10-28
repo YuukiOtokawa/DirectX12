@@ -1,11 +1,12 @@
 #pragma once
+#include "Engine/Public/EngineAPI.h"
 #include "Renderer.h"
 #include "Engine/Source/Render/Material.h"
 #include <DirectXMath.h>
 
 namespace EngineCore::General {
 
-	class MeshRenderer : public Renderer {
+	class ENGINE_API MeshRenderer : public Renderer {
 		EngineCore::Render::Material m_Material;
 
 		// シャドウマップに深度を書き込むか（スカイドーム等、影を落とさない物はfalse）

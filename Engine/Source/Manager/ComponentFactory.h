@@ -5,6 +5,8 @@
 #include <map>
 #include <string>
 
+#include "Engine/Public/EngineAPI.h"
+
 namespace EngineCore::General {
 	class Component;
 }
@@ -13,7 +15,7 @@ namespace EngineCore::Manager {
 	using namespace EngineCore::General;
 	using ComponentCreator = std::function<std::unique_ptr<General::Component>()>;
 
-	class ComponentFactory {
+	class ENGINE_API ComponentFactory {
 
 	public: 
 		std::string GetComponentTypeName() { return typeid(decltype(this)).name(); } \
@@ -34,5 +36,4 @@ namespace EngineCore::Manager {
 
 
 }
-
 

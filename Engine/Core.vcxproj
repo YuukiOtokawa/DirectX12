@@ -19,13 +19,13 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -48,6 +48,33 @@
   <PropertyGroup>
     <TargetName>EngineCore</TargetName>
   </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>ENGINECORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkIncremental>true</LinkIncremental>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkIncremental>true</LinkIncremental>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Component\Camera\Camera.cpp" />
     <ClCompile Include="Source\Component\PostProcessComponent.cpp" />
@@ -122,12 +149,13 @@
     <ClInclude Include="Source\Utility\WorldInitializer.h" />
     <ClInclude Include="Source\Render\ShaderMetadata.h" />
     <ClInclude Include="Public\ScriptAPI.h" />
+    <ClInclude Include="Public\EngineAPI.h" />
     <ClInclude Include="Source\Utility\ResourcePath.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ThirdParty\yaml-cpp\yaml-cpp.vcxproj">
       <Project>{1160a550-1277-485a-9893-ebecae3ca89a}</Project>
-      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

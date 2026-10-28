@@ -1,4 +1,5 @@
 #pragma once
+#include "Engine/Public/EngineAPI.h"
 #include "Component.h"
 #include "Material.h"
 #include <string>
@@ -12,7 +13,7 @@ namespace EngineCore::General {
 		EngineCore::Render::Material material; // パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）
 	};
 
-	class PostProcessComponent : public Component {
+	class ENGINE_API PostProcessComponent : public Component {
 		REGISTER_COMPONENT(PostProcessComponent)
 
 	private:

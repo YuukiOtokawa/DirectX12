@@ -8,6 +8,7 @@
 #include "Engine/Source/Manager/Main.h"
 #include "Engine/Source/Render/RenderTargetType.h"
 #include "Engine/Source/Utility/ResourcePath.h"
+#include "Engine/Public/EngineAPI.h"
 
 namespace EngineCore::General {
 	class Camera;
@@ -26,7 +27,7 @@ namespace EngineCore {
 
 	// エンジン本体。描画とオブジェクト管理を所有し、エディタ・製品の両方の exe から使う
 	// エディタの UI やエディタカメラは持たない。それらは exe 側（EditorApp など）が持つ
-	class Engine {
+	class ENGINE_API Engine {
 		std::unique_ptr<Render::RenderManager> m_RenderManager;
 		Manager::ObjectManager* m_ObjectManager = nullptr;
 
