@@ -35,12 +35,8 @@ namespace EngineCore::Manager {
 
 	public:
 		
-		static ObjectManager* GetInstance() {
-			if (!m_Instance) {
-				m_Instance = new ObjectManager();
-			}
-			return m_Instance;
-		}
+		// 定義は .cpp に置く（モジュールをまたいでも実体が1つになるように）
+		static ObjectManager* GetInstance();
 
 		General::GameObject* CreateObject();
 

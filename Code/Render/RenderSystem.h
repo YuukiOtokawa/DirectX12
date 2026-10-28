@@ -9,12 +9,8 @@ namespace EngineCore::RenderSystem {
 		static RenderSystem* m_Instance;
 		RenderSystem() = default;
 	public:
-		static RenderSystem* GetInstance() {
-			if (!m_Instance) {
-				m_Instance = new RenderSystem();
-			}
-			return m_Instance;
-		}
+		// 定義は .cpp に置く（モジュールをまたいでも実体が1つになるように）
+		static RenderSystem* GetInstance();
 
 		// Execute render for all active objects
 		void Render(const std::vector<EngineCore::Manager::ObjectManager::GameObjectEntry>& objects);

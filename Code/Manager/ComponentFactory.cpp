@@ -2,6 +2,10 @@
 
 #include "Code/Component/Component.h"
 
+EngineCore::Manager::ComponentFactory* EngineCore::Manager::ComponentFactory::GetInstance() {
+	static ComponentFactory instance;
+	return &instance;
+}
 
 std::unique_ptr<EngineCore::General::Component> EngineCore::Manager::ComponentFactory::CreateComponent(const std::string& name) {
 	if (m_Creators.find(name) != m_Creators.end()) {

@@ -7,6 +7,13 @@
 
 EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::m_Instance;
 
+EngineCore::Manager::ObjectManager* EngineCore::Manager::ObjectManager::GetInstance() {
+	if (!m_Instance) {
+		m_Instance = new ObjectManager();
+	}
+	return m_Instance;
+}
+
 namespace EngineCore::Manager {
 	using namespace General;
 

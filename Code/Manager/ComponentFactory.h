@@ -20,10 +20,8 @@ namespace EngineCore::Manager {
 
 		std::map<std::string, ComponentCreator> m_Creators;
 	public:
-		static ComponentFactory* GetInstance() {
-			static ComponentFactory instance;
-			return &instance;
-		}
+		// 定義は .cpp に置く（モジュールをまたいでも実体が1つになるように）
+		static ComponentFactory* GetInstance();
 
 		void RegisterComponent(const std::string& name, ComponentCreator creator) {
 			m_Creators[name] = creator;
