@@ -6,7 +6,7 @@ using namespace EngineCore::General;
 
 PostProcessComponent::PostProcessComponent() {
 	// デフォルトで InvertColor を登録しておく
-	m_Passes.push_back({ "InvertColor", SHADER_DIR "InvertColor.hlsl" });
+	m_Passes.push_back({ "InvertColor", EngineCore::ResourcePath::Shader("InvertColor.hlsl") });
 }
 
 void PostProcessComponent::Start() {

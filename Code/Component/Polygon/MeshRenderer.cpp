@@ -66,7 +66,7 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 		// シェーダーファイル×パス種別でPSOを引く（初回のみコンパイル）。未設定なら Geometry
 		const std::string& shaderFile = m_Material.GetShaderFilePath();
 		ID3D12PipelineState* pipeline = renderManager->GetOrCreatePipeline(
-			shaderFile.empty() ? SHADER_DIR "Geometry.hlsl" : shaderFile,
+			shaderFile.empty() ? EngineCore::ResourcePath::Shader("Geometry.hlsl") : shaderFile,
 			m_Material.GetRenderPassType());
 		if (!pipeline) return; // コンパイル失敗中は描かない
 		renderManager->SetPipelineState(pipeline);

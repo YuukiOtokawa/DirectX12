@@ -271,42 +271,49 @@ void RenderManager::Init(HWND hWnd)
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
 
-		m_PipelineState["Screen"] = CreatePipeline(SHADER_DIR "Screen.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["Screen"] = CreatePipeline(EngineCore::ResourcePath::Shader("Screen.hlsl").c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 
+	}
+
+	// Screen と同じシェーダーで、バックバッファ（スワップチェーンの形式）へ描く版。製品 exe が GameView をそのまま表示するのに使う
+	{
+		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R8G8B8A8_UNORM };
+
+		m_PipelineState["ScreenToBackBuffer"] = CreatePipeline(EngineCore::ResourcePath::Shader("Screen.hlsl").c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["Deferred"] = CreatePipeline(SHADER_DIR "Deferred.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["Deferred"] = CreatePipeline(EngineCore::ResourcePath::Shader("Deferred.hlsl").c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	{
         DXGI_FORMAT RTVFormats[] = {DXGI_FORMAT_R16G16B16A16_FLOAT};
 		// 深度テスト必須（PostProcessだとDepthEnable=FALSEになり、描画順で深度が上書きされる）
-		m_PipelineState["Shadow"] = CreatePipeline(SHADER_DIR "Shadow.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::DeferredOpaque);
+		m_PipelineState["Shadow"] = CreatePipeline(EngineCore::ResourcePath::Shader("Shadow.hlsl").c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::DeferredOpaque);
 	}
 
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		m_PipelineState["PostProcess"] = CreatePipeline(SHADER_DIR "PostProcess.hlsl", RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
+		m_PipelineState["PostProcess"] = CreatePipeline(EngineCore::ResourcePath::Shader("PostProcess.hlsl").c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess);
 	}
 
 	// Bloom : 1ファイル5エントリポイント。エントリ名だけ変えて PSO を作り分ける。
 	{
 		DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };
-		const char* bloomShader = SHADER_DIR "Bloom.hlsl";
+		const std::string bloomShader = EngineCore::ResourcePath::Shader("Bloom.hlsl");
 
-		m_PipelineState["BloomPrefilter"] = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixPrefilter");
-		m_PipelineState["BloomBlurH"]     = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurH");
-		m_PipelineState["BloomBlurV"]     = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurV");
-		m_PipelineState["BloomUpsample"]  = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixUpsample");
-		m_PipelineState["BloomComposite"] = CreatePipeline(bloomShader, RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixComposite");
+		m_PipelineState["BloomPrefilter"] = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixPrefilter");
+		m_PipelineState["BloomBlurH"]     = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurH");
+		m_PipelineState["BloomBlurV"]     = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixBlurV");
+		m_PipelineState["BloomUpsample"]  = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixUpsample");
+		m_PipelineState["BloomComposite"] = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixComposite");
 	}
 
 	m_RenderTargetManager.InitGBuffers(m_Device.Get(), m_SRVAllocator, m_RTVAllocator);
 
-	m_EnvTexture = LoadTexture(ASSET_DIR "charolettenbrunn_park_2k.dds");
+	m_EnvTexture = LoadTexture(EngineCore::ResourcePath::Asset("charolettenbrunn_park_2k.dds").c_str());
 }
 
 
@@ -1151,6 +1158,20 @@ void RenderManager::FrameEnd() {
 	// このバッファ(m_RTIndex)を使う前フレームのGPU実行はフェンスで完了済みなので、
 	// ここで1回だけ定数バッファリングを巻き戻す（フレーム内の全パスで共有）
 	m_ConstantBufferRing.ResetFrame(m_RTIndex);
+}
+
+// source（GAME_VIEW / SCENE_VIEW）の内容をバックバッファ全面に拡縮して描く。
+// SetCurrentTarget(BACK_BUFFER) → DrawGeometryBegin() の後に呼ぶ（エディタの UI と同じく、バックバッファへの描画の一部）
+void RenderManager::DrawTargetToBackBuffer(RENDER_TARGET_TYPE source)
+{
+	RENDER_TARGET* target = (source == RENDER_TARGET_TYPE::GAME_VIEW) ? m_RenderTargetManager.GetGameViewTarget() : m_RenderTargetManager.GetSceneViewTarget();
+	if (!target) {
+		return;
+	}
+
+	SetPipelineState("ScreenToBackBuffer");
+	SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, target);
+	DrawScreen();
 }
 
 void RenderManager::DrawScreen()

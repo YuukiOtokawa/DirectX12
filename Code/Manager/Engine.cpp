@@ -17,7 +17,8 @@ namespace EngineCore {
 
 	Engine::~Engine() = default;
 
-	void Engine::Initialize(HWND hWnd) {
+	void Engine::Initialize(HWND hWnd, ResourcePath::Layout layout) {
+		ResourcePath::SetLayout(layout);
 		m_RenderManager = std::make_unique<Render::RenderManager>(hWnd);
 	}
 

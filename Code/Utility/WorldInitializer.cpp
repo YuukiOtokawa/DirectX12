@@ -56,7 +56,7 @@ namespace EngineCore::Utility {
         // テクスチャのロードと設定
         auto renderManager = EngineCore::Render::RenderManager::GetInstance();
         if (renderManager) {
-            auto texture = renderManager->LoadTexture(ASSET_DIR "field004.dds");
+            auto texture = renderManager->LoadTexture(EngineCore::ResourcePath::Asset("field004.dds").c_str());
             if (texture) {
                 std::vector<std::unique_ptr<EngineCore::Render::Types::TEXTURE>> textures;
                 textures.push_back(std::move(texture));
@@ -71,7 +71,7 @@ namespace EngineCore::Utility {
             meshFilter->SetVertexData(vertexData);
         }
         auto meshRenderer = planeObj->AddComponent<General::MeshRenderer>();
-        meshRenderer->SetShaderFile(SHADER_DIR "Geometry.hlsl"); // デフォルトのジオメトリシェーダーを使用
+        meshRenderer->SetShaderFile(EngineCore::ResourcePath::Shader("Geometry.hlsl")); // デフォルトのジオメトリシェーダーを使用
         meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::DeferredOpaque);
 
         {
@@ -90,7 +90,7 @@ namespace EngineCore::Utility {
             }
 
             auto skyVertexData = new VertexData();
-            LoadObjToVertexData(ASSET_DIR "sky.obj", skyVertexData);
+            LoadObjToVertexData(EngineCore::ResourcePath::Asset("sky.obj").c_str(), skyVertexData);
 
 
             // MeshFilter と MeshRenderer の追加
@@ -101,7 +101,7 @@ namespace EngineCore::Utility {
                 meshFilter->SetVertexData(skyVertexData);
                 meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
             }
-            meshRenderer->SetShaderFile(SHADER_DIR "Unlit.hlsl"); // スカイドーム用のシェーダーを使用
+            meshRenderer->SetShaderFile(EngineCore::ResourcePath::Shader("Unlit.hlsl")); // スカイドーム用のシェーダーを使用
             meshRenderer->GetMaterial().SetRenderPassType(EngineCore::Render::RenderPassType::ForwardOpaque);
             meshRenderer->SetCastShadows(false); // 天球は影を落とさない
         }

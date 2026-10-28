@@ -172,7 +172,7 @@ namespace EngineCore::Render {
 
         // 2. If cbuffer body not found in shader, check Common.hlsli if included
         if (cbufferContent.empty()) {
-            std::string commonPath = SHADER_DIR "Common.hlsli";
+            std::string commonPath = EngineCore::ResourcePath::Shader("Common.hlsli");
             if (lastSlash != std::string::npos) {
                 commonPath = filePath.substr(0, lastSlash + 1) + "Common.hlsli";
             }

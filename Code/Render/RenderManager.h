@@ -241,6 +241,8 @@ namespace EngineCore::Render {
 		void BeginShadowCascade(unsigned int cascadeIndex);
 		void DrawEnd();
 		void FrameEnd();
+		// source（GAME_VIEW / SCENE_VIEW）の内容をバックバッファへ描く。BACK_BUFFER に対する DrawGeometryBegin() の後に呼ぶ
+		void DrawTargetToBackBuffer(RENDER_TARGET_TYPE source);
 
 		void DrawScreen();
 

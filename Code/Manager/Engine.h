@@ -7,6 +7,7 @@
 
 #include "Code/Manager/Main.h"
 #include "Code/Render/RenderTargetType.h"
+#include "Code/Utility/ResourcePath.h"
 
 namespace EngineCore::General {
 	class Camera;
@@ -34,7 +35,8 @@ namespace EngineCore {
 		~Engine();
 
 		// 描画デバイスを作る。ウィンドウ作成後、表示前に呼ぶ
-		void Initialize(HWND hWnd);
+		// layout はアセット・シェーダーの参照先（エディタは Repository、製品は Distribution）。シェーダーのコンパイル前に決める必要がある
+		void Initialize(HWND hWnd, ResourcePath::Layout layout);
 
 		// 初期ワールド（地面・ライト・カメラ等）と PostProcessManager を作る
 		void CreateDefaultScene();

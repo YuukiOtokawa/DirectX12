@@ -61,6 +61,7 @@
     <ClCompile Include="..\Code\Utility\FBXLoader.cpp" />
     <ClCompile Include="..\Code\Utility\OBJLoader.cpp" />
     <ClCompile Include="..\Code\Utility\VertexData.cpp" />
+    <ClCompile Include="..\Code\Utility\ResourcePath.cpp" />
     <ClCompile Include="..\Code\Utility\DDSTextureLoader12.cpp" />
     <ClCompile Include="..\Code\Manager\Engine.cpp" />
     <ClCompile Include="..\Code\GameObject\GameObject.cpp" />
@@ -121,6 +122,7 @@
     <ClInclude Include="..\Code\Utility\WorldInitializer.h" />
     <ClInclude Include="..\Code\Render\ShaderMetadata.h" />
     <ClInclude Include="..\Engine\Public\ScriptAPI.h" />
+    <ClInclude Include="..\Code\Utility\ResourcePath.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\yaml-cpp\yaml-cpp.vcxproj">

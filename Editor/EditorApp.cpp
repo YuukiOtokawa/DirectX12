@@ -16,7 +16,8 @@ namespace Editor {
 
 	EditorApp::EditorApp(HWND hWnd) {
 		m_Instance = this;
-		m_Engine.Initialize(hWnd);
+		// エディタはリポジトリ内のアセット・シェーダーを直接読む（シェーダーのホットリロードのため）
+		m_Engine.Initialize(hWnd, EngineCore::ResourcePath::Layout::Repository);
 	}
 
 	EditorApp::~EditorApp() {

@@ -71,7 +71,7 @@ void SpriteRenderer::Draw() {
 	renderManager->SetVertexBuffer(m_VertexBuffer.get());
 	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	ID3D12PipelineState* pipeline = renderManager->GetOrCreatePipeline(SHADER_DIR "Unlit.hlsl", EngineCore::Render::RenderPassType::ForwardOpaque);
+	ID3D12PipelineState* pipeline = renderManager->GetOrCreatePipeline(EngineCore::ResourcePath::Shader("Unlit.hlsl"), EngineCore::Render::RenderPassType::ForwardOpaque);
 	if (!pipeline) return;
 	renderManager->SetPipelineState(pipeline);
 
