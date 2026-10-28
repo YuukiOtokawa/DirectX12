@@ -3,7 +3,7 @@
 - PR: https://github.com/YuukiOtokawa/DirectX12/pull/3
 - ブランチ: `claude/cross-conversation-reference-b31077` → `master`
 - コミット: `c37385c`（`9c51ae4` の上に作成）
-- 状態: PR作成済み・未マージ（2026-10-26 時点）
+- 状態: master にマージ済み（2026-10-26、マージコミット `bfa4ffd`）。`Split-Project` にも取り込み済み
 
 ## 目的
 
