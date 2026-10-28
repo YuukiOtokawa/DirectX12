@@ -11,105 +11,105 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Editor\Component\EditorCameraController.cpp">
+    <ClCompile Include="Component\EditorCameraController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\GraphicsDebugWindowController.cpp">
+    <ClCompile Include="GUIController\GraphicsDebugWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\InspectorWindowController.cpp">
+    <ClCompile Include="GUIController\InspectorWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\Utility\FilePicker.cpp">
+    <ClCompile Include="Utility\FilePicker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\InspectorRegistry.cpp">
+    <ClCompile Include="Inspector\InspectorRegistry.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\TransformDrawer.cpp">
+    <ClCompile Include="Inspector\TransformDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\CameraDrawer.cpp">
+    <ClCompile Include="Inspector\CameraDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\LightDrawer.cpp">
+    <ClCompile Include="Inspector\LightDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\MeshFilterDrawer.cpp">
+    <ClCompile Include="Inspector\MeshFilterDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\MeshRendererDrawer.cpp">
+    <ClCompile Include="Inspector\MeshRendererDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\FractalTreeRendererDrawer.cpp">
+    <ClCompile Include="Inspector\FractalTreeRendererDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Editor\Inspector\PostProcessComponentDrawer.cpp">
+    <ClCompile Include="Inspector\PostProcessComponentDrawer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\DefaultWindowController.cpp">
+    <ClCompile Include="GUIController\DefaultWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\GameViewWindowController.cpp">
+    <ClCompile Include="GUIController\GameViewWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\SceneViewWindowController.cpp">
+    <ClCompile Include="GUIController\SceneViewWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\ImGuiController.cpp">
+    <ClCompile Include="GUIController\ImGuiController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\ImGuiWindowController.cpp">
+    <ClCompile Include="GUIController\ImGuiWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\HierarchyWindowController.cpp">
+    <ClCompile Include="GUIController\HierarchyWindowController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\Code\GUIController\WindowManager.cpp">
+    <ClCompile Include="GUIController\WindowManager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Editor\Component\EditorCameraController.h">
+    <ClInclude Include="Component\EditorCameraController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\GraphicsDebugWindowController.h">
+    <ClInclude Include="GUIController\GraphicsDebugWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\InspectorWindowController.h">
+    <ClInclude Include="GUIController\InspectorWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\ObjectNameEditor.h">
+    <ClInclude Include="GUIController\ObjectNameEditor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\Utility\FilePicker.h">
+    <ClInclude Include="Utility\FilePicker.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\DefaultWindowController.h">
+    <ClInclude Include="GUIController\DefaultWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\GameViewWindowController.h">
+    <ClInclude Include="GUIController\GameViewWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\SceneViewWindowController.h">
+    <ClInclude Include="GUIController\SceneViewWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\ImGuiController.h">
+    <ClInclude Include="GUIController\ImGuiController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\ImGuiWindowController.h">
+    <ClInclude Include="GUIController\ImGuiWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\HierarchyWindowController.h">
+    <ClInclude Include="GUIController\HierarchyWindowController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Editor\Inspector\InspectorRegistry.h">
+    <ClInclude Include="Inspector\InspectorRegistry.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Code\GUIController\WindowManager.h">
+    <ClInclude Include="GUIController\WindowManager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\Editor\Inspector\MaterialPropertyInspector.h">
+    <ClInclude Include="Inspector\MaterialPropertyInspector.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

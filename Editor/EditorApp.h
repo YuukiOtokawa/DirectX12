@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <optional>
 
-#include "Code/Manager/Engine.h"
-#include "Code/GUIController/ImGuiController.h"
-#include "Code/GUIController/WindowManager.h"
+#include "Engine/Source/Manager/Engine.h"
+#include "Editor/GUIController/ImGuiController.h"
+#include "Editor/GUIController/WindowManager.h"
 
 namespace EngineCore::General {
 	class Camera;

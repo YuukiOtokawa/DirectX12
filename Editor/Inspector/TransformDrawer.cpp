@@ -1,7 +1,7 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Transform/Transform.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Transform/Transform.h"
 
 static void DrawTransform(EngineCore::General::Component& component) {
 	auto& transform = static_cast<EngineCore::General::Transform&>(component);

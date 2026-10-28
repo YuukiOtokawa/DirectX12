@@ -1,7 +1,7 @@
 #include "EditorCameraController.h"
-#include "ImGui/Code/imgui.h"
-#include "Code/GameObject/GameObject.h"
-#include "Code/Component/Transform/Transform.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/GameObject/GameObject.h"
+#include "Engine/Source/Component/Transform/Transform.h"
 
 using namespace EngineCore::General;
 

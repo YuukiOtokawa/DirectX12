@@ -2,10 +2,10 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="AsteroidEditor.vcxproj" Id="38a2ba2e-51a6-4ab4-99c9-943f84ce34c0" />
-  <Project Path="Core/Core.vcxproj" Id="73169531-6d65-42fd-b843-c8a9808dcb31" />
+  <Project Path="Editor/AsteroidEditor.vcxproj" Id="38a2ba2e-51a6-4ab4-99c9-943f84ce34c0" />
+  <Project Path="Engine/Core.vcxproj" Id="73169531-6d65-42fd-b843-c8a9808dcb31" />
   <Project Path="Editor/Editor.vcxproj" Id="fab9ca40-055a-4e34-a8b7-b30ffa39f823" />
   <Project Path="Player/Player.vcxproj" Id="1381c89a-46fc-4f95-9381-9831f48ecf30" />
-  <Project Path="ImGui/ImGui.vcxproj" Id="76200ea9-6f73-49d3-9d5d-9ae9fcd35388" />
-  <Project Path="yaml-cpp/yaml-cpp.vcxproj" Id="1160a550-1277-485a-9893-ebecae3ca89a" />
+  <Project Path="ThirdParty/ImGui/ImGui.vcxproj" Id="76200ea9-6f73-49d3-9d5d-9ae9fcd35388" />
+  <Project Path="ThirdParty/yaml-cpp/yaml-cpp.vcxproj" Id="1160a550-1277-485a-9893-ebecae3ca89a" />
 </Solution>

@@ -2,11 +2,11 @@
 // シェーダメタデータ（HLSLのcbuffer + Unity風アノテーション）から
 // マテリアルプロパティのImGui UIを描画する共有ヘルパー。
 // MeshRenderer と PostProcessComponent の両方から利用する。
-#include "ImGui/Code/imgui.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
 #include "Material.h"
 #include "ShaderMetadata.h"
 #include "RenderManager.h"
-#include "Code/Utility/FilePicker.h"
+#include "Editor/Utility/FilePicker.h"
 
 namespace GUIHelper {
 

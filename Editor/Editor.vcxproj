@@ -49,48 +49,48 @@
     <TargetName>EngineEditor</TargetName>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\Editor\Component\EditorCameraController.cpp" />
-    <ClCompile Include="..\Code\GUIController\GraphicsDebugWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\InspectorWindowController.cpp" />
-    <ClCompile Include="..\Code\Utility\FilePicker.cpp" />
-    <ClCompile Include="..\Editor\Inspector\InspectorRegistry.cpp" />
-    <ClCompile Include="..\Editor\Inspector\TransformDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\CameraDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\LightDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\MeshFilterDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\MeshRendererDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\FractalTreeRendererDrawer.cpp" />
-    <ClCompile Include="..\Editor\Inspector\PostProcessComponentDrawer.cpp" />
-    <ClCompile Include="..\Code\GUIController\DefaultWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\GameViewWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\SceneViewWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\ImGuiController.cpp" />
-    <ClCompile Include="..\Code\GUIController\ImGuiWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\HierarchyWindowController.cpp" />
-    <ClCompile Include="..\Code\GUIController\WindowManager.cpp" />
+    <ClCompile Include="Component\EditorCameraController.cpp" />
+    <ClCompile Include="GUIController\GraphicsDebugWindowController.cpp" />
+    <ClCompile Include="GUIController\InspectorWindowController.cpp" />
+    <ClCompile Include="Utility\FilePicker.cpp" />
+    <ClCompile Include="Inspector\InspectorRegistry.cpp" />
+    <ClCompile Include="Inspector\TransformDrawer.cpp" />
+    <ClCompile Include="Inspector\CameraDrawer.cpp" />
+    <ClCompile Include="Inspector\LightDrawer.cpp" />
+    <ClCompile Include="Inspector\MeshFilterDrawer.cpp" />
+    <ClCompile Include="Inspector\MeshRendererDrawer.cpp" />
+    <ClCompile Include="Inspector\FractalTreeRendererDrawer.cpp" />
+    <ClCompile Include="Inspector\PostProcessComponentDrawer.cpp" />
+    <ClCompile Include="GUIController\DefaultWindowController.cpp" />
+    <ClCompile Include="GUIController\GameViewWindowController.cpp" />
+    <ClCompile Include="GUIController\SceneViewWindowController.cpp" />
+    <ClCompile Include="GUIController\ImGuiController.cpp" />
+    <ClCompile Include="GUIController\ImGuiWindowController.cpp" />
+    <ClCompile Include="GUIController\HierarchyWindowController.cpp" />
+    <ClCompile Include="GUIController\WindowManager.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Editor\Component\EditorCameraController.h" />
-    <ClInclude Include="..\Code\GUIController\GraphicsDebugWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\InspectorWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\ObjectNameEditor.h" />
-    <ClInclude Include="..\Code\Utility\FilePicker.h" />
-    <ClInclude Include="..\Code\GUIController\DefaultWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\GameViewWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\SceneViewWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\ImGuiController.h" />
-    <ClInclude Include="..\Code\GUIController\ImGuiWindowController.h" />
-    <ClInclude Include="..\Code\GUIController\HierarchyWindowController.h" />
-    <ClInclude Include="..\Editor\Inspector\InspectorRegistry.h" />
-    <ClInclude Include="..\Code\GUIController\WindowManager.h" />
-    <ClInclude Include="..\Editor\Inspector\MaterialPropertyInspector.h" />
+    <ClInclude Include="Component\EditorCameraController.h" />
+    <ClInclude Include="GUIController\GraphicsDebugWindowController.h" />
+    <ClInclude Include="GUIController\InspectorWindowController.h" />
+    <ClInclude Include="GUIController\ObjectNameEditor.h" />
+    <ClInclude Include="Utility\FilePicker.h" />
+    <ClInclude Include="GUIController\DefaultWindowController.h" />
+    <ClInclude Include="GUIController\GameViewWindowController.h" />
+    <ClInclude Include="GUIController\SceneViewWindowController.h" />
+    <ClInclude Include="GUIController\ImGuiController.h" />
+    <ClInclude Include="GUIController\ImGuiWindowController.h" />
+    <ClInclude Include="GUIController\HierarchyWindowController.h" />
+    <ClInclude Include="Inspector\InspectorRegistry.h" />
+    <ClInclude Include="GUIController\WindowManager.h" />
+    <ClInclude Include="Inspector\MaterialPropertyInspector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Core\Core.vcxproj">
+    <ProjectReference Include="..\Engine\Core.vcxproj">
       <Project>{73169531-6d65-42fd-b843-c8a9808dcb31}</Project>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
-    <ProjectReference Include="..\ImGui\ImGui.vcxproj">
+    <ProjectReference Include="..\ThirdParty\ImGui\ImGui.vcxproj">
       <Project>{76200ea9-6f73-49d3-9d5d-9ae9fcd35388}</Project>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>

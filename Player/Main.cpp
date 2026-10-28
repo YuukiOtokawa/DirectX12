@@ -1,7 +1,7 @@
 // 製品 exe（AsteroidPlayer.exe）のエントリポイント
 // エディタ版（Editor/Main.cpp）からメニューバーとエディタの UI を除いたもの
 
-#include "Code/Manager/Main.h"
+#include "Engine/Source/Manager/Main.h"
 #include "Player/GameApp.h"
 #include <exception>
 

@@ -1,7 +1,7 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Component.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Component.h"
 
 namespace EditorUI {
 

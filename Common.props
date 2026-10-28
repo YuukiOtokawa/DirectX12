@@ -17,7 +17,7 @@
       <PreprocessorDefinitions>_WINDOWS;YAML_CPP_STATIC_DEFINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(AsteroidRoot)Code\Component;$(AsteroidRoot)Code;$(AsteroidRoot);$(AsteroidRoot)yaml-cpp\Code;$(AsteroidRoot)Code\Render;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(AsteroidRoot)Engine\Source\Component;$(AsteroidRoot)Engine\Source;$(AsteroidRoot);$(AsteroidRoot)ThirdParty\yaml-cpp\Code;$(AsteroidRoot)ThirdParty\assimp\include;$(AsteroidRoot)Engine\Source\Render;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>

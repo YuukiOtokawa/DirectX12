@@ -1,8 +1,8 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Polygon/MeshFilter.h"
-#include "Code/Utility/FilePicker.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Polygon/MeshFilter.h"
+#include "Editor/Utility/FilePicker.h"
 
 static void DrawMeshFilter(EngineCore::General::Component& component) {
 	auto& meshFilter = static_cast<EngineCore::General::MeshFilter&>(component);

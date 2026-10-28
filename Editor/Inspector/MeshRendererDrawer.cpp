@@ -1,9 +1,9 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Polygon/MeshRenderer.h"
-#include "Code/Render/RenderManager.h"
-#include "Code/Utility/FilePicker.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Polygon/MeshRenderer.h"
+#include "Engine/Source/Render/RenderManager.h"
+#include "Editor/Utility/FilePicker.h"
 #include "MaterialPropertyInspector.h"
 
 static void DrawMeshRenderer(EngineCore::General::Component& component) {

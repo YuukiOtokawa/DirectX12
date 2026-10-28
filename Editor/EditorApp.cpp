@@ -1,13 +1,13 @@
 #include "EditorApp.h"
 
-#include "Resource/resource.h"
+#include "Editor/Resource/resource.h"
 
-#include "Code/Render/RenderManager.h"
-#include "Code/Manager/ObjectManager.h"
-#include "Code/GameObject/GameObject.h"
-#include "Code/GUIController/DefaultWindowController.h"
-#include "Code/Component/Camera/Camera.h"
-#include "Code/Component/Transform/Transform.h"
+#include "Engine/Source/Render/RenderManager.h"
+#include "Engine/Source/Manager/ObjectManager.h"
+#include "Engine/Source/GameObject/GameObject.h"
+#include "Editor/GUIController/DefaultWindowController.h"
+#include "Engine/Source/Component/Camera/Camera.h"
+#include "Engine/Source/Component/Transform/Transform.h"
 #include "Editor/Component/EditorCameraController.h"
 
 namespace Editor {

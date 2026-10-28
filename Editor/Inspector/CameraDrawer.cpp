@@ -1,7 +1,7 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Camera/Camera.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Camera/Camera.h"
 
 static void DrawCamera(EngineCore::General::Component& component) {
 	auto& camera = static_cast<EngineCore::General::Camera&>(component);

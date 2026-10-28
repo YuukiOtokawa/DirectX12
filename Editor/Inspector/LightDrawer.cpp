@@ -1,7 +1,7 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/Polygon/Light.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/Polygon/Light.h"
 
 #include <cstdlib>
 

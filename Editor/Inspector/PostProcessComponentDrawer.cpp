@@ -1,9 +1,9 @@
 #include "InspectorRegistry.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/Component/PostProcessComponent.h"
-#include "Code/Render/RenderManager.h"
-#include "Code/Utility/FilePicker.h"
+#include "ThirdParty/ImGui/Code/imgui.h"
+#include "Engine/Source/Component/PostProcessComponent.h"
+#include "Engine/Source/Render/RenderManager.h"
+#include "Editor/Utility/FilePicker.h"
 #include "MaterialPropertyInspector.h"
 
 #include <cstring>
