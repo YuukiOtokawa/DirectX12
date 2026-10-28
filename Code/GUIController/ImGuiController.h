@@ -15,7 +15,7 @@ namespace GUIController::Gui {
 		public:
 			ImGuiController() = default;
 			~ImGuiController() = default;
-			void Initialize();
+			void Initialize(HWND hWnd);
 			void BeginFrame();
 			void EndFrame();
 			void Finalize();

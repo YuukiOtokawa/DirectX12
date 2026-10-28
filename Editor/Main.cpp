@@ -1,13 +1,11 @@
 
-#include "Main.h"
-#include "GameManager.h"
+#include "Code/Manager/Main.h"
+#include "Editor/EditorApp.h"
+#include "Code/Render/RenderManager.h"
 #include <exception>
 
 #include "Resource/resource.h"
 
-#include "Code/GUIController/ImGuiController.h"
-
-using namespace EngineManager;
 
 
 #define APP_NAME "DX12"
@@ -22,14 +20,7 @@ bool        g_FullWindow;
 int         g_WindowWidth;
 int         g_WindowHeight;
 
-std::unique_ptr<GameManager> g_GameManager = nullptr;
-
-namespace EngineCore {
-	HWND GetWindow() {
-		return g_Window;
-	}
-
-}
+std::unique_ptr<Editor::EditorApp> g_EditorApp = nullptr;
 
 
 
@@ -96,7 +87,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 	{
 
 
-		g_GameManager = std::make_unique<GameManager>();
+		g_EditorApp = std::make_unique<Editor::EditorApp>(g_Window);
 
 		{
 			HMENU hMenu = LoadMenu(g_Instance, MAKEINTRESOURCE(IDR_MENU1));
@@ -116,7 +107,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 		dwExecLastTime = timeGetTime();
 		dwCurrentTime = 0;
 
-		g_GameManager->Initialize();
+		g_EditorApp->Initialize(g_Window);
 
 		while (true)
 		{
@@ -142,9 +133,9 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 
 				if ((dwCurrentTime - dwExecLastTime) >= (1000 / 60 / 5))
 				{
-					g_GameManager->Update();
+					g_EditorApp->Update();
 					try {
-						g_GameManager->Draw();
+						g_EditorApp->Draw();
 					}
 					catch (const std::exception& error) {
 						// Do not submit this partially recorded frame or draw with stale constants.
@@ -192,7 +183,7 @@ void ChangeFullWindow()
 void EngineMenuBarCommand(WPARAM wParam) {
 	switch (LOWORD(wParam)) {
 	case ID_WINDOW_NEWWINDOW:
-		g_GameManager->EngineManagerMenuBarCommand(wParam);
+		g_EditorApp->MenuBarCommand(wParam);
 		break;
 	case ID_FILE_EXIT:
 		DestroyWindow(g_Window);
@@ -204,7 +195,7 @@ void EngineMenuBarCommand(WPARAM wParam) {
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	if (g_GameManager->WndProc(hWnd,message,wParam,lParam))
+	if (g_EditorApp && g_EditorApp->WndProc(hWnd,message,wParam,lParam))
 		return true;
 
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();

@@ -2,7 +2,7 @@
 #include "ObjectNameEditor.h"
 
 #include "Code/Manager/ObjectManager.h"
-#include "Code/Manager/GameManager.h"
+#include "Editor/EditorApp.h"
 using namespace EngineCore::Manager;
 
 #include "Code/GameObject/GameObject.h"
@@ -17,8 +17,8 @@ void GUIController::Window::HierarchyWindowController::Draw() {
 	auto& objects = ObjectManager::GetInstance()->GetObjects();
 
 	std::optional<uint64_t> editorCameraID;
-	if (auto gameManager = EngineManager::GameManager::GetInstance()) {
-		editorCameraID = gameManager->GetEditorCameraID();
+	if (auto editorApp = Editor::EditorApp::GetInstance()) {
+		editorCameraID = editorApp->GetEditorCameraID();
 	}
 
 	for (auto& object : objects) {

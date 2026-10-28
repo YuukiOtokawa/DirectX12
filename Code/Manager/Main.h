@@ -50,7 +50,3 @@ using DirectX::XMFLOAT4X4;
 #pragma comment (lib, "xinput.lib")
 
 
-namespace EngineCore {
-	HWND GetWindow();
-}
-

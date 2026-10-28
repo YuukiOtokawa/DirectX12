@@ -128,12 +128,13 @@
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="Code\GUIController\GameViewWindowController.cpp" />
     <ClCompile Include="Code\GUIController\SceneViewWindowController.cpp" />
-    <ClCompile Include="Code\Manager\GameManager.cpp" />
+    <ClCompile Include="Code\Manager\Engine.cpp" />
+    <ClCompile Include="Editor\EditorApp.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiController.cpp" />
     <ClCompile Include="Code\GUIController\ImGuiWindowController.cpp" />
     <ClCompile Include="Code\GameObject\GameObject.cpp" />
     <ClCompile Include="Code\GUIController\HierarchyWindowController.cpp" />
-    <ClCompile Include="Code\Manager\Main.cpp" />
+    <ClCompile Include="Editor\Main.cpp" />
     <ClCompile Include="Code\Render\RenderManager.cpp" />
     <ClCompile Include="Code\Render\DescriptorAllocator.cpp" />
     <ClCompile Include="Code\Render\ConstantBufferRing.cpp" />
@@ -177,7 +178,8 @@
     <ClInclude Include="Code\GUIController\DefaultWindowController.h" />
     <ClInclude Include="Code\GUIController\GameViewWindowController.h" />
     <ClInclude Include="Code\GUIController\SceneViewWindowController.h" />
-    <ClInclude Include="Code\Manager\GameManager.h" />
+    <ClInclude Include="Code\Manager\Engine.h" />
+    <ClInclude Include="Editor\EditorApp.h" />
     <ClInclude Include="Code\GUIController\ImGuiController.h" />
     <ClInclude Include="Code\GUIController\ImGuiWindowController.h" />
     <ClInclude Include="Code\GameObject\GameObject.h" />

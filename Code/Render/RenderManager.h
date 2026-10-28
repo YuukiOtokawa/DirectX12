@@ -191,7 +191,7 @@ namespace EngineCore::Render {
 		bool						m_MaterialTexInitialized = false;
 
 		bool						m_IsShadowPass = false;
-		void Init();
+		void Init(HWND hWnd);
 
 	public:
 
@@ -231,7 +231,7 @@ namespace EngineCore::Render {
 		int GetBackBufferWidth() { return m_BackBufferWidth; }
 		int GetBackBufferHeight() { return m_BackBufferHeight; }
 
-		RenderManager();
+		explicit RenderManager(HWND hWnd);
 		~RenderManager();
 
 		void WaitGPU();

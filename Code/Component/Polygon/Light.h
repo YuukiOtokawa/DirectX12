@@ -18,7 +18,7 @@ namespace EngineCore::General {
 		// 各カスケードの正射影幅の倍率（近→遠）
 		static constexpr float CASCADE_SCALE[CASCADE_COUNT] = { 1.0f, 4.0f, 16.0f };
 
-		// シャドウパスで今描いているカスケード番号（GameManagerが設定する）
+		// シャドウパスで今描いているカスケード番号（Engine::RenderView が設定する）
 		int m_CurrentCascade = 0;
 
 		Vector4 m_Color;

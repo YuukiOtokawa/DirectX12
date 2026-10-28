@@ -17,7 +17,7 @@
 using namespace EngineCore;
 using namespace GUIController::Gui;
 
-void ImGuiController::Initialize() {
+void ImGuiController::Initialize(HWND hWnd) {
 
     auto renderManager = EngineCore::Render::RenderManager::GetInstance();
     assert(renderManager);
@@ -38,7 +38,7 @@ void ImGuiController::Initialize() {
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGui_ImplWin32_Init(GetWindow());
+    ImGui_ImplWin32_Init(hWnd);
 
     ImGui_ImplDX12_InitInfo initInfo = {};
     initInfo.Device = renderManager->GetDevice();

@@ -20,11 +20,11 @@ RenderManager* RenderManager::m_Instance = nullptr;
 
 
 
-RenderManager::RenderManager()
+RenderManager::RenderManager(HWND hWnd)
 {
 	m_Instance = this;
 
-	Init();
+	Init(hWnd);
 }
 
 
@@ -54,7 +54,7 @@ RenderManager::~RenderManager()
 // DirectX 12 Initialization
 //==================================================
 
-void RenderManager::Init()
+void RenderManager::Init(HWND hWnd)
 {
     // Window and BackBuffer settings
 
@@ -65,7 +65,7 @@ void RenderManager::Init()
 
 
 
-	m_WindowHandle = GetWindow();
+	m_WindowHandle = hWnd;
 	m_Frame[0] = 0;
 	m_Frame[1] = 0;
 	m_FenceValue = 0;
@@ -544,7 +544,7 @@ void RenderManager::BeginShadowCascade(unsigned int cascadeIndex)
 void RenderManager::DrawEnd()
 {
 	if (m_RenderTargetManager.GetCurrentTarget() == RENDER_TARGET_TYPE::BACK_BUFFER) {
-		// BackBuffer path: ImGui will render onto it, so we do nothing here.
+		// BackBuffer path: the caller (e.g. the editor UI) keeps rendering onto it, so we do nothing here.
     } else if (m_RenderTargetManager.GetCurrentTarget() ==
                RENDER_TARGET_TYPE::SHADOW_BUFFER) {
         // Transition back buffer: PRESENT -> PIXEL_SHADER_RESOURCE

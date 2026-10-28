@@ -21,10 +21,13 @@
     <ClCompile Include="Code\Component\Polygon\FractalTreeRenderer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Manager\GameManager.cpp">
+    <ClCompile Include="Code\Manager\Engine.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Code\Manager\Main.cpp">
+    <ClCompile Include="Editor\EditorApp.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Code\Render\RenderManager.cpp">
@@ -176,7 +179,10 @@
     <ClInclude Include="Code\Utility\DDSTextureLoader12.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Code\Manager\GameManager.h">
+    <ClInclude Include="Code\Manager\Engine.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Editor\EditorApp.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Code\Manager\Main.h">
