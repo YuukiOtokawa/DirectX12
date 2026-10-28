@@ -116,6 +116,7 @@
     <ClCompile Include="Code\Utility\FilePicker.cpp" />
     <ClCompile Include="Code\Utility\OBJLoader.cpp" />
     <ClCompile Include="Code\Utility\VertexData.cpp" />
+    <ClCompile Include="Editor\Inspector\InspectorRegistry.cpp" />
     <ClCompile Include="Code\Utility\DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="Code\GUIController\GameViewWindowController.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="Code\Render\GraphicsDevice.h" />
     <ClInclude Include="Code\Render\RenderTargetType.h" />
     <ClInclude Include="Code\Render\VertexTypes.h" />
+    <ClInclude Include="Editor\Inspector\InspectorRegistry.h" />
     <ClInclude Include="Code\Render\RenderTargetManager.h" />
     <ClInclude Include="Code\Render\Material.h" />
     <ClInclude Include="Code\Object.h" />

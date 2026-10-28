@@ -1,8 +1,5 @@
 #include "GameObject.h"
 
-#include "ImGui/Code/imgui.h"
-#include "Code/GUIController/ObjectNameEditor.h"
-
 #include "Code/Manager/ObjectManager.h"
 using namespace EngineCore::Manager;
 
@@ -18,52 +15,13 @@ void EngineCore::General::GameObject::Draw() {
 	// グローバル描画順ソート（RenderSystem）に移行したため、ここでは何もしません
 }
 
-void EngineCore::General::GameObject::DrawInspector() {
-
-	// Active Checkbox
-	ImGui::Checkbox("###Active", &m_IsActive);
-
-	// GameObject Name
-	ImGui::TextUnformatted("Name:");
-	ImGui::SameLine();
-	GUIController::Gui::ObjectNameEditor::Draw(*this);
-	ImGui::Separator();
-	
-	for (const auto& component : m_Components) {
-		if (component) {
-			component->DrawInspector();
-			
-		}
+EngineCore::General::Component* EngineCore::General::GameObject::AddComponent(std::unique_ptr<Component> component) {
+	if (!component) {
+		return nullptr;
 	}
-
-	// Add Component Button
-	const char* label = "Add Component";
-
-	float windowWidth = ImGui::GetContentRegionAvail().x;
-	float textWidth = ImGui::CalcTextSize(label).x;
-
-	ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
-	if (ImGui::Button(label)) {
-		ImGui::OpenPopup("AddComponentPopup");
-	}
-
-	// Add Component Popup
-	if (ImGui::BeginPopup("AddComponentPopup")) {
-		auto componentNames = ComponentFactory::GetInstance()->GetRegisteredComponentNames();
-
-		for (const auto& componentName : componentNames) {
-			if (ImGui::MenuItem(componentName.c_str())) {
-				auto component = ComponentFactory::GetInstance()->CreateComponent(componentName);
-				if (component) {
-					component->SetOwner(this);
-					m_Components.push_back(std::move(component));
-				}
-			}
-		}
-
-		ImGui::EndPopup();
-	}
-
+	component->SetOwner(this);
+	m_Components.push_back(std::move(component));
+	return m_Components.back().get();
 }
 
 void EngineCore::General::GameObject::SetName(const std::string& name) {

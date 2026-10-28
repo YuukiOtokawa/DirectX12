@@ -37,15 +37,16 @@ namespace EngineCore::General {
 		virtual void Update();
         void Draw();
 
-		void DrawInspector() override;
-
 		bool IsActive() const { return m_IsActive; }
 		void SetActive(bool active) { m_IsActive = active; }
 		std::string GetName() const { return m_Name; }
 		void SetName(const std::string& name);	
 
-		template<typename T> 
+		template<typename T>
 		T* AddComponent();
+
+		// 生成済みのコンポーネントを追加する（エディタの Add Component など、型名から生成した場合）
+		Component* AddComponent(std::unique_ptr<Component> component);
 
 		template<typename T>
 		T* GetComponent();

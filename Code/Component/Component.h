@@ -15,6 +15,9 @@ namespace EngineCore::General {
 	};
 
 #define REGISTER_COMPONENT(Type) \
+public: \
+	/* ComponentFactory の登録キーと同じ型名。エディタの Drawer もこの名前で引く */ \
+	virtual const char* GetTypeName() const { return #Type; } \
 private: \
 	static const char* GetClassName() { return #Type; } \
 	static inline bool registered = []() { \
@@ -41,7 +44,6 @@ private: \
 		void SetOwner(GameObject* owner) { m_Owner = owner; }
 		GameObject* GetOwner() const { return m_Owner; }
 
-		void DrawInspector() override;
 		virtual void Inspector();
 
 	};

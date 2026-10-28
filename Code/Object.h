@@ -12,7 +12,7 @@ namespace EngineCore::General {
 		friend class EngineCore::Manager::ObjectManager;
 		void SetID(uint64_t id) { m_InstanceID = id; }
 	public:
-		virtual void DrawInspector() {}
+		virtual ~Object() = default;
 
 		uint64_t GetID() const { return m_InstanceID; }
 
