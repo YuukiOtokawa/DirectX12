@@ -8,7 +8,7 @@
 #include "Code/Component/Camera/Camera.h"
 #include "Code/Component/Polygon/Light.h"
 #include "Code/Component/Transform/Transform.h"
-#include "Code/Component/Polygon/EditorCameraController.h"
+#include "Editor/Component/EditorCameraController.h"
 #include "Code/Utility/WorldInitializer.h"
 #include "Code/Component/PostProcessComponent.h"
 

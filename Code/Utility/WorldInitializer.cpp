@@ -9,7 +9,6 @@
 #include "Code/Component/Camera/Camera.h"
 #include "Code/Render/RenderManager.h"
 
-#include "FilePicker.h"
 #include "ResourcePath.h"
 #include "FBXLoader.h"
 #include "OBJLoader.h"
