@@ -19,8 +19,7 @@ namespace EditorUI {
 		ImGui::Text("%s", typeName);
 
 		if (!DrawAs(typeName, component)) {
-			// Drawer へ移行していないコンポーネントは従来の Inspector() で描く
-			component.Inspector();
+			ImGui::TextDisabled("No custom inspector");
 		}
 	}
 

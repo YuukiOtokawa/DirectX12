@@ -6,6 +6,7 @@
 #include "Code/Utility/VertexData.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace EngineCore::General {
@@ -26,7 +27,8 @@ namespace EngineCore::General {
 		~MeshFilter() override;
 		void Update() override;
 
-		void Inspector() override;
+		// FBX / OBJ を拡張子で判別して読み込み、頂点データとして設定する
+		void LoadModel(const std::string& filePath);
 
 		void SetVertexBuffer(EngineCore::Render::Types::VERTEX_BUFFER* pVertexBuffer);
 		void SetIndexBuffer(EngineCore::Render::Types::INDEX_BUFFER* pIndexBuffer);

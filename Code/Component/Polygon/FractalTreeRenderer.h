@@ -10,8 +10,10 @@ namespace EngineCore::General {
 		REGISTER_COMPONENT(FractalTreeRenderer)
 
 	public:
+		// Keep recursive draw cost bounded; branch count grows exponentially.
+		static constexpr int MaxBranchDepth = 5;
+
 		void Draw() override;
-		void Inspector() override;
 
 		void SetBranchDepth(int depth) {
 			m_BranchDepth = std::clamp(depth, 0, MaxBranchDepth);
@@ -19,10 +21,19 @@ namespace EngineCore::General {
 		void SetBranchAngle(float degrees) {
 			m_BranchAngleDegrees = std::clamp(degrees, 0.0f, 90.0f);
 		}
+		void SetBranchLength(float length) {
+			m_BranchLength = std::clamp(length, 0.001f, 1000.0f);
+		}
+		void SetChildScale(float scale) {
+			m_ChildScale = std::clamp(scale, 0.1f, 0.95f);
+		}
+
+		int GetBranchDepth() const { return m_BranchDepth; }
+		float GetBranchAngle() const { return m_BranchAngleDegrees; }
+		float GetBranchLength() const { return m_BranchLength; }
+		float GetChildScale() const { return m_ChildScale; }
 
 	private:
-		// Keep recursive draw cost bounded; branch count grows exponentially.
-		static constexpr int MaxBranchDepth = 5;
 		int m_BranchDepth = 3;
 		float m_BranchAngleDegrees = 30.0f;
 		float m_BranchLength = 1.0f;

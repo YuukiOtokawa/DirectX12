@@ -17,8 +17,6 @@ namespace EngineCore::General {
 
 	private:
 		std::vector<PostProcessPassInfo> m_Passes;
-		char m_NewName[256];
-		char m_NewShaderPath[256];
 
 	public:
 		PostProcessComponent();
@@ -26,9 +24,15 @@ namespace EngineCore::General {
 
 		void Start() override;
 		void Update() override;
-		void Inspector() override;
 
 		void ApplyPassesToRenderManager();
+
+		std::vector<PostProcessPassInfo>& GetPasses() { return m_Passes; }
+		const std::vector<PostProcessPassInfo>& GetPasses() const { return m_Passes; }
+
+		// シェーダーのコンパイルが通ったときだけパスを追加して RenderManager に反映する。追加できたら true
+		bool AddPass(const std::string& name, const std::string& shaderPath);
+		void RemovePass(size_t index);
 
 	private:
 		// メタデータからパスのマテリアルバッファを構成（シェーダ登録後に呼ぶ）

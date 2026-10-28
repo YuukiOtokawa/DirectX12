@@ -46,7 +46,6 @@ namespace EngineCore::General {
 
 		void Update() override;
 		void Draw() override;
-		void Inspector() override;
 		DrawOrder GetDrawOrder() const override { return DrawOrder::Camera; }
 
 		void SetColor(const Vector4& color) { m_Color = color; }
@@ -57,6 +56,15 @@ namespace EngineCore::General {
 
 		LightType GetLightType() const { return m_LightType; }
 		void SetLightType(LightType type) { m_LightType = type; }
+
+		float GetShadowOrthoSize() const { return m_ShadowOrthoSize; }
+		void SetShadowOrthoSize(float size) { m_ShadowOrthoSize = size; }
+		float GetShadowFov() const { return m_ShadowFov; }
+		void SetShadowFov(float fov) { m_ShadowFov = fov; }
+		float GetShadowNear() const { return m_ShadowNear; }
+		void SetShadowNear(float nearZ) { m_ShadowNear = nearZ; }
+		float GetShadowFar() const { return m_ShadowFar; }
+		void SetShadowFar(float farZ) { m_ShadowFar = farZ; }
 
 		void SetCurrentCascade(int cascade) { m_CurrentCascade = cascade; }
 		int GetCurrentCascade() const { return m_CurrentCascade; }

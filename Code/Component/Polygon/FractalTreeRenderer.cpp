@@ -3,7 +3,6 @@
 #include "Code/Component/Transform/Transform.h"
 #include "Code/GameObject/GameObject.h"
 #include "Code/Render/RenderManager.h"
-#include "ImGui/Code/imgui.h"
 #include <cmath>
 
 using namespace DirectX;
@@ -70,25 +69,4 @@ void FractalTreeRenderer::DrawBranch(const XMMATRIX& world,
 
 	DrawBranch(leftWorld, meshToBranch, remainingDepth - 1);
 	DrawBranch(rightWorld, meshToBranch, remainingDepth - 1);
-}
-
-void FractalTreeRenderer::Inspector() {
-	MeshRenderer::Inspector();
-	ImGui::Separator();
-	ImGui::Text("Fractal Tree");
-
-	if (ImGui::SliderInt("Branch Depth", &m_BranchDepth, 0, MaxBranchDepth)) {
-		SetBranchDepth(m_BranchDepth);
-	}
-	if (ImGui::SliderFloat("Branch Angle", &m_BranchAngleDegrees, 0.0f, 90.0f)) {
-		SetBranchAngle(m_BranchAngleDegrees);
-	}
-	if (ImGui::DragFloat("Branch Length", &m_BranchLength, 0.01f, 0.001f, 1000.0f)) {
-		m_BranchLength = std::clamp(m_BranchLength, 0.001f, 1000.0f);
-	}
-	if (ImGui::SliderFloat("Child Scale", &m_ChildScale, 0.1f, 0.95f)) {
-		m_ChildScale = std::clamp(m_ChildScale, 0.1f, 0.95f);
-	}
-
-	ImGui::Text("Branches: %d", (1 << (m_BranchDepth + 1)) - 1);
 }

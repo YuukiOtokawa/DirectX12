@@ -1,7 +1,5 @@
 #include "MeshFilter.h"
-#include "ImGui/Code/imgui.h"
 
-#include "Code/Utility/FilePicker.h"
 #include "Code/Utility/FBXLoader.h"
 #include "Code/Utility/OBJLoader.h"
 #include <algorithm>
@@ -29,33 +27,29 @@ void EngineCore::General::MeshFilter::SetIndexBuffer(EngineCore::Render::Types::
 
 void EngineCore::General::MeshFilter::Update() {}
 
-void EngineCore::General::MeshFilter::Inspector() {
-	if (ImGui::Button("Open Model")) {
-		auto filePath = OpenFileDialog();
-		if (filePath.empty())
-			return;
+void EngineCore::General::MeshFilter::LoadModel(const std::string& filePath) {
+	if (filePath.empty())
+		return;
 
-		if (!m_VertexData) {
-			m_VertexData = new VertexData();
-		}
+	if (!m_VertexData) {
+		m_VertexData = new VertexData();
+	}
 
-		// Determine file extension
-		std::string pathStr(filePath);
-		std::string ext = pathStr.substr(pathStr.find_last_of(".") + 1);
-		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+	// Determine file extension
+	std::string ext = filePath.substr(filePath.find_last_of(".") + 1);
+	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-		if (ext == "fbx") {
-			auto fbxData = LoadFBX(filePath.c_str(), m_VertexData);
-			if (fbxData.m_Scene) {
-				SetVertexData(fbxData.vertexData[0]);
-				SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
-			}
+	if (ext == "fbx") {
+		auto fbxData = LoadFBX(filePath.c_str(), m_VertexData);
+		if (fbxData.m_Scene) {
+			SetVertexData(fbxData.vertexData[0]);
+			SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
 		}
-		else if (ext == "obj") {
-			LoadObjToVertexData(filePath.c_str(), m_VertexData);
-			SetVertexData(m_VertexData->GetFilePath().c_str(), m_VertexData->GetVertices(), m_VertexData->GetIndices());
-			SetPrimitiveTopology(m_VertexData->GetPrimitiveTopology());
-		}
+	}
+	else if (ext == "obj") {
+		LoadObjToVertexData(filePath.c_str(), m_VertexData);
+		SetVertexData(m_VertexData->GetFilePath().c_str(), m_VertexData->GetVertices(), m_VertexData->GetIndices());
+		SetPrimitiveTopology(m_VertexData->GetPrimitiveTopology());
 	}
 }
 

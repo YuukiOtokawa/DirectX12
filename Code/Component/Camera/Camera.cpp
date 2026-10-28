@@ -7,9 +7,6 @@
 #include "Code/GameObject/GameObject.h"
 #include "Code/Component/Transform/Transform.h"
 
-// Include ImGui header
-#include "ImGui/Code/imgui.h"
-
 using namespace EngineCore::General;
 using namespace EngineCore::Render::RenderStructure;
 
@@ -131,12 +128,4 @@ void Camera::Draw() {
         transform ? Vector4(transform->Position.x, transform->Position.y, transform->Position.z, 1.0f) : Vector4(0.0f, 0.0f, 0.0f, 1.0f);
 
 	renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::CAMERA, &cameraConstant, sizeof(cameraConstant));
-}
-
-void Camera::Inspector() {
-	ImGui::DragFloat("FOV", &m_Fov, 0.5f, 1.0f, 180.0f, "%.1f");
-	ImGui::DragFloat("Near", &m_Near, 0.05f, 0.01f, 10.0f, "%.2f");
-	ImGui::DragFloat("Far", &m_Far, 1.0f, 10.0f, 10000.0f, "%.1f");
-    ImGui::DragFloat3("Target Position", &m_TargetPosition.x, 0.1f, -1000.0f,
-                      1000.0f, "%.1f");
 }

@@ -8,7 +8,5 @@ namespace EngineCore::General {
 
 	void Component::Update() {}
 
-	void Component::Inspector() {}
-
 
 }

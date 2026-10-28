@@ -1,5 +1,4 @@
 #include "Light.h"
-#include "ImGui/Code/imgui.h"
 #include "Code/GameObject/GameObject.h"
 #include "Code/Component/Transform/Transform.h"
 #include "Code/Component/Camera/Camera.h"
@@ -98,31 +97,4 @@ void Light::Draw() {
 	envConstant.Exposure = m_Exposure;
 
 	renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::ENV, &envConstant, sizeof(envConstant));
-}
-
-void Light::Inspector() {
-	// Color Picker
-	float color[4] = { m_Color.x, m_Color.y, m_Color.z, m_Color.w };
-	if (ImGui::ColorEdit4("Light Color", color)) {
-		m_Color = Vector4(color[0], color[1], color[2], color[3]);
-	}
-
-	// Exposure Slider
-	ImGui::SliderFloat("Exposure", &m_Exposure, 0.0f, 10.0f);
-
-	// Light Type
-	const char* lightTypeNames[] = { "Directional", "Point", "Spot" };
-	int currentType = (int)m_LightType;
-	if (ImGui::Combo("Light Type", &currentType, lightTypeNames, _countof(lightTypeNames))) {
-		m_LightType = (LightType)currentType;
-	}
-
-	if (m_LightType == LightType::Directional) {
-		ImGui::DragFloat("Shadow Ortho Size", &m_ShadowOrthoSize, 0.5f, 1.0f, 500.0f, "%.1f");
-	}
-	else {
-		ImGui::DragFloat("Shadow Fov", &m_ShadowFov, 0.5f, 1.0f, 180.0f, "%.1f");
-	}
-	ImGui::DragFloat("Shadow Near", &m_ShadowNear, 0.05f, 0.01f, 10.0f, "%.2f");
-	ImGui::DragFloat("Shadow Far", &m_ShadowFar, 1.0f, 10.0f, 10000.0f, "%.1f");
 }

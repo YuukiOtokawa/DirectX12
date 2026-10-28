@@ -21,7 +21,6 @@ namespace EngineCore::General {
 		~MeshRenderer() override = default;
 
 		void Draw() override;
-		void Inspector() override;
 
 		void SetShaderFile(const std::string &shaderFile) {
             m_Material.SetShaderFile(shaderFile);

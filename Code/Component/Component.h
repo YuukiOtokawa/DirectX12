@@ -44,8 +44,6 @@ private: \
 		void SetOwner(GameObject* owner) { m_Owner = owner; }
 		GameObject* GetOwner() const { return m_Owner; }
 
-		virtual void Inspector();
-
 	};
 
 }

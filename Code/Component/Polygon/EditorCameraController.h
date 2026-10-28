@@ -13,7 +13,6 @@ namespace EngineCore::General {
 		~EditorCameraController() override = default;
 
 		void Draw() override;
-		void Inspector() override {}
 	};
 
 }

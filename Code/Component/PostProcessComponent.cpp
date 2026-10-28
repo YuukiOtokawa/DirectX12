@@ -1,18 +1,10 @@
 #include "PostProcessComponent.h"
 #include "RenderManager.h"
-#include "ImGui/Code/imgui.h"
-#include "Code/Utility/FilePicker.h"
 #include "Code/Utility/ResourcePath.h"
-#include "MaterialPropertyInspector.h"
-#include <cstring>
-#include <filesystem>
 
 using namespace EngineCore::General;
 
 PostProcessComponent::PostProcessComponent() {
-	m_NewName[0] = '\0';
-	m_NewShaderPath[0] = '\0';
-	
 	// デフォルトで InvertColor を登録しておく
 	m_Passes.push_back({ "InvertColor", SHADER_DIR "InvertColor.hlsl" });
 }
@@ -44,79 +36,22 @@ void PostProcessComponent::ApplyPassesToRenderManager() {
 	}
 }
 
-void PostProcessComponent::Inspector() {
+bool PostProcessComponent::AddPass(const std::string& name, const std::string& shaderPath) {
 	auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
+	if (!renderManager) return false;
 
-	ImGui::Text("Active Post-Process Passes:");
-	ImGui::Separator();
+	// コンパイルが通ったときだけ追加する
+	if (!renderManager->ReloadPipeline(shaderPath, EngineCore::Render::RenderPassType::PostProcess)) return false;
 
-	int removeIndex = -1;
-	for (size_t i = 0; i < m_Passes.size(); ++i) {
-		ImGui::PushID((int)i);
-		ImGui::Text("%d: %s -> %s", (int)(i + 1), m_Passes[i].name.c_str(), m_Passes[i].shaderPath.c_str());
-		ImGui::SameLine();
-		if (ImGui::Button("Remove")) {
-			removeIndex = (int)i;
-		}
+	m_Passes.push_back({ name, shaderPath });
+	// 登録直後にメタデータが利用可能なのでマテリアルを構成
+	SetupPassMaterial(m_Passes.back());
+	ApplyPassesToRenderManager();
+	return true;
+}
 
-		// パス独自のマテリアルプロパティ（HLSLのcbufferから動的生成）を編集
-		if (renderManager) {
-			// メタデータはファイル名で登録されるので、表示名ではなくマテリアルのシェーダー名で引く
-			const EngineCore::Render::ShaderMetadata* meta = renderManager->GetShaderMetadata(m_Passes[i].material.GetShaderName());
-			if (meta && !meta->properties.empty()) {
-				ImGui::Indent();
-				if (GUIHelper::DrawMaterialProperties(m_Passes[i].material, meta)) {
-					// 値が変わったらバッファをRenderManagerへ反映
-					ApplyPassesToRenderManager();
-				}
-				ImGui::Unindent();
-			}
-		}
-		ImGui::Separator();
-		ImGui::PopID();
-	}
-
-	if (removeIndex != -1) {
-		m_Passes.erase(m_Passes.begin() + removeIndex);
-		ApplyPassesToRenderManager();
-	}
-
-	ImGui::Separator();
-	ImGui::Text("Add New Pass:");
-	ImGui::InputText("Pass Name", m_NewName, sizeof(m_NewName));
-	ImGui::InputText("Shader Path", m_NewShaderPath, sizeof(m_NewShaderPath));
-	ImGui::SameLine();
-	if (ImGui::Button("Browse...")) {
-		COMDLG_FILTERSPEC shaderFilter = { L"HLSL Shader Files (*.hlsl)", L"*.hlsl" };
-		std::string selectedPath = OpenFileDialog(&shaderFilter, 1);
-		if (!selectedPath.empty()) {
-			std::filesystem::path currentPath = std::filesystem::current_path();
-			std::filesystem::path fullPath(selectedPath);
-			std::filesystem::path relativePath = std::filesystem::relative(fullPath, currentPath);
-			
-			std::string relStr = relativePath.generic_string();
-			std::string stemName = fullPath.stem().string();
-
-			strcpy_s(m_NewShaderPath, sizeof(m_NewShaderPath), relStr.c_str());
-			strcpy_s(m_NewName, sizeof(m_NewName), stemName.c_str());
-		}
-	}
-
-	if (ImGui::Button("Add and Register")) {
-		if (strlen(m_NewName) > 0 && strlen(m_NewShaderPath) > 0) {
-			auto* renderManager = EngineCore::Render::RenderManager::GetInstance();
-			if (renderManager) {
-				// コンパイルが通ったときだけ追加する
-				if (renderManager->ReloadPipeline(m_NewShaderPath, EngineCore::Render::RenderPassType::PostProcess)) {
-					m_Passes.push_back({ m_NewName, m_NewShaderPath });
-					// 登録直後にメタデータが利用可能なのでマテリアルを構成
-					SetupPassMaterial(m_Passes.back());
-					ApplyPassesToRenderManager();
-					// クリア
-					m_NewName[0] = '\0';
-					m_NewShaderPath[0] = '\0';
-				}
-			}
-		}
-	}
+void PostProcessComponent::RemovePass(size_t index) {
+	if (index >= m_Passes.size()) return;
+	m_Passes.erase(m_Passes.begin() + index);
+	ApplyPassesToRenderManager();
 }

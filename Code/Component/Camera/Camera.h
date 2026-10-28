@@ -44,7 +44,15 @@ namespace EngineCore::General {
 		// Component のオーバーライド
 		void Draw() override;
 		DrawOrder GetDrawOrder() const override { return DrawOrder::Camera; }
-		void Inspector() override;
+
+		float GetFov() const { return m_Fov; }
+		void SetFov(float fov) { m_Fov = fov; }
+		float GetNear() const { return m_Near; }
+		void SetNear(float nearZ) { m_Near = nearZ; }
+		float GetFar() const { return m_Far; }
+		void SetFar(float farZ) { m_Far = farZ; }
+		Vector3 GetTargetPosition() const { return m_TargetPosition; }
+		void SetTargetPosition(const Vector3& target) { m_TargetPosition = target; }
 
 		// アクティブカメラの管理
 		static void SetActiveCamera(Camera* camera) { s_ActiveCamera = camera; }

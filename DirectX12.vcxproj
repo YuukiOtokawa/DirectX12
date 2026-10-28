@@ -117,6 +117,13 @@
     <ClCompile Include="Code\Utility\OBJLoader.cpp" />
     <ClCompile Include="Code\Utility\VertexData.cpp" />
     <ClCompile Include="Editor\Inspector\InspectorRegistry.cpp" />
+    <ClCompile Include="Editor\Inspector\TransformDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\CameraDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\LightDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\MeshFilterDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\MeshRendererDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\FractalTreeRendererDrawer.cpp" />
+    <ClCompile Include="Editor\Inspector\PostProcessComponentDrawer.cpp" />
     <ClCompile Include="Code\Utility\DDSTextureLoader12.cpp" />
     <ClCompile Include="Code\GUIController\DefaultWindowController.cpp" />
     <ClCompile Include="Code\GUIController\GameViewWindowController.cpp" />

@@ -138,6 +138,27 @@
     <ClCompile Include="Editor\Inspector\InspectorRegistry.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Editor\Inspector\TransformDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\CameraDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\LightDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\MeshFilterDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\MeshRendererDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\FractalTreeRendererDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Editor\Inspector\PostProcessComponentDrawer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="Code\Render\RenderSystem.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
