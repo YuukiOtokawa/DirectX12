@@ -60,7 +60,7 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 		renderManager->SetIndexBuffer(indexBuffer);
 	}
 
-	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(meshFilter->GetPrimitiveTopology());
+	renderManager->GetGraphicsCommandList()->IASetPrimitiveTopology(EngineCore::Render::ToD3D12PrimitiveTopology(meshFilter->GetPrimitiveTopology()));
 
 	// Bind Pipeline State
     if (renderManager->IsShadowPass()) {

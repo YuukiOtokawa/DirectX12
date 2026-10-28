@@ -13,20 +13,25 @@
 #include "GraphicsDevice.h"
 #include "RenderTargetType.h"
 #include "RenderTargetManager.h"
+#include "VertexTypes.h"
 #include <memory>
 
 namespace EngineCore::Render {
 
+	inline D3D12_PRIMITIVE_TOPOLOGY ToD3D12PrimitiveTopology(PrimitiveTopology topology) {
+		switch (topology) {
+		case PrimitiveTopology::PointList:     return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+		case PrimitiveTopology::LineList:      return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+		case PrimitiveTopology::LineStrip:     return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+		case PrimitiveTopology::TriangleList:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		case PrimitiveTopology::TriangleStrip: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+		}
+		return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+	}
+
 	namespace Types {
 
-		// 頂点データ VertexDataクラスに移動
-		struct VERTEX
-		{
-			Vector3 Position;
-			Vector3 Normal;
-			Vector2 TexCoord;
-			Vector4 Color;
-		};
+		// 頂点データ VERTEX は VertexTypes.h に移動
 
 		// マテリアルデータ Materialクラスに移動
 		using MATERIAL = EngineCore::Render::MaterialConstant;

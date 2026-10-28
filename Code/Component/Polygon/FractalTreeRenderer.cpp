@@ -2,6 +2,7 @@
 #include "MeshFilter.h"
 #include "Code/Component/Transform/Transform.h"
 #include "Code/GameObject/GameObject.h"
+#include "Code/Render/RenderManager.h"
 #include "ImGui/Code/imgui.h"
 #include <cmath>
 

@@ -8,6 +8,24 @@
 
 #include "Code/GameObject/GameObject.h"
 #include "Code/Component/Transform/Transform.h"
+#include "Code/Render/RenderManager.h"
+
+EngineCore::General::MeshFilter::MeshFilter() = default;
+
+EngineCore::General::MeshFilter::~MeshFilter() {
+	if (m_VertexData) {
+		delete m_VertexData;
+		m_VertexData = nullptr;
+	}
+}
+
+void EngineCore::General::MeshFilter::SetVertexBuffer(EngineCore::Render::Types::VERTEX_BUFFER* pVertexBuffer) {
+	m_VertexBuffer.reset(pVertexBuffer);
+}
+
+void EngineCore::General::MeshFilter::SetIndexBuffer(EngineCore::Render::Types::INDEX_BUFFER* pIndexBuffer) {
+	m_IndexBuffer.reset(pIndexBuffer);
+}
 
 void EngineCore::General::MeshFilter::Update() {}
 

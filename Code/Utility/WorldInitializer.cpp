@@ -52,7 +52,7 @@ namespace EngineCore::Utility {
         vertexData->SetFilePath("Plane");
         vertexData->SetVertices(vertices);
         vertexData->SetIndices(indices);
-        vertexData->SetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        vertexData->SetPrimitiveTopology(EngineCore::Render::PrimitiveTopology::TriangleList);
 
         // テクスチャのロードと設定
         auto renderManager = EngineCore::Render::RenderManager::GetInstance();
