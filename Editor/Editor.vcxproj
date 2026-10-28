@@ -9,7 +9,6 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -20,69 +19,82 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared" >
+  <ImportGroup Label="Shared">
   </ImportGroup>
-    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    </ImportGroup>
-    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    </ImportGroup>
-
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Common.props" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-       <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Manifest>
-       <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-       <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Manifest>
-       <EnableSegmentHeap>true</EnableSegmentHeap>
-    </Manifest>
-  </ItemDefinitionGroup>
-
-  <ItemGroup></ItemGroup>
+  <PropertyGroup>
+    <TargetName>EngineEditor</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Editor\Component\EditorCameraController.cpp" />
+    <ClCompile Include="..\Code\GUIController\GraphicsDebugWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\InspectorWindowController.cpp" />
+    <ClCompile Include="..\Code\Utility\FilePicker.cpp" />
+    <ClCompile Include="..\Editor\Inspector\InspectorRegistry.cpp" />
+    <ClCompile Include="..\Editor\Inspector\TransformDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\CameraDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\LightDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\MeshFilterDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\MeshRendererDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\FractalTreeRendererDrawer.cpp" />
+    <ClCompile Include="..\Editor\Inspector\PostProcessComponentDrawer.cpp" />
+    <ClCompile Include="..\Code\GUIController\DefaultWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\GameViewWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\SceneViewWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\ImGuiController.cpp" />
+    <ClCompile Include="..\Code\GUIController\ImGuiWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\HierarchyWindowController.cpp" />
+    <ClCompile Include="..\Code\GUIController\WindowManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Editor\Component\EditorCameraController.h" />
+    <ClInclude Include="..\Code\GUIController\GraphicsDebugWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\InspectorWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\ObjectNameEditor.h" />
+    <ClInclude Include="..\Code\Utility\FilePicker.h" />
+    <ClInclude Include="..\Code\GUIController\DefaultWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\GameViewWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\SceneViewWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\ImGuiController.h" />
+    <ClInclude Include="..\Code\GUIController\ImGuiWindowController.h" />
+    <ClInclude Include="..\Code\GUIController\HierarchyWindowController.h" />
+    <ClInclude Include="..\Editor\Inspector\InspectorRegistry.h" />
+    <ClInclude Include="..\Code\GUIController\WindowManager.h" />
+    <ClInclude Include="..\Editor\Inspector\MaterialPropertyInspector.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.vcxproj">
+      <Project>{73169531-6d65-42fd-b843-c8a9808dcb31}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\ImGui\ImGui.vcxproj">
+      <Project>{76200ea9-6f73-49d3-9d5d-9ae9fcd35388}</Project>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
