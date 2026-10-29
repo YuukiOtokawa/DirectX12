@@ -1,5 +1,6 @@
 #include "ModelImporter.h"
 
+#include <cctype>
 #include <filesystem>
 
 namespace AssetPipeline {

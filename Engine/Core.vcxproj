@@ -57,23 +57,17 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkIncremental>true</LinkIncremental>
-      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkIncremental>true</LinkIncremental>
-      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
-    <PostBuildEvent>
-      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Component\Camera\Camera.cpp" />
@@ -85,8 +79,6 @@
     <ClCompile Include="Source\Component\Polygon\Light.cpp" />
     <ClCompile Include="Source\Component\Transform\Transform.cpp" />
     <ClCompile Include="Source\Manager\ComponentFactory.cpp" />
-    <ClCompile Include="Source\Utility\FBXLoader.cpp" />
-    <ClCompile Include="Source\Utility\OBJLoader.cpp" />
     <ClCompile Include="Source\Utility\VertexData.cpp" />
     <ClCompile Include="Source\Utility\ResourcePath.cpp" />
     <ClCompile Include="Source\Utility\DDSTextureLoader12.cpp" />
@@ -108,6 +100,7 @@
     <ClCompile Include="Source\Render\RenderSystem.cpp" />
     <ClCompile Include="Source\Utility\WorldInitializer.cpp" />
     <ClCompile Include="Source\Render\ShaderMetadata.cpp" />
+    <ClCompile Include="Source\Asset\MeshAsset.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Component\Camera\Camera.h" />
@@ -118,9 +111,7 @@
     <ClInclude Include="Source\Component\Polygon\Light.h" />
     <ClInclude Include="Source\Component\Transform\Transform.h" />
     <ClInclude Include="Source\Manager\ComponentFactory.h" />
-    <ClInclude Include="Source\Utility\FBXLoader.h" />
     <ClInclude Include="Source\Utility\ObjectIDManipulator.h" />
-    <ClInclude Include="Source\Utility\OBJLoader.h" />
     <ClInclude Include="Source\Utility\VectorClass.h" />
     <ClInclude Include="Source\Render\D3DX12.h" />
     <ClInclude Include="Source\Component\Component.h" />
@@ -151,6 +142,8 @@
     <ClInclude Include="Public\ScriptAPI.h" />
     <ClInclude Include="Public\EngineAPI.h" />
     <ClInclude Include="Source\Utility\ResourcePath.h" />
+    <ClInclude Include="Source\Utility\BinaryStream.h" />
+    <ClInclude Include="Source\Asset\MeshAsset.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ThirdParty\yaml-cpp\yaml-cpp.vcxproj">
