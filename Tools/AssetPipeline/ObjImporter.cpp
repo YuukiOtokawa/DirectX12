@@ -200,7 +200,7 @@ namespace AssetPipeline {
 					if (s)
 						vertices[vc].Color = colArray[atoi(s) - 1];
 					else
-						vertices[vc].Color = { 1.0f, 1.0f, 1.0f, 1.0f };
+						vertices[vc].Color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 					indices[ic] = vc;
 					ic++;
