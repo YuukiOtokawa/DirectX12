@@ -1,5 +1,7 @@
 #include "ShaderMetadata.h"
 #include "Engine/Source/Utility/ResourcePath.h"
+#include "Engine/Source/Utility/BinaryStream.h"
+#include <Windows.h>
 #include <fstream>
 #include <sstream>
 #include <regex>
@@ -116,8 +118,17 @@ namespace EngineCore::Render {
 
     ShaderMetadata ParseShaderMetadata(const std::string& filePath) {
         ShaderMetadata metadata;
+
+        if (EngineCore::ResourcePath::GetLayout() == EngineCore::ResourcePath::Layout::Distribution) {
+            if (!LoadShaderMetadata(EngineCore::ResourcePath::ShaderMetadataFile(filePath), metadata)) {
+                OutputDebugStringA(("Failed to load shader metadata: " + filePath + "\n").c_str());
+            }
+            metadata.shaderFilePath = filePath;
+            return metadata;
+        }
+
         metadata.shaderFilePath = filePath;
-        
+
         // Extract shader name from file path
         size_t lastSlash = filePath.find_last_of("\\/");
         if (lastSlash != std::string::npos) {
@@ -271,5 +282,77 @@ namespace EngineCore::Render {
         }
 
         return metadata;
+    }
+
+    namespace {
+        constexpr uint32_t kShaderMetaMagic = 0x4D485341; // ファイル先頭のバイト列が "ASHM" になる
+        constexpr uint32_t kShaderMetaVersion = 1;
+    }
+
+    bool SaveShaderMetadata(const std::string& filePath, const ShaderMetadata& metadata) {
+        using namespace EngineCore::BinaryStream;
+        std::ofstream out(filePath, std::ios::binary);
+        if (!out) return false;
+
+        WriteHeader(out, kShaderMetaMagic, kShaderMetaVersion);
+        Write(out, metadata.shaderName);
+        Write(out, static_cast<uint64_t>(metadata.totalSize));
+
+        Write(out, static_cast<uint32_t>(metadata.properties.size()));
+        for (const auto& prop : metadata.properties) {
+            Write(out, prop.name);
+            Write(out, prop.type);
+            Write(out, static_cast<uint64_t>(prop.offset));
+            Write(out, static_cast<uint64_t>(prop.size));
+            Write(out, prop.defaultValue);
+            Write(out, prop.displayName);
+            Write(out, prop.header);
+            Write(out, prop.isColor);
+            Write(out, prop.isHDR);
+            Write(out, prop.hasRange);
+            Write(out, prop.rangeMin);
+            Write(out, prop.rangeMax);
+        }
+
+        Write(out, static_cast<uint32_t>(metadata.textures.size()));
+        for (const auto& tex : metadata.textures) {
+            Write(out, tex.name);
+            Write(out, tex.registerIndex);
+            Write(out, tex.displayName);
+            Write(out, tex.header);
+        }
+
+        return static_cast<bool>(out);
+    }
+
+    bool LoadShaderMetadata(const std::string& filePath, ShaderMetadata& metadata) {
+        using namespace EngineCore::BinaryStream;
+        std::ifstream in(filePath, std::ios::binary);
+        if (!in || !ReadHeader(in, kShaderMetaMagic, kShaderMetaVersion)) return false;
+
+        uint64_t totalSize = 0;
+        uint32_t count = 0;
+        if (!Read(in, metadata.shaderName) || !Read(in, totalSize) || !Read(in, count)) return false;
+        metadata.totalSize = static_cast<size_t>(totalSize);
+
+        metadata.properties.resize(count);
+        for (auto& prop : metadata.properties) {
+            uint64_t offset = 0, size = 0;
+            bool ok = Read(in, prop.name) && Read(in, prop.type) && Read(in, offset) && Read(in, size)
+                && Read(in, prop.defaultValue) && Read(in, prop.displayName) && Read(in, prop.header)
+                && Read(in, prop.isColor) && Read(in, prop.isHDR) && Read(in, prop.hasRange)
+                && Read(in, prop.rangeMin) && Read(in, prop.rangeMax);
+            if (!ok) return false;
+            prop.offset = static_cast<size_t>(offset);
+            prop.size = static_cast<size_t>(size);
+        }
+
+        if (!Read(in, count)) return false;
+        metadata.textures.resize(count);
+        for (auto& tex : metadata.textures) {
+            if (!Read(in, tex.name) || !Read(in, tex.registerIndex) || !Read(in, tex.displayName) || !Read(in, tex.header))
+                return false;
+        }
+        return true;
     }
 }

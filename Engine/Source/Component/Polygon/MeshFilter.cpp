@@ -1,7 +1,6 @@
 #include "MeshFilter.h"
 
-#include "Engine/Source/Utility/FBXLoader.h"
-#include "Engine/Source/Utility/OBJLoader.h"
+#include "Engine/Source/Asset/MeshAsset.h"
 #include <algorithm>
 
 #include "Engine/Source/GameObject/GameObject.h"
@@ -31,26 +30,12 @@ void EngineCore::General::MeshFilter::LoadModel(const std::string& filePath) {
 	if (filePath.empty())
 		return;
 
-	if (!m_VertexData) {
-		m_VertexData = new VertexData();
-	}
+	VertexData* vertexData = EngineCore::Asset::LoadMesh(filePath);
+	if (!vertexData)
+		return;
 
-	// Determine file extension
-	std::string ext = filePath.substr(filePath.find_last_of(".") + 1);
-	std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-	if (ext == "fbx") {
-		auto fbxData = LoadFBX(filePath.c_str(), m_VertexData);
-		if (fbxData.m_Scene) {
-			SetVertexData(fbxData.vertexData[0]);
-			SetPrimitiveTopology(fbxData.vertexData[0]->GetPrimitiveTopology());
-		}
-	}
-	else if (ext == "obj") {
-		LoadObjToVertexData(filePath.c_str(), m_VertexData);
-		SetVertexData(m_VertexData->GetFilePath().c_str(), m_VertexData->GetVertices(), m_VertexData->GetIndices());
-		SetPrimitiveTopology(m_VertexData->GetPrimitiveTopology());
-	}
+	delete m_VertexData;
+	SetVertexData(vertexData);
 }
 
 void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::vector<EngineCore::Render::Types::VERTEX> vertices, std::vector<unsigned int> indices) {

@@ -10,8 +10,8 @@
 #include "Engine/Source/Render/RenderManager.h"
 
 #include "ResourcePath.h"
-#include "FBXLoader.h"
-#include "OBJLoader.h"
+#include "VertexData.h"
+#include "Engine/Source/Asset/MeshAsset.h"
 
 
 namespace EngineCore::Utility {
@@ -89,15 +89,14 @@ namespace EngineCore::Utility {
                 skyTransform->SetRotation(Vector3(0.0f, 0.0f, 0.0f));
             }
 
-            auto skyVertexData = new VertexData();
-            LoadObjToVertexData(EngineCore::ResourcePath::Asset("sky.obj").c_str(), skyVertexData);
+            auto skyVertexData = EngineCore::Asset::LoadMesh(EngineCore::ResourcePath::Asset("sky.obj"));
 
 
             // MeshFilter と MeshRenderer の追加
             skyObj->AddComponent<General::MeshFilter>();
             auto meshRenderer = skyObj->AddComponent<General::MeshRenderer>();
             auto meshFilter = skyObj->GetComponent<General::MeshFilter>();
-            if (meshFilter) {
+            if (meshFilter && skyVertexData) {
                 meshFilter->SetVertexData(skyVertexData);
                 meshFilter->SetPrimitiveTopology(skyVertexData->GetPrimitiveTopology());
             }

@@ -28,7 +28,7 @@ namespace EngineCore::General {
 		~MeshFilter() override;
 		void Update() override;
 
-		// FBX / OBJ を拡張子で判別して読み込み、頂点データとして設定する
+		// モデルを読み込み、頂点データとして設定する（読み分けは EngineCore::Asset::LoadMesh を参照）
 		void LoadModel(const std::string& filePath);
 
 		void SetVertexBuffer(EngineCore::Render::Types::VERTEX_BUFFER* pVertexBuffer);

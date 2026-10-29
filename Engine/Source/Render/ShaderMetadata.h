@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "Engine/Source/Utility/VectorClass.h"
+#include "Engine/Public/EngineAPI.h"
 
 namespace EngineCore::Render {
     struct ShaderProperty {
@@ -36,5 +37,11 @@ namespace EngineCore::Render {
         size_t totalSize = 0;
     };
 
-    ShaderMetadata ParseShaderMetadata(const std::string& filePath);
+    // .hlsl のテキストを解析してメタデータを作る。
+    // Distribution では .hlsl を配布しないので、代わりに ShaderCompiler.exe が書き出した .shadermeta を読む
+    ENGINE_API ShaderMetadata ParseShaderMetadata(const std::string& filePath);
+
+    // .shadermeta の読み書き（ShaderCompiler.exe が書き、製品のエンジンが読む）
+    ENGINE_API bool SaveShaderMetadata(const std::string& filePath, const ShaderMetadata& metadata);
+    ENGINE_API bool LoadShaderMetadata(const std::string& filePath, ShaderMetadata& metadata);
 }
