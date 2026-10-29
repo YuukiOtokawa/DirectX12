@@ -1,0 +1,39 @@
+#pragma once
+
+#include <functional>
+#include <memory>
+#include <map>
+#include <string>
+
+#include "Engine/Public/EngineAPI.h"
+
+namespace EngineCore::General {
+	class Component;
+}
+
+namespace EngineCore::Manager {
+	using namespace EngineCore::General;
+	using ComponentCreator = std::function<std::unique_ptr<General::Component>()>;
+
+	class ENGINE_API ComponentFactory {
+
+	public: 
+		std::string GetComponentTypeName() { return typeid(decltype(this)).name(); } \
+
+		std::map<std::string, ComponentCreator> m_Creators;
+	public:
+		// 定義は .cpp に置く（モジュールをまたいでも実体が1つになるように）
+		static ComponentFactory* GetInstance();
+
+		void RegisterComponent(const std::string& name, ComponentCreator creator) {
+			m_Creators[name] = creator;
+		}
+
+		std::unique_ptr<Component> CreateComponent(const std::string& name);
+
+		std::vector<std::string> GetRegisteredComponentNames() const;
+	};
+
+
+}
+

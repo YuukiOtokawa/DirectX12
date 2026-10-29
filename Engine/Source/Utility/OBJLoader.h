@@ -1,0 +1,55 @@
+#pragma once
+
+#include "RenderManager.h"
+#include "VertexData.h"
+#include "Engine/Source/Render/Material.h"
+
+// 描画サブセットマテリアル構造体
+struct SUBSET_MATERIAL {
+  char Name[256];
+  EngineCore::Render::Material Material;
+
+  std::unique_ptr<EngineCore::Render::Types::TEXTURE> TextureBaseColor;
+};
+
+// 描画サブセット構造体
+struct SUBSET {
+  char Name[256];
+  unsigned int StartIndex;
+  unsigned int IndexNum;
+  SUBSET_MATERIAL Material;
+};
+
+// モデルサブセットマテリアル構造体
+struct MODEL_SUBSET_MATERIAL {
+  char Name[256];
+  EngineCore::Render::Types::MATERIAL Material;
+
+  char TextureNameBaseColor[256];
+};
+
+// モデルサブセット構造体
+struct MODEL_SUBSET {
+  char Name[256];
+  unsigned int StartIndex;
+  unsigned int IndexNum;
+  MODEL_SUBSET_MATERIAL Material;
+};
+
+// モデル構造体
+struct MODEL {
+  EngineCore::Render::Types::VERTEX *VertexArray;
+  unsigned int VertexNum;
+
+  unsigned int *IndexArray;
+  unsigned int IndexNum;
+
+  MODEL_SUBSET *SubsetArray;
+  unsigned int SubsetNum;
+};
+
+class VertexData;
+
+void LoadObj(const char *, VertexData*);
+
+void LoadObjToVertexData(const char *FileName, VertexData *vertexData);

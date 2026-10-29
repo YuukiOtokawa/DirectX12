@@ -373,3 +373,8 @@ FodyWeavers.xsd
 /DirectX12.lib
 # ImGui window layout (written to the working directory at runtime)
 imgui.ini
+# Prebuilt third-party binaries are tracked (overrides [Bb]in/ above)
+!ThirdParty/**/bin/
+# 3D model assets are tracked (overrides *.obj above, which targets compiler output)
+!Assets/**/*.obj
+!Resource/Asset/**/*.obj

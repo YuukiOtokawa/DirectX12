@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{73169531-6d65-42fd-b843-c8a9808dcb31}</ProjectGuid>
+    <RootNamespace>Core</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\Common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <TargetName>EngineCore</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>ENGINECORE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkIncremental>true</LinkIncremental>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <LinkIncremental>true</LinkIncremental>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;DirectXTex_Release.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;$(AsteroidRoot)ThirdParty\DirectXTex;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Component\Camera\Camera.cpp" />
+    <ClCompile Include="Source\Component\PostProcessComponent.cpp" />
+    <ClCompile Include="Source\Component\Component.cpp" />
+    <ClCompile Include="Source\Component\Polygon\MeshFilter.cpp" />
+    <ClCompile Include="Source\Component\Polygon\MeshRenderer.cpp" />
+    <ClCompile Include="Source\Component\Polygon\FractalTreeRenderer.cpp" />
+    <ClCompile Include="Source\Component\Polygon\Light.cpp" />
+    <ClCompile Include="Source\Component\Transform\Transform.cpp" />
+    <ClCompile Include="Source\Manager\ComponentFactory.cpp" />
+    <ClCompile Include="Source\Utility\FBXLoader.cpp" />
+    <ClCompile Include="Source\Utility\OBJLoader.cpp" />
+    <ClCompile Include="Source\Utility\VertexData.cpp" />
+    <ClCompile Include="Source\Utility\ResourcePath.cpp" />
+    <ClCompile Include="Source\Utility\DDSTextureLoader12.cpp" />
+    <ClCompile Include="Source\Manager\Engine.cpp" />
+    <ClCompile Include="Source\GameObject\GameObject.cpp" />
+    <ClCompile Include="Source\Render\RenderManager.cpp" />
+    <ClCompile Include="Source\Render\DescriptorAllocator.cpp" />
+    <ClCompile Include="Source\Render\ConstantBufferRing.cpp" />
+    <ClCompile Include="Source\Render\TextureLoader.cpp" />
+    <ClCompile Include="Source\Render\RenderTargetFactory.cpp" />
+    <ClCompile Include="Source\Render\GraphicsDevice.cpp" />
+    <ClCompile Include="Source\Render\RenderTargetManager.cpp" />
+    <ClCompile Include="Source\Render\Material.cpp" />
+    <ClCompile Include="Source\Object.cpp" />
+    <ClCompile Include="Source\Component\Polygon\SpriteRenderer.cpp" />
+    <ClCompile Include="Source\Component\Polygon\Renderer.cpp" />
+    <ClCompile Include="Source\Manager\ObjectManager.cpp" />
+    <ClCompile Include="Source\Manager\YamlConfigLoader.cpp" />
+    <ClCompile Include="Source\Render\RenderSystem.cpp" />
+    <ClCompile Include="Source\Utility\WorldInitializer.cpp" />
+    <ClCompile Include="Source\Render\ShaderMetadata.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Component\Camera\Camera.h" />
+    <ClInclude Include="Source\Component\PostProcessComponent.h" />
+    <ClInclude Include="Source\Component\Polygon\MeshFilter.h" />
+    <ClInclude Include="Source\Component\Polygon\MeshRenderer.h" />
+    <ClInclude Include="Source\Component\Polygon\FractalTreeRenderer.h" />
+    <ClInclude Include="Source\Component\Polygon\Light.h" />
+    <ClInclude Include="Source\Component\Transform\Transform.h" />
+    <ClInclude Include="Source\Manager\ComponentFactory.h" />
+    <ClInclude Include="Source\Utility\FBXLoader.h" />
+    <ClInclude Include="Source\Utility\ObjectIDManipulator.h" />
+    <ClInclude Include="Source\Utility\OBJLoader.h" />
+    <ClInclude Include="Source\Utility\VectorClass.h" />
+    <ClInclude Include="Source\Render\D3DX12.h" />
+    <ClInclude Include="Source\Component\Component.h" />
+    <ClInclude Include="Source\Utility\VertexData.h" />
+    <ClInclude Include="Source\Utility\DDSTextureLoader12.h" />
+    <ClInclude Include="Source\Manager\Engine.h" />
+    <ClInclude Include="Source\GameObject\GameObject.h" />
+    <ClInclude Include="Source\Manager\Main.h" />
+    <ClInclude Include="Source\Render\RenderManager.h" />
+    <ClInclude Include="Source\Render\DescriptorAllocator.h" />
+    <ClInclude Include="Source\Render\DeferredReleaseQueue.h" />
+    <ClInclude Include="Source\Render\ConstantBufferRing.h" />
+    <ClInclude Include="Source\Render\TextureLoader.h" />
+    <ClInclude Include="Source\Render\RenderTargetFactory.h" />
+    <ClInclude Include="Source\Render\GraphicsDevice.h" />
+    <ClInclude Include="Source\Render\RenderTargetType.h" />
+    <ClInclude Include="Source\Render\VertexTypes.h" />
+    <ClInclude Include="Source\Render\RenderTargetManager.h" />
+    <ClInclude Include="Source\Render\Material.h" />
+    <ClInclude Include="Source\Object.h" />
+    <ClInclude Include="Source\Component\Polygon\Renderer.h" />
+    <ClInclude Include="Source\Manager\ObjectManager.h" />
+    <ClInclude Include="Source\Component\Polygon\SpriteRenderer.h" />
+    <ClInclude Include="Source\Manager\YamlConfigLoader.h" />
+    <ClInclude Include="Source\Render\RenderSystem.h" />
+    <ClInclude Include="Source\Utility\WorldInitializer.h" />
+    <ClInclude Include="Source\Render\ShaderMetadata.h" />
+    <ClInclude Include="Public\ScriptAPI.h" />
+    <ClInclude Include="Public\EngineAPI.h" />
+    <ClInclude Include="Source\Utility\ResourcePath.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ThirdParty\yaml-cpp\yaml-cpp.vcxproj">
+      <Project>{1160a550-1277-485a-9893-ebecae3ca89a}</Project>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
