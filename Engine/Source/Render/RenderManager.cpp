@@ -1215,6 +1215,20 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 	auto compileShader = [](const char* filename, const char* entrypoint, const char* target, ID3DBlob** blob) -> bool {
 		wchar_t wFileName[MAX_PATH];
 		size_t size;
+
+		// 製品では .hlsl を配布しないので、ShaderCompiler.exe が事前にコンパイルした .cso を読む
+		if (EngineCore::ResourcePath::GetLayout() == EngineCore::ResourcePath::Layout::Distribution) {
+			std::string csoPath = EngineCore::ResourcePath::CompiledShader(filename, entrypoint);
+			mbstowcs_s(&size, wFileName, csoPath.c_str(), MAX_PATH);
+			if (FAILED(D3DReadFileToBlob(wFileName, blob))) {
+				std::string message = "Compiled shader not found: " + csoPath;
+				OutputDebugStringA((message + "\n").c_str());
+				MessageBoxA(nullptr, message.c_str(), "Shader Load Error", MB_OK | MB_ICONERROR);
+				return false;
+			}
+			return true;
+		}
+
 		mbstowcs_s(&size, wFileName, filename, MAX_PATH);
 
 		UINT compileFlags = 0;

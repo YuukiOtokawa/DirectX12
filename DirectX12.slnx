@@ -6,6 +6,9 @@
   <Project Path="Engine/Core.vcxproj" Id="73169531-6d65-42fd-b843-c8a9808dcb31" />
   <Project Path="Editor/Editor.vcxproj" Id="fab9ca40-055a-4e34-a8b7-b30ffa39f823" />
   <Project Path="Player/Player.vcxproj" Id="1381c89a-46fc-4f95-9381-9831f48ecf30" />
+  <Project Path="Tools/AssetImporter/AssetImporter.vcxproj" Id="7700276c-5a23-4cbe-a7a4-aa676a890def" />
+  <Project Path="Tools/AssetPipeline/AssetPipeline.vcxproj" Id="59b6b32b-2958-4e06-959b-91e556835c00" />
+  <Project Path="Tools/ShaderCompiler/ShaderCompiler.vcxproj" Id="ac1a163a-821a-47a5-8528-13421d2bd0fa" />
   <Project Path="ThirdParty/ImGui/ImGui.vcxproj" Id="76200ea9-6f73-49d3-9d5d-9ae9fcd35388" />
   <Project Path="ThirdParty/yaml-cpp/yaml-cpp.vcxproj" Id="1160a550-1277-485a-9893-ebecae3ca89a" />
 </Solution>

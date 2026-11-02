@@ -47,7 +47,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <TargetName>AsteroidPlayer</TargetName>
-    <LocalDebuggerWorkingDirectory>$(AsteroidRoot)</LocalDebuggerWorkingDirectory>
+    <!-- 配布フォルダ。ビルド後に AsteroidDeployPlayer ターゲットが exe・DLL・Resource をここに揃える -->
+    <PlayerDistDir>$(OutDir)Player\</PlayerDistDir>
+    <!-- 製品と同じ状態で動かすため、配布フォルダの exe を配布フォルダを作業ディレクトリにして起動する -->
+    <LocalDebuggerCommand>$(PlayerDistDir)$(TargetName).exe</LocalDebuggerCommand>
+    <LocalDebuggerWorkingDirectory>$(PlayerDistDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
@@ -66,8 +70,34 @@
     <ProjectReference Include="..\Engine\Core.vcxproj">
       <Project>{73169531-6d65-42fd-b843-c8a9808dcb31}</Project>
     </ProjectReference>
+    <!-- 配布フォルダを作るツール。ビルド順のためだけに参照し、リンクはしない -->
+    <ProjectReference Include="..\Tools\ShaderCompiler\ShaderCompiler.vcxproj">
+      <Project>{ac1a163a-821a-47a5-8528-13421d2bd0fa}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\AssetImporter\AssetImporter.vcxproj">
+      <Project>{7700276c-5a23-4cbe-a7a4-aa676a890def}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!--
+    配布フォルダ（Build\x64\<構成>\Player\）を作る。
+      AsteroidPlayer.exe と EngineCore.dll をコピーする（assimp の DLL は製品に不要なのでコピーしない）
+      Resource\Shader : ShaderCompiler.exe が Engine\Shader の .hlsl から .cso と .shadermeta を作る（.hlsl は置かない）
+      Resource\Asset  : AssetImporter.exe が Assets のモデルを .meshbin に変換し、テクスチャなどをコピーする
+  -->
+  <Target Name="AsteroidDeployPlayer" AfterTargets="Build">
+    <PropertyGroup>
+      <ShaderCompilerOptions Condition="'$(Configuration)'=='Debug'">--debug</ShaderCompilerOptions>
+    </PropertyGroup>
+    <MakeDir Directories="$(PlayerDistDir)" />
+    <Copy SourceFiles="$(OutDir)$(TargetName).exe;$(OutDir)EngineCore.dll" DestinationFolder="$(PlayerDistDir)" SkipUnchangedFiles="true" />
+    <Exec Command="&quot;$(OutDir)ShaderCompiler.exe&quot; &quot;$(AsteroidRoot)Engine\Shader&quot; &quot;$(PlayerDistDir)Resource\Shader&quot; $(ShaderCompilerOptions)" />
+    <Exec Command="&quot;$(OutDir)AssetImporter.exe&quot; &quot;$(AsteroidRoot)Assets&quot; &quot;$(PlayerDistDir)Resource\Asset&quot;" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

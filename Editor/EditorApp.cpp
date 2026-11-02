@@ -9,6 +9,8 @@
 #include "Engine/Source/Component/Camera/Camera.h"
 #include "Engine/Source/Component/Transform/Transform.h"
 #include "Editor/Component/EditorCameraController.h"
+#include "Engine/Source/Asset/MeshAsset.h"
+#include "Tools/AssetPipeline/ModelImporter.h"
 
 namespace Editor {
 
@@ -16,6 +18,8 @@ namespace Editor {
 
 	EditorApp::EditorApp(HWND hWnd) {
 		m_Instance = this;
+		// エディタは .obj / .fbx を AssetPipeline（assimp）で直接読む。製品は事前変換した .meshbin だけを読む
+		EngineCore::Asset::SetMeshImporter(&AssetPipeline::ImportModel);
 		// エディタはリポジトリ内のアセット・シェーダーを直接読む（シェーダーのホットリロードのため）
 		m_Engine.Initialize(hWnd, EngineCore::ResourcePath::Layout::Repository);
 	}

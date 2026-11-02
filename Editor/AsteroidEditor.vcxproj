@@ -58,14 +58,24 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/WHOLEARCHIVE:EngineEditor.lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>assimp-vc145-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(AsteroidRoot)ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y /D "$(AsteroidRoot)ThirdParty\assimp\bin\assimp-vc145-mtd.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EditorApp.cpp" />
@@ -87,6 +97,9 @@
     </ProjectReference>
     <ProjectReference Include="Editor.vcxproj">
       <Project>{fab9ca40-055a-4e34-a8b7-b30ffa39f823}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Tools\AssetPipeline\AssetPipeline.vcxproj">
+      <Project>{59b6b32b-2958-4e06-959b-91e556835c00}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
