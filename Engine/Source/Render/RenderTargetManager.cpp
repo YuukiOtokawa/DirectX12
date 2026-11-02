@@ -3,7 +3,7 @@
 #include "RenderManager.h"
 #include "RenderTargetFactory.h"
 #include "D3DX12.h"
-#include <cassert>
+#include "Engine/Source/Utility/Log.h"
 #include <cstdio>
 
 namespace EngineCore::Render {
@@ -33,7 +33,7 @@ namespace EngineCore::Render {
 			heapDesc.NodeMask = 0;
 
 			HRESULT hr = device->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&m_BackBufferDescriptorHeap));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateDescriptorHeap of the back buffer failed");
 
 			UINT size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 			for (UINT i = 0; i < 2; ++i)
@@ -56,7 +56,7 @@ namespace EngineCore::Render {
 			descriptorHeapDesc.NodeMask = 0;
 
 			HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&m_DepthBufferDescriptorHeap));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateDescriptorHeap of the depth buffer failed");
 		}
 
 		CreateDepthBuffer(device, backBufferWidth, backBufferHeight);
@@ -86,7 +86,8 @@ namespace EngineCore::Render {
 		m_EmissionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 
-		m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+		// 描画側は RENDER_TARGET 状態を前提にする（RenderManager::ResolveDeferredLighting）ので、その状態で作る
+		m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, nullptr, 1, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		m_LightedColorBuffer->Resource->SetName(L"LightedColorBuffer");
 
         FLOAT clearColor[4] = {0.0f, 1.0f, 0.0f, 1.0f};
@@ -130,7 +131,7 @@ namespace EngineCore::Render {
 		for (UINT i = 0; i < 2; i++) {
 			ComPtr<ID3D12Resource> backBuffer;
 			HRESULT hr = swapChain->GetBuffer(i, IID_PPV_ARGS(&backBuffer));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "GetBuffer of the swap chain failed");
 
 			device->CreateRenderTargetView(backBuffer.Get(), nullptr, m_BackBufferHandle[i]);
 			m_BackBuffer[i] = backBuffer;
@@ -164,7 +165,7 @@ namespace EngineCore::Render {
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&clearValue,
 			IID_PPV_ARGS(&outBuffer));
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "CreateCommittedResource of the depth buffer failed");
 
 		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
@@ -254,10 +255,10 @@ namespace EngineCore::Render {
 
 			DXGI_SWAP_CHAIN_DESC1 desc = {};
 			HRESULT hr = swapChain->GetDesc1(&desc);
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "GetDesc1 of the swap chain failed");
 
 			hr = swapChain->ResizeBuffers(0, m_SwapChainPendingWidth, m_SwapChainPendingHeight, desc.Format, desc.Flags);
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "ResizeBuffers failed");
 
 			backBufferWidth = static_cast<int>(m_SwapChainPendingWidth);
 			backBufferHeight = static_cast<int>(m_SwapChainPendingHeight);
@@ -302,7 +303,7 @@ namespace EngineCore::Render {
 			m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
 
 			m_LightedColorBuffer.reset();
-			m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT);
+			m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, nullptr, 1, D3D12_RESOURCE_STATE_RENDER_TARGET);
 			m_LightedColorBuffer->Resource->SetName(L"LightedColorBuffer");
 
 			m_GameViewTarget.reset();

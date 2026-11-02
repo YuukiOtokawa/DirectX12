@@ -19,7 +19,8 @@ namespace EngineCore::Render {
 			unsigned int width, unsigned int height,
 			DXGI_FORMAT format,
 			const FLOAT* clearColor = nullptr,
-			unsigned int mipLevel = 1);
+			unsigned int mipLevel = 1,
+			D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	};
 
 }

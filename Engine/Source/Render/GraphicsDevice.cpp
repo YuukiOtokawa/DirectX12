@@ -1,6 +1,7 @@
 #include "Engine/Source/Manager/Main.h"
 #include "GraphicsDevice.h"
-#include <cassert>
+#include "Engine/Source/Utility/Log.h"
+#include <stdexcept>
 
 namespace EngineCore::Render {
 
@@ -23,13 +24,13 @@ namespace EngineCore::Render {
 		{
 			UINT flag{};
 			hr = CreateDXGIFactory2(flag, IID_PPV_ARGS(&m_Factory));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateDXGIFactory2 failed");
 
 			hr = m_Factory->EnumAdapters(0, (IDXGIAdapter**)m_Adapter.GetAddressOf());
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "EnumAdapters failed");
 
 			hr = D3D12CreateDevice(m_Adapter.Get(), D3D_FEATURE_LEVEL_11_1, IID_PPV_ARGS(&m_Device));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "D3D12CreateDevice failed");
 		}
 
 		// CommandQueue
@@ -42,27 +43,29 @@ namespace EngineCore::Render {
 			commandQueueDesc.NodeMask = 0;
 
 			hr = m_Device->CreateCommandQueue(&commandQueueDesc, IID_PPV_ARGS(&m_CommandQueue));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateCommandQueue failed");
 
 			m_FenceEvent = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
-			assert(m_FenceEvent);
+			if (!m_FenceEvent) {
+				throw std::runtime_error("CreateEventEx failed");
+			}
 
 			hr = m_Device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_Fence));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateFence failed");
 		}
 
 		// CommandAllocator
 		{
 			hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_GraphicsCommandAllocator[0]));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateCommandAllocator[0] failed");
 			m_GraphicsCommandAllocator[0]->SetName(L"GraphicsCommandAllocator[0]");
 
 			hr = m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_GraphicsCommandAllocator[1]));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateCommandAllocator[1] failed");
 			m_GraphicsCommandAllocator[1]->SetName(L"GraphicsCommandAllocator[1]");
 
 			hr = m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_GraphicsCommandAllocator[0].Get(), nullptr, IID_PPV_ARGS(&m_GraphicsCommandList));
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateCommandList failed");
 			m_GraphicsCommandList->SetName(L"GraphicsCommandList");
 		}
 
@@ -88,10 +91,10 @@ namespace EngineCore::Render {
 			swapChainDesc.SampleDesc.Quality = 0;
 
 			hr = m_Factory->CreateSwapChain(m_CommandQueue.Get(), &swapChainDesc, &swapChain);
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "CreateSwapChain failed");
 
 			hr = swapChain.As(&m_SwapChain);
-			assert(SUCCEEDED(hr));
+			Log::ThrowIfFailed(hr, "IDXGISwapChain3 query failed");
 		}
 	}
 

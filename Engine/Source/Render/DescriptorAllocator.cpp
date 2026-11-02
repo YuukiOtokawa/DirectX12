@@ -1,4 +1,5 @@
 #include "DescriptorAllocator.h"
+#include "Engine/Source/Utility/Log.h"
 #include <stdexcept>
 
 namespace EngineCore::Render {
@@ -11,7 +12,8 @@ namespace EngineCore::Render {
 		desc.Type = type;
 		desc.NodeMask = 0;
 
-		device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_Heap));
+		HRESULT hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&m_Heap));
+		Log::ThrowIfFailed(hr, "DescriptorAllocator: CreateDescriptorHeap failed");
 
 		m_DescriptorSize = device->GetDescriptorHandleIncrementSize(type);
 

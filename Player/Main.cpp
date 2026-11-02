@@ -3,6 +3,7 @@
 
 #include "Engine/Source/Manager/Main.h"
 #include "Player/GameApp.h"
+#include "Engine/Source/Utility/Log.h"
 #include <exception>
 
 
@@ -63,7 +64,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 			rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, g_Instance, nullptr);
 	}
 
-	{
+	try {
 		g_GameApp = std::make_unique<Player::GameApp>(g_Window);
 
 		ShowWindow(g_Window, SW_SHOW);
@@ -100,15 +101,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 				if ((dwCurrentTime - dwExecLastTime) >= (1000 / 60 / 5))
 				{
 					g_GameApp->Update();
-					try {
-						g_GameApp->Draw();
-					}
-					catch (const std::exception& error) {
-						// Do not submit this partially recorded frame or draw with stale constants.
-						OutputDebugStringA(error.what());
-						MessageBoxA(g_Window, error.what(), "Rendering stopped", MB_OK | MB_ICONERROR);
-						break;
-					}
+					g_GameApp->Draw();
 
 					dwExecLastTime = dwCurrentTime;
 				}
@@ -118,6 +111,12 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 				}
 			}
 		}
+	}
+	catch (const std::exception& error) {
+		// Do not submit this partially recorded frame or draw with stale constants.
+		EngineCore::Log::Write(EngineCore::Log::Level::Fatal, error.what());
+		MessageBoxA(g_Window, error.what(), "Fatal Error", MB_OK | MB_ICONERROR);
+		return 1;
 	}
 
 	return 0;

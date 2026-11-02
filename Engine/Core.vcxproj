@@ -81,6 +81,7 @@
     <ClCompile Include="Source\Manager\ComponentFactory.cpp" />
     <ClCompile Include="Source\Utility\VertexData.cpp" />
     <ClCompile Include="Source\Utility\ResourcePath.cpp" />
+    <ClCompile Include="Source\Utility\Log.cpp" />
     <ClCompile Include="Source\Utility\DDSTextureLoader12.cpp" />
     <ClCompile Include="Source\Manager\Engine.cpp" />
     <ClCompile Include="Source\GameObject\GameObject.cpp" />
@@ -142,6 +143,7 @@
     <ClInclude Include="Public\ScriptAPI.h" />
     <ClInclude Include="Public\EngineAPI.h" />
     <ClInclude Include="Source\Utility\ResourcePath.h" />
+    <ClInclude Include="Source\Utility\Log.h" />
     <ClInclude Include="Source\Utility\BinaryStream.h" />
     <ClInclude Include="Source\Asset\MeshAsset.h" />
   </ItemGroup>

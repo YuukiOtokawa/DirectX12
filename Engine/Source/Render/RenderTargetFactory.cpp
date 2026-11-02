@@ -1,7 +1,7 @@
 #include "Engine/Source/Manager/Main.h"
 #include "RenderTargetFactory.h"
 #include "RenderManager.h"
-#include <cassert>
+#include "Engine/Source/Utility/Log.h"
 
 namespace EngineCore::Render {
 
@@ -12,7 +12,8 @@ namespace EngineCore::Render {
 		unsigned int width, unsigned int height,
 		DXGI_FORMAT format,
 		const FLOAT* clearColor,
-		unsigned int mipLevel)
+		unsigned int mipLevel,
+		D3D12_RESOURCE_STATES initialState)
 	{
 		D3D12_HEAP_PROPERTIES properties{};
 		properties.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -52,10 +53,10 @@ namespace EngineCore::Render {
 		HRESULT hr = device->CreateCommittedResource(&properties,
 			D3D12_HEAP_FLAG_NONE,
 			&desc,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			initialState,
 			&clearValue,
 			IID_PPV_ARGS(&renderTarget->Resource));
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "CreateCommittedResource of the render target failed");
 
 		renderTarget->Size = Vector2((float)width, (float)height);
 

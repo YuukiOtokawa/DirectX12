@@ -2,6 +2,7 @@
 #include "Engine/Source/Manager/Main.h"
 #include "Editor/EditorApp.h"
 #include "Engine/Source/Render/RenderManager.h"
+#include "Engine/Source/Utility/Log.h"
 #include <exception>
 
 #include "Editor/Resource/resource.h"
@@ -84,7 +85,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 
 
 
-	{
+	try {
 
 
 		g_EditorApp = std::make_unique<Editor::EditorApp>(g_Window);
@@ -134,15 +135,7 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 				if ((dwCurrentTime - dwExecLastTime) >= (1000 / 60 / 5))
 				{
 					g_EditorApp->Update();
-					try {
-						g_EditorApp->Draw();
-					}
-					catch (const std::exception& error) {
-						// Do not submit this partially recorded frame or draw with stale constants.
-						OutputDebugStringA(error.what());
-						MessageBoxA(g_Window, error.what(), "Rendering stopped", MB_OK | MB_ICONERROR);
-						break;
-					}
+					g_EditorApp->Draw();
 
 					dwExecLastTime = dwCurrentTime;
 				}
@@ -154,6 +147,12 @@ int APIENTRY wWinMain(  _In_ HINSTANCE hInstance,
 
 			}
 		}
+	}
+	catch (const std::exception& error) {
+		// Do not submit this partially recorded frame or draw with stale constants.
+		EngineCore::Log::Write(EngineCore::Log::Level::Fatal, error.what());
+		MessageBoxA(g_Window, error.what(), "Fatal Error", MB_OK | MB_ICONERROR);
+		return 1;
 	}
 
 
@@ -203,7 +202,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_SIZE:
-		if (renderManager->GetDevice() && wParam != SIZE_MINIMIZED) {
+		// 初期化中や初期化の失敗後は RenderManager がない
+		if (renderManager && renderManager->GetDevice() && wParam != SIZE_MINIMIZED) {
 			renderManager->Resize((unsigned int)LOWORD(lParam), (unsigned int)HIWORD(lParam));
 		}
 		return 0;

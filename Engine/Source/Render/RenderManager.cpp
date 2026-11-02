@@ -3,6 +3,7 @@
 
 #include "D3DX12.h"
 #include "Engine/Source/Utility/DDSTextureLoader12.h"
+#include "Engine/Source/Utility/Log.h"
 #include "Engine/Source/Utility/ResourcePath.h"
 #include "dxgiformat.h"
 #include <d3dcompiler.h>
@@ -24,7 +25,14 @@ RenderManager::RenderManager(HWND hWnd)
 {
 	m_Instance = this;
 
-	Init(hWnd);
+	try {
+		Init(hWnd);
+	}
+	catch (...) {
+		// 構築に失敗するとデストラクタは呼ばれないので、破棄後のポインタを残さない
+		m_Instance = nullptr;
+		throw;
+	}
 }
 
 
@@ -225,10 +233,10 @@ void RenderManager::Init(HWND hWnd)
 		HRESULT hr;
 		ComPtr<ID3DBlob> blob{};
 		hr = D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, nullptr);
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "D3D12SerializeRootSignature failed");
 
 		hr = m_Device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature));
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "CreateRootSignature failed");
 	}
 
 
@@ -242,7 +250,7 @@ void RenderManager::Init(HWND hWnd)
 		// Map
 		VERTEX* buffer{};
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "Map of the screen vertex buffer failed");
 
 		buffer[0].Position = Vector3(-1.0f,  1.0f,  0.0f);
 		buffer[1].Position = Vector3(1.0f,  1.0f, 0.0f);
@@ -1116,7 +1124,7 @@ void RenderManager::FrameEnd() {
 	// Execute command lists
 	{
 		HRESULT hr = m_GraphicsCommandList->Close();
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "Command list Close failed");
 
 		ID3D12CommandList* const command_lists[1] = { m_GraphicsCommandList.Get() };
 		m_CommandQueue->ExecuteCommandLists(1, command_lists);
@@ -1129,8 +1137,11 @@ void RenderManager::FrameEnd() {
 
 	// Swap buffers and wait for the target back buffer's GPU completion
 	{
-		HRESULT hr = m_SwapChain->Present(1, 0);
-		assert(SUCCEEDED(hr));
+		HRESULT hr = m_SwapChain->Present(2, 0);
+		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
+			Log::ThrowIfFailed(hr, "Device lost on Present, removed reason: " + Log::FormatHresult(m_Device->GetDeviceRemovedReason()));
+		}
+		Log::ThrowIfFailed(hr, "Present failed");
 
 		m_RTIndex = m_SwapChain->GetCurrentBackBufferIndex();
 
@@ -1150,10 +1161,10 @@ void RenderManager::FrameEnd() {
 
 
 	HRESULT hr = m_GraphicsCommandAllocator[m_RTIndex]->Reset();
-	assert(SUCCEEDED(hr));
+	Log::ThrowIfFailed(hr, "Command allocator Reset failed");
 
 	hr = m_GraphicsCommandList->Reset(m_GraphicsCommandAllocator[m_RTIndex].Get(), m_PipelineState["Deferred"].Get());
-	assert(SUCCEEDED(hr));
+	Log::ThrowIfFailed(hr, "Command list Reset failed");
 
 	// このバッファ(m_RTIndex)を使う前フレームのGPU実行はフェンスで完了済みなので、
 	// ここで1回だけ定数バッファリングを巻き戻す（フレーム内の全パスで共有）
@@ -1222,7 +1233,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 			mbstowcs_s(&size, wFileName, csoPath.c_str(), MAX_PATH);
 			if (FAILED(D3DReadFileToBlob(wFileName, blob))) {
 				std::string message = "Compiled shader not found: " + csoPath;
-				OutputDebugStringA((message + "\n").c_str());
+				Log::Write(Log::Level::Error, message);
 				MessageBoxA(nullptr, message.c_str(), "Shader Load Error", MB_OK | MB_ICONERROR);
 				return false;
 			}
@@ -1253,7 +1264,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 
 		if (FAILED(hr)) {
 			if (errorBlob) {
-				OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+				Log::Write(Log::Level::Error, (char*)errorBlob->GetBufferPointer());
 				MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Shader Compilation Error", MB_OK | MB_ICONERROR);
 			}
 			return false;
@@ -1503,7 +1514,7 @@ void RenderManager::EnsureMaterialTextureSetup()
 
 		HRESULT hr = m_Device->CreateCommittedResource(&texProp, D3D12_HEAP_FLAG_NONE, &texDesc,
 			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_DummyTexture));
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "CreateCommittedResource of the dummy texture failed");
 
 		// アップロードバッファ（GPUがコピーを消費するまで保持する必要があるためメンバに保存）
 		UINT64 reqSize = GetRequiredIntermediateSize(m_DummyTexture.Get(), 0, 1);
@@ -1511,7 +1522,7 @@ void RenderManager::EnsureMaterialTextureSetup()
 		auto upDesc = CD3DX12_RESOURCE_DESC::Buffer(reqSize);
 		hr = m_Device->CreateCommittedResource(&upProp, D3D12_HEAP_FLAG_NONE, &upDesc,
 			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_DummyUpload));
-		assert(SUCCEEDED(hr));
+		Log::ThrowIfFailed(hr, "CreateCommittedResource of the dummy upload buffer failed");
 
 		// 白（中立。未割当スロットはサンプルしても見た目を変えない）
 		const uint8_t pixel[4] = { 255, 255, 255, 255 };
@@ -1863,7 +1874,7 @@ void EngineCore::Render::RenderManager::ApplyPendingResizes() {
 
 	// Re-reset the command list under the current back buffer index with clean allocator
 	HRESULT hr = m_GraphicsCommandList->Reset(m_GraphicsCommandAllocator[m_RTIndex].Get(), m_PipelineState["Deferred"].Get());
-	assert(SUCCEEDED(hr));
+	Log::ThrowIfFailed(hr, "Command list Reset after resize failed");
 }
 
 
@@ -1872,16 +1883,21 @@ void EngineCore::Render::RenderManager::ApplyPendingResizes() {
 
 
 
+// RenderManager の構築に失敗したときは、メンバーの破棄中に GetInstance() が nullptr を返す
 TEXTURE::~TEXTURE()
 {
-	RenderManager::GetInstance()->ReleaseShaderResourceView(SRVIndex);
+	if (auto* renderManager = RenderManager::GetInstance()) {
+		renderManager->ReleaseShaderResourceView(SRVIndex);
+	}
 }
 
 
 RENDER_TARGET::~RENDER_TARGET()
 {
-	RenderManager::GetInstance()->ReleaseShaderResourceView(SRVIndex);
-	RenderManager::GetInstance()->ReleaseRenderTargetView(RTVIndex);
+	if (auto* renderManager = RenderManager::GetInstance()) {
+		renderManager->ReleaseShaderResourceView(SRVIndex);
+		renderManager->ReleaseRenderTargetView(RTVIndex);
+	}
 }
 
 

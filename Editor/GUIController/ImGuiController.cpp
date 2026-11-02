@@ -8,6 +8,8 @@
 
 #include "RenderManager.h"
 
+#include <stdexcept>
+
 using namespace EngineCore;
 using namespace GUIController::Gui;
 
@@ -69,9 +71,9 @@ void ImGuiController::Initialize(HWND hWnd) {
     };
 
     initInfo.SrvDescriptorHeap = renderManager->GetSRVDescriptorHeap();
-    // assert の中で呼ぶと Release (NDEBUG) で呼び出しごと消えるため、必ず外で呼ぶ
-    bool imguiInitialized = ImGui_ImplDX12_Init(&initInfo);
-    assert(imguiInitialized);
+    if (!ImGui_ImplDX12_Init(&initInfo)) {
+        throw std::runtime_error("ImGui_ImplDX12_Init failed");
+    }
 }
 
 void ImGuiController::BeginFrame() {

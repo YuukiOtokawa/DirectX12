@@ -51,6 +51,7 @@
   <ItemGroup>
     <ClCompile Include="Component\EditorCameraController.cpp" />
     <ClCompile Include="GUIController\GraphicsDebugWindowController.cpp" />
+    <ClCompile Include="GUIController\LogWindowController.cpp" />
     <ClCompile Include="GUIController\InspectorWindowController.cpp" />
     <ClCompile Include="Utility\FilePicker.cpp" />
     <ClCompile Include="Inspector\InspectorRegistry.cpp" />
@@ -72,6 +73,7 @@
   <ItemGroup>
     <ClInclude Include="Component\EditorCameraController.h" />
     <ClInclude Include="GUIController\GraphicsDebugWindowController.h" />
+    <ClInclude Include="GUIController\LogWindowController.h" />
     <ClInclude Include="GUIController\InspectorWindowController.h" />
     <ClInclude Include="GUIController\ObjectNameEditor.h" />
     <ClInclude Include="Utility\FilePicker.h" />

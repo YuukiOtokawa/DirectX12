@@ -1,6 +1,7 @@
 #include "ShaderMetadata.h"
 #include "Engine/Source/Utility/ResourcePath.h"
 #include "Engine/Source/Utility/BinaryStream.h"
+#include "Engine/Source/Utility/Log.h"
 #include <Windows.h>
 #include <fstream>
 #include <sstream>
@@ -121,7 +122,7 @@ namespace EngineCore::Render {
 
         if (EngineCore::ResourcePath::GetLayout() == EngineCore::ResourcePath::Layout::Distribution) {
             if (!LoadShaderMetadata(EngineCore::ResourcePath::ShaderMetadataFile(filePath), metadata)) {
-                OutputDebugStringA(("Failed to load shader metadata: " + filePath + "\n").c_str());
+                Log::Write(Log::Level::Warning, "Failed to load shader metadata: " + filePath);
             }
             metadata.shaderFilePath = filePath;
             return metadata;

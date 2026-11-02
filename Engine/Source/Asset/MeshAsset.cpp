@@ -4,6 +4,7 @@
 
 #include "Engine/Source/Render/RenderManager.h"
 #include "Engine/Source/Utility/BinaryStream.h"
+#include "Engine/Source/Utility/Log.h"
 #include "Engine/Source/Utility/ResourcePath.h"
 #include "Engine/Source/Utility/VertexData.h"
 
@@ -71,7 +72,7 @@ namespace EngineCore::Asset {
 		}
 
 		if (!loaded) {
-			OutputDebugStringA(("Failed to load mesh: " + filePath + "\n").c_str());
+			Log::Write(Log::Level::Error, "Failed to load mesh: " + filePath);
 			return nullptr;
 		}
 

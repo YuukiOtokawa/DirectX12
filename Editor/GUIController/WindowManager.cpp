@@ -11,6 +11,7 @@
 #include "GraphicsDebugWindowController.h"
 #include "GameViewWindowController.h"
 #include "SceneViewWindowController.h"
+#include "LogWindowController.h"
 
 using namespace GUIController::Window;
 using namespace GUIController::Gui;
@@ -21,6 +22,7 @@ void WindowManager::Initialize() {
 	NewWindow<GraphicsDebugWindowController>();
 	NewWindow<GameViewWindowController>();
 	NewWindow<SceneViewWindowController>();
+	NewWindow<LogWindowController>();
 }
 
 void WindowManager::Draw() {
@@ -44,6 +46,7 @@ void WindowManager::Draw() {
 void GUIController::Window::WindowManager::DrawWindows() {
 	for (auto& window : m_Windows) {
 		if (window && *window->GetIsActive()) {
+			window->Update();
 			window->DrawSystem();
 		}
 	}
