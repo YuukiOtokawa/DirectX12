@@ -59,7 +59,16 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
         tn = normalize(tn);
         worldN = PerturbNormal(N, input.WorldPosition.xyz, input.TexCoord, tn);
     }
-    output.Color.rgb = fbm2(input.TexCoord * 10.0, 5) * 0.5 + 0.5;
+    
+    // fructal perlin noise
+    float noise = fbm2(input.TexCoord * 10.0, 5) * 0.5 + 0.5;
+    
+    // wooden
+    float wood = sin(noise * 100.0);
+    //output.Color = wood;
+    
+    output.Color = voronoi2(input.TexCoord * 5.0);
+    
     output.Color.a   = 1.0;
     output.Color     = output.Color * Material.BaseColor;
     output.Normal    = float4(worldN * origLen, 1.0f); // 未割当時は元の input.Normal と一致

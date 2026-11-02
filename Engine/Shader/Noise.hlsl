@@ -66,3 +66,26 @@ float fbm2(in float2 vec, int octave) {
 
     return value; // -1 ~ 1
 }
+
+float voronoi2(in float2 vec) {
+    float2 ivec = floor(vec);
+    float2 fvec = frac(vec);
+    
+    float value = 1.0;
+
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            float2 offset = float2(x, y);
+            
+            float2 position = random22(ivec + offset);
+
+            float dist = distance(position + offset, fvec);
+
+            value = min(value, dist);
+
+        }
+
+    }
+    
+    return value;
+}
