@@ -19,7 +19,6 @@ PS_OUTPUT pix(PS_INPUT input)
     
     float4 baseColor = TextureBaseColor.Sample(Sampler, input.TexCoord);
     float4 normal = TextureNormal.Sample(Sampler, input.TexCoord);
-    float4 position = TexturePosition.Sample(Sampler, input.TexCoord);
     float4 matParams = TextureMaterial.Sample(Sampler, input.TexCoord);
     float4 emission = TextureEmission.Sample(Sampler, input.TexCoord);
 
@@ -36,6 +35,13 @@ PS_OUTPUT pix(PS_INPUT input)
 
     // Safely normalize the normal vector to prevent NaN on silhouette edges
     float3 norm = normal.xyz / normalLength;
+
+    // 深度からワールド座標を復元する。深度は補間すると物体境界で無意味な値になるので Load で読む
+    // （G-Bufferと深度は同じ 1920x1080 で、このパスのビューポートも同じ）
+    float depth = TextureDepth.Load(int3(input.Position.xy, 0));
+    float2 ndcXY = input.TexCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f); // UV(0..1, Vは下向き) -> NDC(-1..+1, Yは上向き)
+    float4 worldPosition = mul(float4(ndcXY, depth, 1.0f), InverseViewProjection);
+    float3 position = worldPosition.xyz / worldPosition.w;
 
     float3 eye = CameraPosition.xyz - position.xyz;
     eye = normalize(eye);

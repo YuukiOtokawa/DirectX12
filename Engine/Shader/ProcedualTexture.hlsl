@@ -74,7 +74,6 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     output.Color.a   = 1.0;
     output.Color     = output.Color * Material.BaseColor;
     output.Normal    = float4(worldN * origLen, 1.0f); // 未割当時は元の input.Normal と一致
-    output.Position  = input.WorldPosition;
 
     // G-Bufferにマテリアル属性を書き込む
     output.Material = _ArmMap.Sample(Sampler, input.TexCoord);

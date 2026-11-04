@@ -12,9 +12,8 @@ void GUIController::Window::GraphicsDebugWindowController::Draw() {
 	ImGui::Text("Normal Buffer");
 	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetNormalBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));
-    ImGui::Text("Position Buffer");
-    ImGui::Image((void *)EngineCore::Render::RenderManager::GetInstance()->GetPositionBuffer()->SRVHandle.ptr,
-                 ImVec2(300.0f, 200.0f));
+    // Position Buffer は廃止（Deferredで深度から復元する）。
+    // 深度はImGui描画時点で DEPTH_WRITE 状態なので、そのままSRVとして表示はできない
 	ImGui::Text("Material Buffer");
 	ImGui::Image((void*)EngineCore::Render::RenderManager::GetInstance()->GetMaterialBuffer()->SRVHandle.ptr,
 				 ImVec2(300.0f, 200.0f));

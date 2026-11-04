@@ -62,6 +62,7 @@ namespace EngineCore::Render {
 			XMFLOAT4X4		View;
 			XMFLOAT4X4		Projection;
 			Vector4		Position;
+			XMFLOAT4X4		InverseViewProjection; // Deferredで深度からワールド座標を復元する用
 		};
 
 		// World行列 Rendererクラスに移動
@@ -299,7 +300,7 @@ namespace EngineCore::Render {
 		{
 			BASE_COLOR = (int)CONSTANT_TYPE::SUBSET + 1,
 			NORMAL,
-			POSITION,
+			DEPTH,		// t2: メイン深度バッファ（旧 POSITION。ワールド座標は深度から復元する）
 			MATERIAL,
 			EMISSION,
 			ENVIRONMENT,
@@ -387,7 +388,7 @@ namespace EngineCore::Render {
 
 		RENDER_TARGET* GetColorBuffer() { return m_RenderTargetManager.GetColorBuffer(); }
 		RENDER_TARGET* GetNormalBuffer() { return m_RenderTargetManager.GetNormalBuffer(); }
-        RENDER_TARGET *GetPositionBuffer() { return m_RenderTargetManager.GetPositionBuffer(); }
+		RENDER_TARGET* GetDepthTexture() { return m_RenderTargetManager.GetDepthTexture(); }
 		RENDER_TARGET* GetMaterialBuffer() { return m_RenderTargetManager.GetMaterialBuffer(); }
 		RENDER_TARGET* GetEmissionBuffer() { return m_RenderTargetManager.GetEmissionBuffer(); }
 		RENDER_TARGET* GetPostProcessBuffer() { return m_RenderTargetManager.GetPostProcessBuffer(); }

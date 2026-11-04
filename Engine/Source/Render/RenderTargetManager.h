@@ -36,7 +36,9 @@ namespace EngineCore::Render {
 
 		Types::RENDER_TARGET* GetColorBuffer() const { return m_ColorBuffer.get(); }
 		Types::RENDER_TARGET* GetNormalBuffer() const { return m_NormalBuffer.get(); }
-		Types::RENDER_TARGET* GetPositionBuffer() const { return m_PositionBuffer.get(); }
+		// メイン深度バッファのSRV（RTVは持たない）。Deferredでのワールド座標復元とデバッグ表示用
+		Types::RENDER_TARGET* GetDepthTexture() const { return m_DepthTexture.get(); }
+		ID3D12Resource* GetDepthBufferResource() const { return m_DepthBuffer.Get(); }
 		Types::RENDER_TARGET* GetMaterialBuffer() const { return m_MaterialBuffer.get(); }
 		Types::RENDER_TARGET* GetEmissionBuffer() const { return m_EmissionBuffer.get(); }
 		Types::RENDER_TARGET* GetPostProcessBuffer() const { return m_PostProcessBuffer1.get(); }
@@ -65,6 +67,8 @@ namespace EngineCore::Render {
 		void CreateDepthResource(ID3D12Device* device, unsigned int width, unsigned int height, ComPtr<ID3D12Resource>& outBuffer, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle);
 		void CreateDepthBuffer(ID3D12Device* device, unsigned int width, unsigned int height);
 		void CreateShadowDepthBuffer(ID3D12Device* device);
+		// メイン深度バッファを R32_FLOAT として読むSRVを作る（深度を作り直したら呼び直す）
+		void CreateDepthTexture(ID3D12Device* device, DescriptorAllocator& srvAllocator);
 
 		ComPtr<ID3D12Resource>				m_BackBuffer[2];
 		ComPtr<ID3D12DescriptorHeap>		m_BackBufferDescriptorHeap;
@@ -83,7 +87,7 @@ namespace EngineCore::Render {
 
 		std::unique_ptr<Types::RENDER_TARGET>	m_ColorBuffer;
 		std::unique_ptr<Types::RENDER_TARGET>	m_NormalBuffer;
-		std::unique_ptr<Types::RENDER_TARGET>	m_PositionBuffer;
+		std::unique_ptr<Types::RENDER_TARGET>	m_DepthTexture;
 		std::unique_ptr<Types::RENDER_TARGET>	m_MaterialBuffer;
 		std::unique_ptr<Types::RENDER_TARGET>	m_EmissionBuffer;
 		std::unique_ptr<Types::RENDER_TARGET>	m_LightedColorBuffer;

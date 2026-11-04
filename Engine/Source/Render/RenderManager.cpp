@@ -460,7 +460,6 @@ void RenderManager::DrawGeometryBegin() {
 	else {
 		RENDER_TARGET* colorBuffer = m_RenderTargetManager.GetColorBuffer();
 		RENDER_TARGET* normalBuffer = m_RenderTargetManager.GetNormalBuffer();
-		RENDER_TARGET* positionBuffer = m_RenderTargetManager.GetPositionBuffer();
 		RENDER_TARGET* materialBuffer = m_RenderTargetManager.GetMaterialBuffer();
 		RENDER_TARGET* emissionBuffer = m_RenderTargetManager.GetEmissionBuffer();
 		D3D12_CPU_DESCRIPTOR_HANDLE depthBufferHandle = m_RenderTargetManager.GetDepthBufferHandle();
@@ -486,7 +485,7 @@ void RenderManager::DrawGeometryBegin() {
 		// Resource barriers for G-Buffer transition
 		// Transition G-Buffer: PIXEL_SHADER_RESOURCE -> RENDER_TARGET
 		{
-			D3D12_RESOURCE_BARRIER barriers[5];
+			D3D12_RESOURCE_BARRIER barriers[4];
 			barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
 				colorBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
@@ -496,25 +495,20 @@ void RenderManager::DrawGeometryBegin() {
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_RENDER_TARGET);
 			barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
-				positionBuffer->Resource.Get(),
-				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
-				D3D12_RESOURCE_STATE_RENDER_TARGET);
-			barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
 				materialBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_RENDER_TARGET);
-			barriers[4] = CD3DX12_RESOURCE_BARRIER::Transition(
+			barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
 				emissionBuffer->Resource.Get(),
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
 				D3D12_RESOURCE_STATE_RENDER_TARGET);
-			m_GraphicsCommandList->ResourceBarrier(5, barriers);
+			m_GraphicsCommandList->ResourceBarrier(4, barriers);
 		}
 
 		D3D12_CPU_DESCRIPTOR_HANDLE renderTargets[] =
 		{
 			colorBuffer->RTVHandle,
 			normalBuffer->RTVHandle,
-			positionBuffer->RTVHandle,
 			materialBuffer->RTVHandle,
 			emissionBuffer->RTVHandle
 		};
@@ -524,8 +518,6 @@ void RenderManager::DrawGeometryBegin() {
 		FLOAT clearNormal[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 		m_GraphicsCommandList->ClearRenderTargetView(colorBuffer->RTVHandle, clearColor, 0, nullptr);
 		m_GraphicsCommandList->ClearRenderTargetView(normalBuffer->RTVHandle, clearNormal, 0, nullptr);
-		m_GraphicsCommandList->ClearRenderTargetView(
-			positionBuffer->RTVHandle, clearNormal, 0, nullptr);
 		m_GraphicsCommandList->ClearRenderTargetView(materialBuffer->RTVHandle, clearNormal, 0, nullptr);
 		m_GraphicsCommandList->ClearRenderTargetView(emissionBuffer->RTVHandle, clearNormal, 0, nullptr);
 		m_GraphicsCommandList->ClearDepthStencilView(depthBufferHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
@@ -665,12 +657,14 @@ void RenderManager::ResolveDeferredLighting()
 
 	RENDER_TARGET* colorBuffer = m_RenderTargetManager.GetColorBuffer();
 	RENDER_TARGET* normalBuffer = m_RenderTargetManager.GetNormalBuffer();
-	RENDER_TARGET* positionBuffer = m_RenderTargetManager.GetPositionBuffer();
+	RENDER_TARGET* depthTexture = m_RenderTargetManager.GetDepthTexture();
 	RENDER_TARGET* materialBuffer = m_RenderTargetManager.GetMaterialBuffer();
 	RENDER_TARGET* emissionBuffer = m_RenderTargetManager.GetEmissionBuffer();
 	RENDER_TARGET* lightedColorBuffer = m_RenderTargetManager.GetLightedColorBuffer();
 
 	// 1) Transit G-Buffer: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
+	//    深度も DEPTH_WRITE -> PIXEL_SHADER_RESOURCE（ワールド座標の復元に読む）。
+	//    フォワードパスで深度を書くので、このパスの最後で DEPTH_WRITE に戻す
 	{
 		D3D12_RESOURCE_BARRIER barriers[5];
 		barriers[0] = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -682,8 +676,8 @@ void RenderManager::ResolveDeferredLighting()
 			D3D12_RESOURCE_STATE_RENDER_TARGET,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		barriers[2] = CD3DX12_RESOURCE_BARRIER::Transition(
-			positionBuffer->Resource.Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
+			depthTexture->Resource.Get(),
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		barriers[3] = CD3DX12_RESOURCE_BARRIER::Transition(
 			materialBuffer->Resource.Get(),
@@ -729,13 +723,22 @@ void RenderManager::ResolveDeferredLighting()
 		if (SetPipelineState("Deferred")) {
 			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, colorBuffer);
 			SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, normalBuffer);
-			SetTexture(RenderManager::TEXTURE_TYPE::POSITION, positionBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::DEPTH, depthTexture);
 			SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, materialBuffer);
 			SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, emissionBuffer);
 			SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture ? m_EnvTexture.get() : m_BlackTexture.get());
 			SetTexture(RenderManager::TEXTURE_TYPE::SHADOW, m_RenderTargetManager.GetShadowMapBuffer());
 			DrawScreen();
 		}
+	}
+
+	// 3) 深度を DEPTH_WRITE に戻す（BeginForwardPass と次フレームの G-Buffer パスが DSV として使う）
+	{
+		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+			depthTexture->Resource.Get(),
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		m_GraphicsCommandList->ResourceBarrier(1, &trans);
 	}
 }
 
@@ -1877,10 +1880,9 @@ std::string RenderManager::MakePipelineKey(const std::string& shaderFile, Render
 
 ComPtr<ID3D12PipelineState> RenderManager::CreatePipelineForPass(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry)
 {
-	// G-Buffer へ書くパスだけMRT5枚、それ以外は1枚
+	// G-Buffer へ書くパスだけMRT4枚（Color/Normal/Material/Emission）、それ以外は1枚
 	if (passType == RenderPassType::DeferredOpaque) {
 		DXGI_FORMAT RTVFormats[] = {
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
 			DXGI_FORMAT_R16G16B16A16_FLOAT,

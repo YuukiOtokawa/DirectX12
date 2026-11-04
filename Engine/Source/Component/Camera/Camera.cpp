@@ -124,6 +124,8 @@ void Camera::Draw() {
 	CAMERA_CONSTANT cameraConstant{};
 	XMStoreFloat4x4(&cameraConstant.View, XMMatrixTranspose(m_ViewMatrix));
 	XMStoreFloat4x4(&cameraConstant.Projection, XMMatrixTranspose(m_ProjectionMatrix));
+	XMMATRIX inverseViewProjection = XMMatrixInverse(nullptr, XMMatrixMultiply(m_ViewMatrix, m_ProjectionMatrix));
+	XMStoreFloat4x4(&cameraConstant.InverseViewProjection, XMMatrixTranspose(inverseViewProjection));
     cameraConstant.Position =
         transform ? Vector4(transform->Position.x, transform->Position.y, transform->Position.z, 1.0f) : Vector4(0.0f, 0.0f, 0.0f, 1.0f);
 

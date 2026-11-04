@@ -18,6 +18,7 @@ cbuffer CameraConstantBuffer : register(b1)
     float4x4 View;
     float4x4 Projection;
     float4 CameraPosition;
+    float4x4 InverseViewProjection;       // Deferredで深度からワールド座標を復元する用
 
 };
 
@@ -73,9 +74,9 @@ struct PS_OUTPUT_GEOMETRY
 {
     float4 Color : SV_TARGET0;
     float4 Normal : SV_TARGET1;
-    float4 Position : SV_TARGET2;
-    float4 Material : SV_TARGET3;
-    float4 Emission : SV_TARGET4;
+    float4 Material : SV_TARGET2;
+    float4 Emission : SV_TARGET3;
+    // ワールド座標は書かない。Deferredで深度バッファ(TextureDepth)から復元する
 };
 
 struct PS_OUTPUT
@@ -86,7 +87,7 @@ struct PS_OUTPUT
 
 Texture2D<float4> TextureBaseColor : register(t0);
 Texture2D<float4> TextureNormal : register(t1);
-Texture2D<float4> TexturePosition : register(t2);
+Texture2D<float> TextureDepth : register(t2); // メイン深度バッファ（R32_FLOAT）
 Texture2D<float4> TextureMaterial : register(t3);
 Texture2D<float4> TextureEmission : register(t4);
 Texture2D<float4> TextureEnviroment : register(t5);

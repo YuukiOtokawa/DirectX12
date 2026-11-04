@@ -59,8 +59,8 @@ namespace EngineCore::Render {
 			Log::ThrowIfFailed(hr, "CreateDescriptorHeap of the depth buffer failed");
 		}
 
-		CreateDepthBuffer(device, backBufferWidth, backBufferHeight);
-		m_DepthBuffer->SetName(L"DepthBuffer");
+		// G-Buffer（1920x1080固定）と同じサイズにする。Deferredが深度からワールド座標を復元するので一致が必要
+		CreateDepthBuffer(device, 1920, 1080);
 
 		CreateShadowDepthBuffer(device);
 		m_ShadowDepthBuffer->SetName(L"ShadowDepthBuffer");
@@ -77,8 +77,7 @@ namespace EngineCore::Render {
 		m_NormalBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 
-		m_PositionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
-		m_PositionBuffer->Resource->SetName(L"PositionBuffer");
+		CreateDepthTexture(device, srvAllocator);
 
 		m_MaterialBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
@@ -180,6 +179,35 @@ namespace EngineCore::Render {
 	{
 		m_DepthBufferHandle = m_DepthBufferDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 		CreateDepthResource(device, width, height, m_DepthBuffer, m_DepthBufferHandle);
+		m_DepthBuffer->SetName(L"DepthBuffer");
+	}
+
+	void RenderTargetManager::CreateDepthTexture(ID3D12Device* device, DescriptorAllocator& srvAllocator)
+	{
+		// 先に古いSRV番号を返す（呼び出し元はGPUの完了を待っている）
+		m_DepthTexture.reset();
+
+		auto depthTexture = std::make_unique<Types::RENDER_TARGET>();
+		depthTexture->Resource = m_DepthBuffer;
+
+		D3D12_RESOURCE_DESC desc = m_DepthBuffer->GetDesc();
+		depthTexture->Size = Vector2((float)desc.Width, (float)desc.Height);
+
+		depthTexture->SRVIndex = srvAllocator.Allocate();
+		{
+			// リソースは R32_TYPELESS（DSVは D32_FLOAT）なので、SRVは R32_FLOAT で読む
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+			srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			srvDesc.Texture2D.MipLevels = 1;
+			device->CreateShaderResourceView(m_DepthBuffer.Get(), &srvDesc, srvAllocator.GetCPUHandle(depthTexture->SRVIndex));
+		}
+		depthTexture->SRVHandle = srvAllocator.GetGPUHandle(depthTexture->SRVIndex);
+		// RTVは持たない（RTVIndex は INVALID のまま。デストラクタでRTVを解放しない）
+		depthTexture->RTVHandle = {};
+
+		m_DepthTexture = std::move(depthTexture);
 	}
 
 	void RenderTargetManager::CreateShadowDepthBuffer(ID3D12Device* device)
@@ -251,6 +279,7 @@ namespace EngineCore::Render {
 		if (m_SwapChainResizePending) {
 			m_BackBuffer[0].Reset();
 			m_BackBuffer[1].Reset();
+			m_DepthTexture.reset(); // 深度リソースへの参照を持っているので一緒に手放す
 			m_DepthBuffer.Reset();
 
 			DXGI_SWAP_CHAIN_DESC1 desc = {};
@@ -290,9 +319,7 @@ namespace EngineCore::Render {
 			m_NormalBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
 			m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 
-			m_PositionBuffer.reset();
-			m_PositionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
-			m_PositionBuffer->Resource->SetName(L"PositionBuffer");
+			CreateDepthTexture(device, srvAllocator);
 
 			m_MaterialBuffer.reset();
 			m_MaterialBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
