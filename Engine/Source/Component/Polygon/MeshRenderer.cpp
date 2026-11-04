@@ -85,6 +85,9 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 	// Bind Material Textures
 	if (m_Material.GetTextureBaseColor()) {
 		renderManager->SetTexture(EngineCore::Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, m_Material.GetTextureBaseColor());
+	} else if (vertexData->GetTextures().empty()) {
+		// テクスチャがないとき（読み込み失敗を含む）に、前のオブジェクトのテクスチャを使わない
+		renderManager->SetTexture(EngineCore::Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, renderManager->GetWhiteTexture());
 	} else {
 		for (auto& texture : vertexData->GetTextures()) {
 			renderManager->SetTexture(EngineCore::Render::RenderManager::TEXTURE_TYPE::BASE_COLOR, texture.get());

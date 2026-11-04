@@ -119,6 +119,11 @@ namespace EngineCore::Render {
     }
 
     void Material::SetTextureBaseColor(std::shared_ptr<EngineCore::Render::Types::TEXTURE> texture) {
+        // 同じフレームで記録済みの描画や前のフレームが使っているので、即解放せず遅延解放へ回す（SetTexture と同じ）
+        auto rm = RenderManager::GetInstance();
+        if (m_TextureBaseColor && m_TextureBaseColor != texture && rm) {
+            rm->DeferReleaseTexture(m_TextureBaseColor);
+        }
         m_TextureBaseColor = std::move(texture);
     }
 

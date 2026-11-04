@@ -70,11 +70,14 @@ namespace EngineCore::Render {
 			XMFLOAT4X4 World;
 		};
 
+		// ディスクリプタを確保する前に破棄されたときに、使用中の番号を解放しないための値
+		inline constexpr unsigned int INVALID_DESCRIPTOR_INDEX = 0xFFFFFFFF;
+
 		// テクスチャデータ Textureクラスに移動
 		struct ENGINE_API TEXTURE
 		{
 			ComPtr<ID3D12Resource>	Resource;
-			unsigned int			SRVIndex;
+			unsigned int			SRVIndex = INVALID_DESCRIPTOR_INDEX;
 			~TEXTURE();
 		};
 
@@ -82,8 +85,8 @@ namespace EngineCore::Render {
 		struct ENGINE_API RENDER_TARGET
 		{
 			ComPtr<ID3D12Resource>	Resource;
-			unsigned int			SRVIndex;
-			unsigned int			RTVIndex;
+			unsigned int			SRVIndex = INVALID_DESCRIPTOR_INDEX;
+			unsigned int			RTVIndex = INVALID_DESCRIPTOR_INDEX;
 			D3D12_GPU_DESCRIPTOR_HANDLE SRVHandle;
 			D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle;
 		    Vector2 Size;
@@ -185,14 +188,17 @@ namespace EngineCore::Render {
 
 		std::unique_ptr<TEXTURE> m_EnvTexture;
 
-		ComPtr<ID3D12Resource>		m_DummyTexture;          // 未割当スロット用の1x1ダミー
-		ComPtr<ID3D12Resource>		m_DummyUpload;           // ↑のアップロード用（GPU消費まで保持）
+		std::unique_ptr<TEXTURE>	m_WhiteTexture;          // 未割当スロットとテクスチャなし用の1x1白
+		std::unique_ptr<TEXTURE>	m_BlackTexture;          // 環境マップなし用の1x1黒
+		ComPtr<ID3D12Resource>		m_WhiteUpload;           // ↑のアップロード用（GPU消費まで保持）
+		ComPtr<ID3D12Resource>		m_BlackUpload;
 		std::list<unsigned int>		m_MaterialBlockPool;     // 空きブロック先頭indexのリスト
 		unsigned int				m_DefaultMaterialBlock = 0; // ステップ1検証用の既定ブロック
 		bool						m_MaterialTexInitialized = false;
 
 		bool						m_IsShadowPass = false;
 		void Init(HWND hWnd);
+		std::unique_ptr<TEXTURE> CreateSolidTexture(const uint8_t (&pixel)[4], ComPtr<ID3D12Resource>& upload);
 
 	public:
 
@@ -210,6 +216,7 @@ namespace EngineCore::Render {
 		// space1テーブルをバインド
 		void         SetMaterialTextureTable(unsigned int blockBase);
 		unsigned int GetDefaultMaterialBlock() const { return m_DefaultMaterialBlock; }
+		const TEXTURE* GetWhiteTexture() const { return m_WhiteTexture.get(); }
 		// ダミー＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
 		void         EnsureMaterialTextureSetup();
 		// GPU使用中の可能性があるテクスチャをフェンス通過まで保持してから解放する

@@ -95,7 +95,7 @@ namespace GUIHelper {
             }
 
             if (ImGui::Button("Select")) {
-                COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.png;*.jpg;*.tga;*.dds" }, { L"All Files", L"*.*" } };
+                COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.dds;*.png;*.jpg;*.jpeg;*.bmp;*.tga" } };
                 std::string path = OpenFileDialog(texFilter, _countof(texFilter));
                 if (!path.empty() && rm) {
                     std::shared_ptr<EngineCore::Render::Types::TEXTURE> t = rm->LoadTexture(path.c_str());

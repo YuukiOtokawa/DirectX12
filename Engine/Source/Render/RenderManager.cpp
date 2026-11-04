@@ -719,7 +719,7 @@ void RenderManager::ResolveDeferredLighting()
 		SetTexture(RenderManager::TEXTURE_TYPE::POSITION, positionBuffer);
 		SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, materialBuffer);
 		SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, emissionBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture.get());
+		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture ? m_EnvTexture.get() : m_BlackTexture.get());
 		SetTexture(RenderManager::TEXTURE_TYPE::SHADOW, m_RenderTargetManager.GetShadowMapBuffer());
 		DrawScreen();
 	}
@@ -1472,7 +1472,8 @@ unsigned int RenderManager::AllocateMaterialTextureBlock()
 
 	// 全スロットをダミーで埋める（未割当スロットを安全にサンプルできるように）
 	for (unsigned int s = 0; s < MATERIAL_TEX_SLOTS; s++) {
-		CreateShaderResourceViewAt(base + s, m_DummyTexture.Get());
+		// 初回の描画前は白がまだない。そのときは何もしない（CreateShaderResourceViewAt が null を無視する）
+		CreateShaderResourceViewAt(base + s, m_WhiteTexture ? m_WhiteTexture->Resource.Get() : nullptr);
 	}
 	return base;
 }
@@ -1486,7 +1487,7 @@ void RenderManager::FreeMaterialTextureBlock(unsigned int blockBase)
 void RenderManager::SetMaterialBlockSlot(unsigned int blockBase, unsigned int slot, ID3D12Resource* Resource)
 {
 	if (slot >= MATERIAL_TEX_SLOTS) return;
-	ID3D12Resource* res = Resource ? Resource : m_DummyTexture.Get();
+	ID3D12Resource* res = Resource ? Resource : (m_WhiteTexture ? m_WhiteTexture->Resource.Get() : nullptr);
 	CreateShaderResourceViewAt(blockBase + slot, res);
 }
 
@@ -1500,48 +1501,60 @@ void RenderManager::SetMaterialTextureTable(unsigned int blockBase)
 	m_GraphicsCommandList->SetGraphicsRootDescriptorTable(MATERIAL_TEX_ROOT_PARAM, handle);
 }
 
-// ダミーテクスチャ＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
+// 1x1 RGBA8 の単色テクスチャを作る（コマンドリスト記録中に呼ぶ）
+std::unique_ptr<TEXTURE> RenderManager::CreateSolidTexture(const uint8_t (&pixel)[4], ComPtr<ID3D12Resource>& upload)
+{
+	auto texture = std::make_unique<TEXTURE>();
+
+	// DEFAULTヒープのテクスチャ本体（COPY_DEST）
+	auto texProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+	auto texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+
+	HRESULT hr = m_Device->CreateCommittedResource(&texProp, D3D12_HEAP_FLAG_NONE, &texDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&texture->Resource));
+	Log::ThrowIfFailed(hr, "CreateCommittedResource of the solid texture failed");
+
+	// アップロードバッファ（GPUがコピーを消費するまで保持する必要があるため呼び出し側のメンバに保存）
+	UINT64 reqSize = GetRequiredIntermediateSize(texture->Resource.Get(), 0, 1);
+	auto upProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto upDesc = CD3DX12_RESOURCE_DESC::Buffer(reqSize);
+	hr = m_Device->CreateCommittedResource(&upProp, D3D12_HEAP_FLAG_NONE, &upDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&upload));
+	Log::ThrowIfFailed(hr, "CreateCommittedResource of the solid texture upload buffer failed");
+
+	D3D12_SUBRESOURCE_DATA sub{};
+	sub.pData = pixel;
+	sub.RowPitch = 4;   // 1px * 4byte
+	sub.SlicePitch = 4;
+
+	UpdateSubresources(m_GraphicsCommandList.Get(), texture->Resource.Get(), upload.Get(),
+		0, 0, 1, &sub);
+
+	auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
+		texture->Resource.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	m_GraphicsCommandList->ResourceBarrier(1, &trans);
+
+	texture->SRVIndex = CreateShaderResourceView(texture->Resource.Get());
+	return texture;
+}
+
+// フォールバックテクスチャ＆既定ブロックを遅延生成（コマンドリスト記録中に呼ぶ）
 void RenderManager::EnsureMaterialTextureSetup()
 {
 	if (m_MaterialTexInitialized) return;
 	m_MaterialTexInitialized = true;
 
-	// 1x1 RGBA8 の緑ダミーテクスチャ（検証用に分かりやすい色）
-	{
-		// DEFAULTヒープのテクスチャ本体（COPY_DEST）
-		auto texProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-		auto texDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_R8G8B8A8_UNORM, 1, 1, 1, 1);
+	// 白（中立。未割当スロットはサンプルしても見た目を変えない）
+	const uint8_t white[4] = { 255, 255, 255, 255 };
+	m_WhiteTexture = CreateSolidTexture(white, m_WhiteUpload);
 
-		HRESULT hr = m_Device->CreateCommittedResource(&texProp, D3D12_HEAP_FLAG_NONE, &texDesc,
-			D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_DummyTexture));
-		Log::ThrowIfFailed(hr, "CreateCommittedResource of the dummy texture failed");
+	// 黒（環境マップがないときに環境光を足さない）
+	const uint8_t black[4] = { 0, 0, 0, 255 };
+	m_BlackTexture = CreateSolidTexture(black, m_BlackUpload);
 
-		// アップロードバッファ（GPUがコピーを消費するまで保持する必要があるためメンバに保存）
-		UINT64 reqSize = GetRequiredIntermediateSize(m_DummyTexture.Get(), 0, 1);
-		auto upProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		auto upDesc = CD3DX12_RESOURCE_DESC::Buffer(reqSize);
-		hr = m_Device->CreateCommittedResource(&upProp, D3D12_HEAP_FLAG_NONE, &upDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&m_DummyUpload));
-		Log::ThrowIfFailed(hr, "CreateCommittedResource of the dummy upload buffer failed");
-
-		// 白（中立。未割当スロットはサンプルしても見た目を変えない）
-		const uint8_t pixel[4] = { 255, 255, 255, 255 };
-		D3D12_SUBRESOURCE_DATA sub{};
-		sub.pData = pixel;
-		sub.RowPitch = 4;   // 1px * 4byte
-		sub.SlicePitch = 4;
-
-		UpdateSubresources(m_GraphicsCommandList.Get(), m_DummyTexture.Get(), m_DummyUpload.Get(),
-			0, 0, 1, &sub);
-
-		auto trans = CD3DX12_RESOURCE_BARRIER::Transition(
-			m_DummyTexture.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		m_GraphicsCommandList->ResourceBarrier(1, &trans);
-	}
-
-	// 検証用の既定ブロックを確保（全スロット=ダミー緑）
+	// 既定ブロックを確保（全スロット=白）
 	m_DefaultMaterialBlock = AllocateMaterialTextureBlock();
 }
 
@@ -1887,7 +1900,7 @@ void EngineCore::Render::RenderManager::ApplyPendingResizes() {
 TEXTURE::~TEXTURE()
 {
 	if (auto* renderManager = RenderManager::GetInstance()) {
-		renderManager->ReleaseShaderResourceView(SRVIndex);
+		if (SRVIndex != INVALID_DESCRIPTOR_INDEX) renderManager->ReleaseShaderResourceView(SRVIndex);
 	}
 }
 
@@ -1895,8 +1908,8 @@ TEXTURE::~TEXTURE()
 RENDER_TARGET::~RENDER_TARGET()
 {
 	if (auto* renderManager = RenderManager::GetInstance()) {
-		renderManager->ReleaseShaderResourceView(SRVIndex);
-		renderManager->ReleaseRenderTargetView(RTVIndex);
+		if (SRVIndex != INVALID_DESCRIPTOR_INDEX) renderManager->ReleaseShaderResourceView(SRVIndex);
+		if (RTVIndex != INVALID_DESCRIPTOR_INDEX) renderManager->ReleaseRenderTargetView(RTVIndex);
 	}
 }
 

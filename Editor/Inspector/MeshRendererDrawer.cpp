@@ -47,7 +47,7 @@ static void DrawMeshRenderer(EngineCore::General::Component& component) {
 		ImGui::SameLine();
 	}
 	if (ImGui::Button("Select Texture")) {
-		COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.png;*.jpg;*.tga;*.dds" }, { L"All Files", L"*.*" } };
+		COMDLG_FILTERSPEC texFilter[] = { { L"Texture Files", L"*.dds;*.png;*.jpg;*.jpeg;*.bmp;*.tga" } };
 		std::string path = OpenFileDialog(texFilter, _countof(texFilter));
 		if (!path.empty() && renderManager) {
 			std::shared_ptr<EngineCore::Render::Types::TEXTURE> tex = renderManager->LoadTexture(path.c_str());
