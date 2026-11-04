@@ -75,7 +75,8 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 	// Reuse the material constant across consecutive branches of the same tree.
 	if (bindMaterial) {
 		if (renderManager->IsShadowPass() || !m_Material.GetShaderName().empty()) {
-			renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()));
+			// cbuffer の大きさが不正なシェーダー（Material::SetShader でログに記録済み）では描かない
+			if (!renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, m_Material.GetBufferData(), static_cast<unsigned int>(m_Material.GetBufferSize()))) return;
 		} else {
 			EngineCore::Render::MaterialConstant constData = m_Material.GetConstantData();
 			renderManager->SetConstant(EngineCore::Render::RenderManager::CONSTANT_TYPE::SUBSET, &constData, sizeof(EngineCore::Render::MaterialConstant));

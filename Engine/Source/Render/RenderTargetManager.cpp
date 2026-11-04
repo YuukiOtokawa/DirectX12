@@ -319,17 +319,26 @@ namespace EngineCore::Render {
 			m_SceneViewResizePending = false;
 		}
 		else {
+			// ビューの作り直しに失敗したら（メモリ不足など）、元のサイズのまま続ける。
+			// 新しいものを作れてから差し替える（呼び出し元が GPU の完了を待っているので、古いものはすぐ破棄してよい）
+			auto resizeView = [&](std::unique_ptr<Types::RENDER_TARGET>& target, unsigned int width, unsigned int height, const wchar_t* name, const char* label) {
+				try {
+					auto newTarget = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, width, height, DXGI_FORMAT_R16G16B16A16_FLOAT);
+					newTarget->Resource->SetName(name);
+					target = std::move(newTarget);
+				}
+				catch (const std::exception& error) {
+					Log::Write(Log::Level::Error, std::string("Failed to resize ") + label + " to " + std::to_string(width) + "x" + std::to_string(height) + ": " + error.what());
+				}
+			};
+
 			if (m_GameViewResizePending) {
-				m_GameViewTarget.reset();
-				m_GameViewTarget = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, m_GameViewPendingWidth, m_GameViewPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
-				m_GameViewTarget->Resource->SetName(L"GameViewTarget");
+				resizeView(m_GameViewTarget, m_GameViewPendingWidth, m_GameViewPendingHeight, L"GameViewTarget", "GameView");
 				m_GameViewResizePending = false;
 			}
 
 			if (m_SceneViewResizePending) {
-				m_SceneViewTarget.reset();
-				m_SceneViewTarget = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, m_SceneViewPendingWidth, m_SceneViewPendingHeight, DXGI_FORMAT_R16G16B16A16_FLOAT);
-				m_SceneViewTarget->Resource->SetName(L"SceneViewTarget");
+				resizeView(m_SceneViewTarget, m_SceneViewPendingWidth, m_SceneViewPendingHeight, L"SceneViewTarget", "SceneView");
 				m_SceneViewResizePending = false;
 			}
 		}

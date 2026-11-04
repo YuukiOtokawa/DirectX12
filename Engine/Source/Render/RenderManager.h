@@ -290,7 +290,9 @@ namespace EngineCore::Render {
 			OBJECT,
 			SUBSET
 		};
-		void SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size);
+		// 定数の大きさが不正（0 または 512 超）なら false を返し、何もしない
+		bool SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size);
+		static bool IsValidConstantSize(size_t Size);
 
 		//テクスチャ
 		enum class TEXTURE_TYPE

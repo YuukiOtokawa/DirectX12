@@ -248,6 +248,9 @@ void RenderManager::Init(HWND hWnd)
 	// VertexBuffer
 	{
 		m_VertexBuffer = CreateVertexBuffer(sizeof(VERTEX), 4);
+		if (!m_VertexBuffer) {
+			throw std::runtime_error("Failed to create the screen vertex buffer");
+		}
 
 		// Map
 		VERTEX* buffer{};
@@ -793,6 +796,8 @@ void RenderManager::ApplyPostProcess()
 		// コンパイル失敗中のパスは飛ばす（入力をそのまま次へ渡す）
 		ID3D12PipelineState* pipeline = GetOrCreatePipeline(pass.shaderFile, RenderPassType::PostProcess);
 		if (!pipeline) continue;
+		// 定数が大きすぎるパスも同様（Material::SetShader でログに記録済み）
+		if (!pass.propertyBuffer.empty() && !IsValidConstantSize(pass.propertyBuffer.size())) continue;
 
 		// Output must be in RENDER_TARGET state (both buffers rest in PIXEL_SHADER_RESOURCE).
 		{
@@ -1515,8 +1520,9 @@ void RenderManager::CreateShaderResourceViewAt(unsigned int index, ID3D12Resourc
 unsigned int RenderManager::AllocateMaterialTextureBlock()
 {
 	if (m_MaterialBlockPool.empty()) {
-		assert(false && "Material texture block pool exhausted");
-		return MATERIAL_BLOCK_REGION_BASE; // フォールバック
+		// 呼び出し側はブロックを持たず、既定ブロック（全スロット白）で描く
+		Log::Write(Log::Level::Error, "Material texture block pool exhausted (max " + std::to_string(MATERIAL_BLOCK_MAX) + " materials with textures)");
+		return Types::INVALID_DESCRIPTOR_INDEX;
 	}
 	unsigned int base = m_MaterialBlockPool.front();
 	m_MaterialBlockPool.pop_front();
@@ -1607,6 +1613,10 @@ void RenderManager::EnsureMaterialTextureSetup()
 
 	// 既定ブロックを確保（全スロット=白）
 	m_DefaultMaterialBlock = AllocateMaterialTextureBlock();
+	if (m_DefaultMaterialBlock == Types::INVALID_DESCRIPTOR_INDEX) {
+		// 枯渇時の代わりに使うブロックなので、これがないと続けられない
+		throw std::runtime_error("Failed to allocate the default material texture block");
+	}
 }
 
 // GPU使用中の可能性があるテクスチャをフェンス通過まで保持してから解放する
@@ -1698,10 +1708,21 @@ void EngineCore::Render::RenderManager::CreateRenderTarget() {
 
 
 
-void RenderManager::SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size)
+bool RenderManager::IsValidConstantSize(size_t Size)
 {
+	return Size > 0 && Size <= ConstantBufferRing::SLOT_SIZE;
+}
+
+// 大きさが不正なら false を返し、何もしない。毎フレーム呼ばれるのでログは出さない
+// （マテリアルの定数は Material::SetShader で記録する）
+bool RenderManager::SetConstant(CONSTANT_TYPE Type, const void* Constant, unsigned int Size)
+{
+	if (!Constant || !IsValidConstantSize(Size)) {
+		return false;
+	}
 	D3D12_GPU_DESCRIPTOR_HANDLE handle = m_ConstantBufferRing.Write(m_RTIndex, Constant, Size);
 	m_GraphicsCommandList->SetGraphicsRootDescriptorTable((unsigned int)Type, handle);
+	return true;
 }
 
 
@@ -1735,8 +1756,14 @@ void RenderManager::SetTexture(TEXTURE_TYPE Type, const RENDER_TARGET* Texture)
 
 
 
+// 失敗したら（頂点 0 個を含む）ログに記録して nullptr を返す
 std::unique_ptr<VERTEX_BUFFER> RenderManager::CreateVertexBuffer(unsigned int Stride, unsigned int Size)
 {
+	if (Stride == 0 || Size == 0) {
+		Log::Write(Log::Level::Error, "Failed to create vertex buffer: empty (stride " + std::to_string(Stride) + ", count " + std::to_string(Size) + ")");
+		return nullptr;
+	}
+
 	std::unique_ptr<VERTEX_BUFFER> vertexBuffer = std::make_unique<VERTEX_BUFFER>();
 
 	auto prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -1747,7 +1774,10 @@ std::unique_ptr<VERTEX_BUFFER> RenderManager::CreateVertexBuffer(unsigned int St
 													D3D12_RESOURCE_STATE_GENERIC_READ,
 													nullptr,
 													IID_PPV_ARGS(&vertexBuffer->Resource));
-	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) {
+		Log::Write(Log::Level::Error, "Failed to create vertex buffer (count " + std::to_string(Size) + ") " + Log::FormatHresult(hr));
+		return nullptr;
+	}
 
 
 	vertexBuffer->Stride = Stride;
@@ -1773,8 +1803,14 @@ void RenderManager::SetVertexBuffer(const VERTEX_BUFFER* VertexBuffer)
 
 
 
+// 失敗したら（インデックス 0 個を含む）ログに記録して nullptr を返す
 std::unique_ptr<INDEX_BUFFER> RenderManager::CreateIndexBuffer(unsigned int Size)
 {
+	if (Size == 0) {
+		Log::Write(Log::Level::Error, "Failed to create index buffer: empty");
+		return nullptr;
+	}
+
 	std::unique_ptr<INDEX_BUFFER> indexBuffer = std::make_unique<INDEX_BUFFER>();
 
 	auto prop = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -1785,7 +1821,10 @@ std::unique_ptr<INDEX_BUFFER> RenderManager::CreateIndexBuffer(unsigned int Size
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
 		IID_PPV_ARGS(&indexBuffer->Resource));
-	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) {
+		Log::Write(Log::Level::Error, "Failed to create index buffer (count " + std::to_string(Size) + ") " + Log::FormatHresult(hr));
+		return nullptr;
+	}
 
 
 	indexBuffer->Size = Size;

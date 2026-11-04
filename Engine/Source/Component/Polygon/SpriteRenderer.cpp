@@ -10,9 +10,14 @@ SpriteRenderer::SpriteRenderer() {
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 
 	m_VertexBuffer = renderManager->CreateVertexBuffer(sizeof(VERTEX), 4);
+	if (!m_VertexBuffer) return; // 失敗はログに記録済み。Draw で飛ばす
 
 	VERTEX* buffer{};
 	HRESULT hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
+	if (FAILED(hr)) {
+		m_VertexBuffer.reset();
+		return;
+	}
 
 	buffer[0].Position = { 0.0f,0.0f,0.0f };
 	buffer[1].Position = { 200.0f,0.0f,0.0f };
@@ -41,6 +46,7 @@ void SpriteRenderer::Update() {
 }
 
 void SpriteRenderer::Draw() {
+	if (!m_VertexBuffer) return;
 	auto renderManager = EngineCore::Render::RenderManager::GetInstance();
 	
 	//マトリクス設定

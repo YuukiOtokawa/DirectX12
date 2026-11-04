@@ -61,18 +61,29 @@ namespace EngineCore::Asset {
 	VertexData* LoadMesh(const std::string& filePath) {
 		MeshAsset mesh;
 		bool loaded = false;
-		if (HasExtension(filePath, ".meshbin")) {
-			loaded = LoadMeshAsset(filePath, mesh);
+		// 壊れた .meshbin は要素数が巨大になり、確保で例外が出ることがある。インポーターの例外も同じく読み込み失敗として扱う
+		try {
+			if (HasExtension(filePath, ".meshbin")) {
+				loaded = LoadMeshAsset(filePath, mesh);
+			}
+			else if (ResourcePath::GetLayout() == ResourcePath::Layout::Distribution) {
+				loaded = LoadMeshAsset(ResourcePath::MeshBin(filePath), mesh);
+			}
+			else if (s_Importer) {
+				loaded = s_Importer(filePath, mesh);
+			}
 		}
-		else if (ResourcePath::GetLayout() == ResourcePath::Layout::Distribution) {
-			loaded = LoadMeshAsset(ResourcePath::MeshBin(filePath), mesh);
-		}
-		else if (s_Importer) {
-			loaded = s_Importer(filePath, mesh);
+		catch (const std::exception& error) {
+			Log::Write(Log::Level::Error, "Failed to load mesh: " + filePath + " (" + error.what() + ")");
+			return nullptr;
 		}
 
 		if (!loaded) {
 			Log::Write(Log::Level::Error, "Failed to load mesh: " + filePath);
+			return nullptr;
+		}
+		if (mesh.vertices.empty()) {
+			Log::Write(Log::Level::Error, "Failed to load mesh (no vertices): " + filePath);
 			return nullptr;
 		}
 

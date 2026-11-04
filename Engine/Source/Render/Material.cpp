@@ -1,5 +1,6 @@
 #include "Material.h"
 #include "RenderManager.h"
+#include "Engine/Source/Utility/Log.h"
 #include <filesystem>
 
 namespace EngineCore::Render {
@@ -82,6 +83,11 @@ namespace EngineCore::Render {
         if (renderManager) {
             const ShaderMetadata* meta = renderManager->GetShaderMetadata(shaderName);
             if (meta) {
+                // 描画時は SetConstant が黙って失敗し、このマテリアルの物体は描かれない。ここで 1 回だけ記録する
+                if (!RenderManager::IsValidConstantSize(meta->totalSize)) {
+                    Log::Write(Log::Level::Error, "Material constant buffer of shader '" + shaderName + "' is " + std::to_string(meta->totalSize) +
+                        " bytes (must be 1.." + std::to_string(ConstantBufferRing::SLOT_SIZE) + "); objects using it are not drawn");
+                }
                 m_PropertyBuffer.resize(meta->totalSize);
                 // Initialize buffer with default values from shader metadata
                 for (auto& prop : meta->properties) {
@@ -136,6 +142,8 @@ namespace EngineCore::Render {
         auto rm = RenderManager::GetInstance();
         if (!rm) return;
         unsigned int base = rm->AllocateMaterialTextureBlock();
+        // 枯渇時はブロックを持たず、既定ブロックで描かれる（ログは RenderManager 側で記録済み）
+        if (base == EngineCore::Render::Types::INVALID_DESCRIPTOR_INDEX) return;
         m_TextureBlock = std::shared_ptr<unsigned int>(new unsigned int(base), [](unsigned int* p) {
             if (auto rm = RenderManager::GetInstance()) rm->FreeMaterialTextureBlock(*p);
             delete p;
@@ -168,6 +176,7 @@ namespace EngineCore::Render {
         for (auto& t : meta->textures) {
             if (t.name == name) {
                 EnsureTextureBlock();
+                if (!m_TextureBlock) break; // ブロックの枯渇
                 rm->SetMaterialBlockSlot(*m_TextureBlock, t.registerIndex, texture ? texture->Resource.Get() : nullptr);
                 break;
             }
