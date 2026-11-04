@@ -1151,10 +1151,11 @@ void RenderManager::FrameEnd() {
 			WaitForSingleObjectEx(m_FenceEvent, INFINITE, FALSE);
 		}
 
-		// GPU側で実行が完了したPSO/テクスチャを解放する
+		// GPU側で実行が完了したPSO/テクスチャ/その他を解放する
 		UINT64 completedValue = m_Fence->GetCompletedValue();
 		m_PendingReleasePSOs.ReleaseCompleted(completedValue);
 		m_PendingReleaseTextures.ReleaseCompleted(completedValue);
+		m_PendingReleaseObjects.ReleaseCompleted(completedValue);
 	}
 
 
@@ -1564,6 +1565,13 @@ void RenderManager::DeferReleaseTexture(std::shared_ptr<Types::TEXTURE> tex)
 	if (!tex) return;
 	// 記録中フレーム＋飛行中フレームをまたいで安全に保持するため +2 のマージン
 	m_PendingReleaseTextures.Push(std::move(tex), m_FenceValue + 2);
+}
+
+void RenderManager::DeferRelease(std::shared_ptr<void> object)
+{
+	if (!object) return;
+	// DeferReleaseTexture と同じマージン
+	m_PendingReleaseObjects.Push(std::move(object), m_FenceValue + 2);
 }
 
 

@@ -7,6 +7,15 @@
 #include "Engine/Source/Component/Transform/Transform.h"
 #include "Engine/Source/Render/RenderManager.h"
 
+namespace {
+	// GPU が使い終わるまで破棄を遅らせる。同じフレームで記録済みの描画や、実行中の前のフレームが使っているため
+	void DeferRelease(std::shared_ptr<void> object) {
+		if (auto* renderManager = EngineCore::Render::RenderManager::GetInstance()) {
+			renderManager->DeferRelease(std::move(object));
+		}
+	}
+}
+
 EngineCore::General::MeshFilter::MeshFilter() = default;
 
 EngineCore::General::MeshFilter::~MeshFilter() {
@@ -34,7 +43,11 @@ void EngineCore::General::MeshFilter::LoadModel(const std::string& filePath) {
 	if (!vertexData)
 		return;
 
-	delete m_VertexData;
+	// 古いメッシュはテクスチャを持つので、即 delete しない
+	if (m_VertexData) {
+		DeferRelease(std::shared_ptr<void>(m_VertexData, [](void* p) { delete static_cast<VertexData*>(p); }));
+		m_VertexData = nullptr;
+	}
 	SetVertexData(vertexData);
 }
 
@@ -43,6 +56,7 @@ void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::v
 	{
 		auto render = EngineCore::Render::RenderManager::GetInstance();
 
+		DeferRelease(std::move(m_VertexBuffer));
 		m_VertexBuffer = render->CreateVertexBuffer(sizeof(EngineCore::Render::Types::VERTEX), (unsigned int)vertices.size());
 		EngineCore::Render::Types::VERTEX* buffer{};
 		hr = m_VertexBuffer->Resource->Map(0, nullptr, (void**)&buffer);
@@ -53,6 +67,7 @@ void EngineCore::General::MeshFilter::SetVertexData(const char* FilePath, std::v
 
 	if (!indices.empty()) {
 		auto render = EngineCore::Render::RenderManager::GetInstance();
+		DeferRelease(std::move(m_IndexBuffer));
 		m_IndexBuffer = render->CreateIndexBuffer((unsigned int)indices.size());
 		unsigned int* buffer{};
 		hr = m_IndexBuffer->Resource->Map(0, nullptr, (void**)&buffer);

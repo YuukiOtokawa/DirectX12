@@ -181,6 +181,8 @@ namespace EngineCore::Render {
 
 		// GPU使用中の可能性があるテクスチャを、フェンス通過まで保持してから解放する
 		DeferredReleaseQueue<std::shared_ptr<Types::TEXTURE>>			m_PendingReleaseTextures;
+		// 同じく、頂点バッファやメッシュなど型を問わないもの（破棄は shared_ptr の削除子に任せる）
+		DeferredReleaseQueue<std::shared_ptr<void>>						m_PendingReleaseObjects;
 
 		std::unique_ptr<VERTEX_BUFFER>		m_VertexBuffer;
 
@@ -221,6 +223,8 @@ namespace EngineCore::Render {
 		void         EnsureMaterialTextureSetup();
 		// GPU使用中の可能性があるテクスチャをフェンス通過まで保持してから解放する
 		void         DeferReleaseTexture(std::shared_ptr<Types::TEXTURE> tex);
+		// 同上。頂点バッファやメッシュなど型を問わないもの
+		void         DeferRelease(std::shared_ptr<void> object);
 
 		unsigned int CreateRenderTargetView(ID3D12Resource* Resource, unsigned int MipLevel = 0);
 		D3D12_CPU_DESCRIPTOR_HANDLE GetRenderTargetViewHandle(unsigned int RTVIndex);
