@@ -3,8 +3,50 @@
 #include "ThirdParty/ImGui/Code/imgui.h"
 #include "Engine/Source/Component/Polygon/MeshRenderer.h"
 #include "Engine/Source/Render/RenderManager.h"
+#include "Engine/Source/Utility/ResourcePath.h"
 #include "Editor/Utility/FilePicker.h"
 #include "MaterialPropertyInspector.h"
+
+#include <vector>
+
+// 設定中のシェーダーをコンパイルし直す。失敗したときはログに出て、前の PSO と値のまま描き続ける
+static void RecompileShader(EngineCore::Render::Material& material, EngineCore::Render::RenderManager& renderManager) {
+	const std::string& shaderFile = material.GetShaderFilePath();
+	// 未設定のときは MeshRenderer と同じく Geometry.hlsl を使っている
+	const std::string target = shaderFile.empty() ? EngineCore::ResourcePath::Shader("Geometry.hlsl") : shaderFile;
+
+	// 作り直すとプロパティが既定値に戻るので、名前と型が同じものは値を引き継ぐ
+	struct SavedProperty {
+		std::string name;
+		bool isFloat;
+		Vector4 value;
+	};
+	std::vector<SavedProperty> saved;
+	if (const EngineCore::Render::ShaderMetadata* meta = renderManager.GetShaderMetadata(material.GetShaderName())) {
+		for (const auto& prop : meta->properties) {
+			const bool isFloat = (prop.type == "float");
+			saved.push_back({ prop.name, isFloat, isFloat ? Vector4(material.GetFloat(prop.name), 0.0f, 0.0f, 0.0f) : material.GetVector(prop.name) });
+		}
+	}
+
+	if (!renderManager.ReloadPipeline(target, material.GetRenderPassType())) {
+		return;
+	}
+	if (shaderFile.empty()) {
+		return;
+	}
+
+	// cbuffer の並びが変わっていてもよいように、新しいメタデータで構成し直してから値を戻す
+	material.SetShaderFile(shaderFile);
+	for (const auto& prop : saved) {
+		if (prop.isFloat) {
+			material.SetFloat(prop.name, prop.value.x);
+		}
+		else {
+			material.SetVector(prop.name, prop.value);
+		}
+	}
+}
 
 static void DrawMeshRenderer(EngineCore::General::Component& component) {
 	auto& meshRenderer = static_cast<EngineCore::General::MeshRenderer&>(component);
@@ -38,6 +80,12 @@ static void DrawMeshRenderer(EngineCore::General::Component& component) {
 			material.SetShaderFile(path);
 		}
 	}
+	ImGui::SameLine();
+	ImGui::BeginDisabled(renderManager == nullptr);
+	if (ImGui::Button("Recompile") && renderManager) {
+		RecompileShader(material, *renderManager);
+	}
+	ImGui::EndDisabled();
 
 	// --- Texture Picker ---
 	ImGui::Text("Base Color Texture");

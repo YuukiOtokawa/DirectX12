@@ -61,7 +61,7 @@ void MeshRenderer::DrawMesh(const DirectX::XMMATRIX& world, bool bindMaterial) {
 
 	// Bind Pipeline State
     if (renderManager->IsShadowPass()) {
-        renderManager->SetPipelineState("Shadow");
+        if (!renderManager->SetPipelineState("Shadow")) return; // シェーダーの失敗中は影を描かない
     } else {
 		// シェーダーファイル×パス種別でPSOを引く（初回のみコンパイル）。未設定なら Geometry
 		const std::string& shaderFile = m_Material.GetShaderFilePath();

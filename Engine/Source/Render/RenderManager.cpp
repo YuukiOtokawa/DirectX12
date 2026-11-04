@@ -9,6 +9,8 @@
 #include <d3dcompiler.h>
 #include <algorithm>
 #include <filesystem>
+#include <sstream>
+#include <stdexcept>
 #pragma comment(lib, "d3dcompiler.lib")
 using namespace DirectX;
 
@@ -319,6 +321,11 @@ void RenderManager::Init(HWND hWnd)
 		m_PipelineState["BloomComposite"] = CreatePipeline(bloomShader.c_str(), RTVFormats, _countof(RTVFormats), RenderPassType::PostProcess, "vtx", "pixComposite");
 	}
 
+	// 製品はログウィンドウがなく、GameView をこの PSO でしか表示できない。作れなければ何も映らないので終了する
+	if (EngineCore::ResourcePath::GetLayout() == EngineCore::ResourcePath::Layout::Distribution && !m_PipelineState["ScreenToBackBuffer"]) {
+		throw std::runtime_error("Failed to create the ScreenToBackBuffer pipeline (Screen.hlsl)");
+	}
+
 	m_RenderTargetManager.InitGBuffers(m_Device.Get(), m_SRVAllocator, m_RTVAllocator);
 
 	m_EnvTexture = LoadTexture(EngineCore::ResourcePath::Asset("charolettenbrunn_park_2k.dds").c_str());
@@ -616,9 +623,11 @@ void RenderManager::DrawEnd()
 			m_GraphicsCommandList->RSSetScissorRects(1, &targetScissorRect);
 
 			// 5) Render screen copy with scaling (1920x1080 lighted buffer -> target resolution)
-			SetPipelineState("Screen");
-			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, lightedColorBuffer);
-			DrawScreen();
+			// PSO がなければ黒くクリアしたまま（シェーダーの失敗はログに記録済み）
+			if (SetPipelineState("Screen")) {
+				SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, lightedColorBuffer);
+				DrawScreen();
+			}
 
 			// 6) Transition target: RENDER_TARGET -> PIXEL_SHADER_RESOURCE
 			{
@@ -713,15 +722,17 @@ void RenderManager::ResolveDeferredLighting()
 		m_GraphicsCommandList->RSSetScissorRects(1, &gbufferScissor);
 
 		// Deferred Shading / Lighting
-		SetPipelineState("Deferred");
-		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, colorBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, normalBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::POSITION, positionBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, materialBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, emissionBuffer);
-		SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture ? m_EnvTexture.get() : m_BlackTexture.get());
-		SetTexture(RenderManager::TEXTURE_TYPE::SHADOW, m_RenderTargetManager.GetShadowMapBuffer());
-		DrawScreen();
+		// PSO がなければ黒くクリアしたまま（シェーダーの失敗はログに記録済み）
+		if (SetPipelineState("Deferred")) {
+			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, colorBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::NORMAL, normalBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::POSITION, positionBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::MATERIAL, materialBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::EMISSION, emissionBuffer);
+			SetTexture(RenderManager::TEXTURE_TYPE::ENVIRONMENT, m_EnvTexture ? m_EnvTexture.get() : m_BlackTexture.get());
+			SetTexture(RenderManager::TEXTURE_TYPE::SHADOW, m_RenderTargetManager.GetShadowMapBuffer());
+			DrawScreen();
+		}
 	}
 }
 
@@ -838,13 +849,15 @@ void RenderManager::ApplyPostProcess()
 			m_GraphicsCommandList->ResourceBarrier(1, &barrier);
 		}
 
-		m_GraphicsCommandList->OMSetRenderTargets(1, &lightedColorBuffer->RTVHandle, TRUE, nullptr);
-		FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_GraphicsCommandList->ClearRenderTargetView(lightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
+		// PSO がなければコピーせず、ポストプロセス前の絵（最初のパスの入力）をそのまま残す
+		if (SetPipelineState("PostProcess")) {
+			m_GraphicsCommandList->OMSetRenderTargets(1, &lightedColorBuffer->RTVHandle, TRUE, nullptr);
+			FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			m_GraphicsCommandList->ClearRenderTargetView(lightedColorBuffer->RTVHandle, clearColor, 0, nullptr);
 
-		SetPipelineState("PostProcess");
-		SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
-		DrawScreen();
+			SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, currentInput);
+			DrawScreen();
+		}
 		// m_PostProcessBuffer1 remains in PIXEL_SHADER_RESOURCE (its resting state).
 	}
 }
@@ -892,16 +905,17 @@ void RenderManager::DrawFullScreenPass(const char* psoName,
 	FLOAT clearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	m_GraphicsCommandList->ClearRenderTargetView(output->RTVHandle, clearColor, 0, nullptr);
 
-	SetPipelineState(psoName);
+	// PSO がなければ黒くクリアしたまま。リソースの状態は下で戻す
+	if (SetPipelineState(psoName)) {
+		if (input)    SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR,  input);
+		if (inputLow) SetTexture(RenderManager::TEXTURE_TYPE::SCENE_COLOR, inputLow);
 
-	if (input)    SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR,  input);
-	if (inputLow) SetTexture(RenderManager::TEXTURE_TYPE::SCENE_COLOR, inputLow);
+		if (constantData && constantSize > 0) {
+			SetConstant(RenderManager::CONSTANT_TYPE::SUBSET, constantData, constantSize);
+		}
 
-	if (constantData && constantSize > 0) {
-		SetConstant(RenderManager::CONSTANT_TYPE::SUBSET, constantData, constantSize);
+		DrawScreen();
 	}
-
-	DrawScreen();
 
 	{
 		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -953,6 +967,14 @@ void RenderManager::ApplyBloom()
 	const unsigned int mipCount = m_RenderTargetManager.GetBloomMipCount();
 	if (mipCount == 0) {
 		return;
+	}
+
+	// 1つでも欠けると合成結果が黒になり、元の絵を上書きしてしまう。その場合はブルームごと飛ばす
+	for (const char* name : { "BloomPrefilter", "BloomBlurH", "BloomBlurV", "BloomUpsample", "BloomComposite" }) {
+		auto it = m_PipelineState.find(name);
+		if (it == m_PipelineState.end() || !it->second) {
+			return;
+		}
 	}
 
 	RENDER_TARGET* lightedColorBuffer = m_RenderTargetManager.GetLightedColorBuffer();
@@ -1181,7 +1203,9 @@ void RenderManager::DrawTargetToBackBuffer(RENDER_TARGET_TYPE source)
 		return;
 	}
 
-	SetPipelineState("ScreenToBackBuffer");
+	if (!SetPipelineState("ScreenToBackBuffer")) {
+		return;
+	}
 	SetTexture(RenderManager::TEXTURE_TYPE::BASE_COLOR, target);
 	DrawScreen();
 }
@@ -1231,17 +1255,16 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 		// 製品では .hlsl を配布しないので、ShaderCompiler.exe が事前にコンパイルした .cso を読む
 		if (EngineCore::ResourcePath::GetLayout() == EngineCore::ResourcePath::Layout::Distribution) {
 			std::string csoPath = EngineCore::ResourcePath::CompiledShader(filename, entrypoint);
-			mbstowcs_s(&size, wFileName, csoPath.c_str(), MAX_PATH);
+			mbstowcs_s(&size, wFileName, csoPath.c_str(), _TRUNCATE);
 			if (FAILED(D3DReadFileToBlob(wFileName, blob))) {
-				std::string message = "Compiled shader not found: " + csoPath;
-				Log::Write(Log::Level::Error, message);
-				MessageBoxA(nullptr, message.c_str(), "Shader Load Error", MB_OK | MB_ICONERROR);
+				Log::Write(Log::Level::Error, "Compiled shader not found: " + csoPath);
 				return false;
 			}
 			return true;
 		}
 
-		mbstowcs_s(&size, wFileName, filename, MAX_PATH);
+		// 長すぎるパスは切り詰める。その場合はファイルが見つからない失敗として扱われる
+		mbstowcs_s(&size, wFileName, filename, _TRUNCATE);
 
 		UINT compileFlags = 0;
 #if defined(_DEBUG)
@@ -1264,10 +1287,33 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 		);
 
 		if (FAILED(hr)) {
+			// 一覧には 1 行目だけが出るので、1 行目に最初のエラーを入れ、コンパイラの出力全文は 2 行目以降に付ける
+			std::string summary = filename;
+			std::string details;
 			if (errorBlob) {
-				Log::Write(Log::Level::Error, (char*)errorBlob->GetBufferPointer());
-				MessageBoxA(nullptr, (char*)errorBlob->GetBufferPointer(), "Shader Compilation Error", MB_OK | MB_ICONERROR);
+				details = (char*)errorBlob->GetBufferPointer();
+				// エラー行は "C:\...\Foo.hlsl(12,5-10): error X3004: ..." の形。include 先のファイルのこともあるので、
+				// ファイル名はエラー行から取り、ディレクトリだけ落とす
+				std::istringstream lines(details);
+				std::string line;
+				while (std::getline(lines, line)) {
+					const size_t errorPos = line.find(": error ");
+					if (errorPos == std::string::npos) continue;
+					if (!line.empty() && line.back() == '\r') line.pop_back();
+					const size_t paren = line.rfind('(', errorPos);
+					const size_t slash = (paren == std::string::npos) ? std::string::npos : line.find_last_of("\\/", paren);
+					summary = (slash == std::string::npos) ? line : line.substr(slash + 1);
+					break;
+				}
 			}
+			std::string message = std::string("Failed to compile shader (") + entrypoint + ", " + target + "): " + summary;
+			if (!details.empty()) {
+				message += "\n" + details;
+			}
+			else {
+				message += " " + Log::FormatHresult(hr); // ファイルがないときなど
+			}
+			Log::Write(Log::Level::Error, message);
 			return false;
 		}
 		return true;
@@ -1391,7 +1437,11 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipeline(const char* ShaderFile
 
 	ComPtr<ID3D12PipelineState> pipelineState;
 	HRESULT hr = m_Device->CreateGraphicsPipelineState(&pipelineStateDesc, IID_PPV_ARGS(&pipelineState));
-	assert(SUCCEEDED(hr));
+	if (FAILED(hr)) {
+		// ルートシグネチャと合わないレジスタを使ったシェーダーなど。呼び出し側は nullptr なら描画を飛ばす
+		Log::Write(Log::Level::Error, std::string("Failed to create pipeline state: ") + ShaderFile + " (" + vsEntry + ", " + psEntry + ") " + Log::FormatHresult(hr));
+		return nullptr;
+	}
 
 	// 自動的にHLSLのメタデータをパースして登録する
 	if (pipelineState) {
@@ -1761,19 +1811,24 @@ void RenderManager::SetIndexBuffer(const INDEX_BUFFER* IndexBuffer)
 
 
 
-void RenderManager::SetPipelineState(const char* PiplineName)
+// PSO がない（シェーダーの失敗など）ときは false を返し、何もしない。失敗は作成時にログへ記録済みなので、ここでは記録しない
+bool RenderManager::SetPipelineState(const char* PiplineName)
 {
-	ID3D12PipelineState* pipeline = m_PipelineState[PiplineName].Get();
-	assert(pipeline);
-
-	m_GraphicsCommandList->SetPipelineState(pipeline);
+	auto it = m_PipelineState.find(PiplineName);
+	if (it == m_PipelineState.end()) {
+		return false;
+	}
+	return SetPipelineState(it->second.Get());
 }
 
-void RenderManager::SetPipelineState(ID3D12PipelineState* pipeline)
+bool RenderManager::SetPipelineState(ID3D12PipelineState* pipeline)
 {
-	assert(pipeline);
+	if (!pipeline) {
+		return false;
+	}
 
 	m_GraphicsCommandList->SetPipelineState(pipeline);
+	return true;
 }
 
 std::string RenderManager::MakePipelineKey(const std::string& shaderFile, RenderPassType passType, const char* vsEntry, const char* psEntry)

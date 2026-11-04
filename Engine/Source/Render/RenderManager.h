@@ -318,8 +318,9 @@ namespace EngineCore::Render {
 
 		IDXGISwapChain3* GetSwapChain() { return m_SwapChain.Get(); }
 
-		void SetPipelineState(const char* PiplineName);
-		void SetPipelineState(ID3D12PipelineState* pipeline);
+		// PSO がなければ false を返し、何もしない
+		bool SetPipelineState(const char* PiplineName);
+		bool SetPipelineState(ID3D12PipelineState* pipeline);
 		// キャッシュから引き、無ければ生成する。コンパイル失敗時は nullptr（失敗もキャッシュされる）
 		ID3D12PipelineState* GetOrCreatePipeline(const std::string& shaderFile, RenderPassType passType, const char* vsEntry = "vtx", const char* psEntry = "pix");
 		// 再コンパイルし、成功したときだけ同じシェーダーファイルの既存PSOを全て差し替える
