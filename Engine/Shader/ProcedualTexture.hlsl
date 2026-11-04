@@ -64,10 +64,12 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     float noise = fbm2(input.TexCoord * 10.0, 5) * 0.5 + 0.5;
     
     // wooden
-    float wood = sin(noise * 100.0);
-    //output.Color = wood;
+    //output.Color = sin(noise * 100.0);
     
-    output.Color = voronoi2(input.TexCoord * 5.0);
+    //output.Color = voronoi2(input.TexCoord * 5.0);
+    
+    // Solid perlin noise texture
+    output.Color = fbm3(input.WorldPosition.xyz, 5) * 0.5 + 0.5;
     
     output.Color.a   = 1.0;
     output.Color     = output.Color * Material.BaseColor;

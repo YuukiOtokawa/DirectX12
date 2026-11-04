@@ -10,6 +10,14 @@ float2 random22(in float2 vec) {
     return frac(sin(vec) * 43758.5453123);
 }
 
+float3 random33(in float3 vec) {
+    vec = float3(dot(vec, float3(127.1, 311.7, 326.4)),
+                 dot(vec, float3(269.5, 183.3, 138.2)),
+                 dot(vec, float3(753.1, 432.7, 612.2)));
+    return frac(sin(vec) * 43758.5453123);
+
+}
+
 // Value noise
 /*
 
@@ -88,4 +96,40 @@ float voronoi2(in float2 vec) {
     }
     
     return value;
+}
+
+float perlinNoise3(in float3 vec) {
+    float3 ivec = floor(vec);
+    float3 fvec = frac(vec);
+    
+    float a = dot(random33(ivec + float3(0.0, 0.0, 1.0)) * 2.0 - 1.0, fvec - float3(0.0, 0.0, 0.0));
+    float b = dot(random33(ivec + float3(1.0, 0.0, 0.0)) * 2.0 - 1.0, fvec - float3(1.0, 0.0, 0.0));
+    float c = dot(random33(ivec + float3(0.0, 1.0, 0.0)) * 2.0 - 1.0, fvec - float3(0.0, 1.0, 0.0));
+    float d = dot(random33(ivec + float3(1.0, 1.0, 0.0)) * 2.0 - 1.0, fvec - float3(1.0, 1.0, 0.0));
+    
+    float e = dot(random33(ivec + float3(0.0, 0.0, 1.0)) * 2.0 - 1.0, fvec - float3(0.0, 0.0, 1.0));
+    float f = dot(random33(ivec + float3(1.0, 0.0, 1.0)) * 2.0 - 1.0, fvec - float3(1.0, 0.0, 1.0));
+    float g = dot(random33(ivec + float3(0.0, 1.0, 1.0)) * 2.0 - 1.0, fvec - float3(0.0, 1.0, 1.0));
+    float h = dot(random33(ivec + float3(1.0, 1.0, 1.0)) * 2.0 - 1.0, fvec - float3(1.0, 1.0, 1.0));
+    
+    fvec = smoothstep(0.0, 1.0, fvec);
+    
+    float v1 = lerp(lerp(a, b, fvec.x), lerp(c, d, fvec.x), fvec.y);
+    float v2 = lerp(lerp(f, g, fvec.x), lerp(g, h, fvec.x), fvec.y);
+    
+    return lerp(v1, v2, fvec.z);
+
+}
+
+float fbm3(in float3 vec, int octave) {
+    float value = 0.0;
+    float amplitude = 0.5;
+    
+    for (int i = 0; i < octave; i++) {
+        value += amplitude * perlinNoise3(vec);
+        vec *= 2.0; // x0.5 Texture size per loop
+        amplitude *= 0.5;
+    }
+
+    return value; // -1 ~ 1
 }
