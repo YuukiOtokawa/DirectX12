@@ -43,7 +43,6 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     PS_OUTPUT_GEOMETRY output;
 
     float3 N = normalize(input.Normal.xyz);
-    float origLen = length(input.Normal.xyz); // 元の長さ（Deferredのシルエット減衰用）を保持
 
     // 法線マップ（未割当=白ダミーのときはフラット法線として素通し）
     // ダミーは非圧縮1x1で必ず厳密に(1,1,1)になるため、圧縮アーティファクトによる
@@ -60,7 +59,7 @@ PS_OUTPUT_GEOMETRY pix(PS_INPUT input)
     }
 
     output.Color    = TextureBaseColor.Sample(Sampler, input.TexCoord) * Material.BaseColor;
-    output.Normal   = float4(worldN * origLen, 1.0f); // 未割当時は元の input.Normal と一致
+    output.Normal   = EncodeNormalOct(worldN); // 正規化したワールド法線を八面体エンコード
 
     // G-Bufferにマテリアル属性を書き込む
     output.Material = _ArmMap.Sample(Sampler, input.TexCoord);

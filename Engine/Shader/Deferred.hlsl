@@ -18,27 +18,26 @@ PS_OUTPUT pix(PS_INPUT input)
     PS_OUTPUT output;
     
     float4 baseColor = TextureBaseColor.Sample(Sampler, input.TexCoord);
-    float4 normal = TextureNormal.Sample(Sampler, input.TexCoord);
     float4 matParams = TextureMaterial.Sample(Sampler, input.TexCoord);
     float4 emission = TextureEmission.Sample(Sampler, input.TexCoord);
 
-    // Calculate normal length to identify background and silhouette edges
-    float normalLength = length(normal.xyz);
-    
-    // If it is completely background, output baseColor directly without lighting
-    if (normalLength < 0.1f)
+    // 深度は補間すると物体境界で無意味な値になるので Load で読む
+    // （G-Bufferと深度は同じ 1920x1080 で、このパスのビューポートも同じ）
+    float depth = TextureDepth.Load(int3(input.Position.xy, 0));
+
+    // 何も描かれていない画素（深度がクリア値1.0のまま）はライティングせずベースカラー（クリア色）を出す
+    if (depth >= 1.0f)
     {
         output.Color = baseColor;
         output.Color.a = 1.0f;
         return output;
     }
 
-    // Safely normalize the normal vector to prevent NaN on silhouette edges
-    float3 norm = normal.xyz / normalLength;
+    // 法線は八面体エンコードの2成分。デコード結果は単位ベクトル
+    // 八面体の折り返しをまたいで補間しないよう、深度と同じく Load で読む
+    float3 norm = DecodeNormalOct(TextureNormal.Load(int3(input.Position.xy, 0)).xy);
 
-    // 深度からワールド座標を復元する。深度は補間すると物体境界で無意味な値になるので Load で読む
-    // （G-Bufferと深度は同じ 1920x1080 で、このパスのビューポートも同じ）
-    float depth = TextureDepth.Load(int3(input.Position.xy, 0));
+    // 深度からワールド座標を復元する
     float2 ndcXY = input.TexCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f); // UV(0..1, Vは下向き) -> NDC(-1..+1, Yは上向き)
     float4 worldPosition = mul(float4(ndcXY, depth, 1.0f), InverseViewProjection);
     float3 position = worldPosition.xyz / worldPosition.w;
@@ -107,10 +106,10 @@ PS_OUTPUT pix(PS_INPUT input)
         // 直接光のみ影で遮る（IBLは環境光なのでそのまま）
         float4 light = LightColor * saturate(dot(lightDirection, norm)) * shadowFactor;
 
-        //IBL
+        //IBL（正規化した法線で引く。以前は正規化前の法線で acos(normal.y) を計算しており、拡大した物体でNaNになっていた）
         float2 iblTexcoord;
-        iblTexcoord.x = -atan2(normal.x, normal.z) / (PI * 2);
-        iblTexcoord.y = acos(normal.y) / PI;
+        iblTexcoord.x = -atan2(norm.x, norm.z) / (PI * 2);
+        iblTexcoord.y = acos(norm.y) / PI;
         light += TextureEnviroment.SampleLevel(Sampler, iblTexcoord, 9) * (1 - metallic) * 10;
 
         diffuse = light * baseColor.xyz / PI;
@@ -135,9 +134,6 @@ PS_OUTPUT pix(PS_INPUT input)
         F = F0 + (1.0f - F0) * pow(2.0f, power);
         
         specular = F * g * d / (4.0f * NoV * NoL + 0.001f);
-        
-        // Smoothly fade specular intensity at silhouette edges to prevent halo artifacts
-        specular = specular * smoothstep(0.1f, 0.9f, normalLength);
     }
     
     // スペキュラも直接光由来なので影で遮る。emissionは自己発光なので影の影響を受けない

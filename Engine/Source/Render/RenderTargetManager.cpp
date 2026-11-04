@@ -66,24 +66,35 @@ namespace EngineCore::Render {
 		m_ShadowDepthBuffer->SetName(L"ShadowDepthBuffer");
 	}
 
-	void RenderTargetManager::InitGBuffers(ID3D12Device* device, DescriptorAllocator& srvAllocator, DescriptorAllocator& rtvAllocator)
+	void RenderTargetManager::CreateGBuffers(ID3D12Device* device, DescriptorAllocator& srvAllocator, DescriptorAllocator& rtvAllocator)
 	{
+		// クリア値は RenderManager::DrawGeometryBegin のクリア色と一致させる（一致しないと最適化クリアにならない）
 		FLOAT colorClear[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
 		FLOAT zeroClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-		m_ColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, colorClear);
+		// 古いものを先に破棄してディスクリプタを返す（リサイズ時は呼び出し元がGPUの完了を待っている）
+		m_ColorBuffer.reset();
+		m_ColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, GBUFFER_FORMATS[GBUFFER_COLOR], colorClear);
 		m_ColorBuffer->Resource->SetName(L"ColorBuffer");
 
-		m_NormalBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
+		m_NormalBuffer.reset();
+		m_NormalBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, GBUFFER_FORMATS[GBUFFER_NORMAL], zeroClear);
 		m_NormalBuffer->Resource->SetName(L"NormalBuffer");
 
-		CreateDepthTexture(device, srvAllocator);
-
-		m_MaterialBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
+		m_MaterialBuffer.reset();
+		m_MaterialBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, GBUFFER_FORMATS[GBUFFER_MATERIAL], zeroClear);
 		m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
 
-		m_EmissionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
+		m_EmissionBuffer.reset();
+		m_EmissionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, GBUFFER_FORMATS[GBUFFER_EMISSION], zeroClear);
 		m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
+
+		CreateDepthTexture(device, srvAllocator);
+	}
+
+	void RenderTargetManager::InitGBuffers(ID3D12Device* device, DescriptorAllocator& srvAllocator, DescriptorAllocator& rtvAllocator)
+	{
+		CreateGBuffers(device, srvAllocator, rtvAllocator);
 
 		// 描画側は RENDER_TARGET 状態を前提にする（RenderManager::ResolveDeferredLighting）ので、その状態で作る
 		m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, nullptr, 1, D3D12_RESOURCE_STATE_RENDER_TARGET);
@@ -308,26 +319,7 @@ namespace EngineCore::Render {
 
 			CreateDepthBuffer(device, 1920, 1080);
 
-			FLOAT colorClear[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
-			FLOAT zeroClear[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-			m_ColorBuffer.reset();
-			m_ColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, colorClear);
-			m_ColorBuffer->Resource->SetName(L"ColorBuffer");
-
-			m_NormalBuffer.reset();
-			m_NormalBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
-			m_NormalBuffer->Resource->SetName(L"NormalBuffer");
-
-			CreateDepthTexture(device, srvAllocator);
-
-			m_MaterialBuffer.reset();
-			m_MaterialBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
-			m_MaterialBuffer->Resource->SetName(L"MaterialBuffer");
-
-			m_EmissionBuffer.reset();
-			m_EmissionBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, zeroClear);
-			m_EmissionBuffer->Resource->SetName(L"EmissionBuffer");
+			CreateGBuffers(device, srvAllocator, rtvAllocator);
 
 			m_LightedColorBuffer.reset();
 			m_LightedColorBuffer = RenderTargetFactory::Create(device, srvAllocator, rtvAllocator, 1920, 1080, DXGI_FORMAT_R16G16B16A16_FLOAT, nullptr, 1, D3D12_RESOURCE_STATE_RENDER_TARGET);

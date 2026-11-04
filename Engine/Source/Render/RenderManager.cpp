@@ -1882,13 +1882,7 @@ ComPtr<ID3D12PipelineState> RenderManager::CreatePipelineForPass(const std::stri
 {
 	// G-Buffer へ書くパスだけMRT4枚（Color/Normal/Material/Emission）、それ以外は1枚
 	if (passType == RenderPassType::DeferredOpaque) {
-		DXGI_FORMAT RTVFormats[] = {
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R16G16B16A16_FLOAT
-		};
-		return CreatePipeline(shaderFile.c_str(), RTVFormats, _countof(RTVFormats), passType, vsEntry, psEntry);
+		return CreatePipeline(shaderFile.c_str(), RenderTargetManager::GBUFFER_FORMATS, RenderTargetManager::GBUFFER_COUNT, passType, vsEntry, psEntry);
 	}
 
 	DXGI_FORMAT RTVFormats[] = { DXGI_FORMAT_R16G16B16A16_FLOAT };

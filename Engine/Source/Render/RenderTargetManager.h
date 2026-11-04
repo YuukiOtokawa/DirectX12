@@ -19,6 +19,22 @@ namespace EngineCore::Render {
 		// ブルームのミップピラミッド段数の上限（実際の段数は解像度から決まる）
 		static const unsigned int BLOOM_MAX_MIPS = 5;
 
+		// G-Buffer（MRT）の並びとフォーマット。シェーダーの PS_OUTPUT_GEOMETRY（SV_TARGET0〜3）と順番を合わせる
+		enum GBufferIndex : unsigned int
+		{
+			GBUFFER_COLOR = 0,	// rgb: ベースカラー, a: 空き
+			GBUFFER_NORMAL,		// rg: 正規化したワールド法線の八面体エンコード（-1..1）
+			GBUFFER_MATERIAL,	// r: AO, g: Roughness, b: Metallic, a: 空き
+			GBUFFER_EMISSION,	// rgb: HDRの発光（負の値は持たない）
+			GBUFFER_COUNT
+		};
+		static constexpr DXGI_FORMAT GBUFFER_FORMATS[GBUFFER_COUNT] = {
+			DXGI_FORMAT_R8G8B8A8_UNORM,
+			DXGI_FORMAT_R16G16_SNORM,
+			DXGI_FORMAT_R8G8B8A8_UNORM,
+			DXGI_FORMAT_R11G11B10_FLOAT,
+		};
+
 		~RenderTargetManager();
 
 		void InitBackBufferAndDepth(ID3D12Device* device, IDXGISwapChain3* swapChain, int backBufferWidth, int backBufferHeight);
@@ -67,6 +83,8 @@ namespace EngineCore::Render {
 		void CreateDepthResource(ID3D12Device* device, unsigned int width, unsigned int height, ComPtr<ID3D12Resource>& outBuffer, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle);
 		void CreateDepthBuffer(ID3D12Device* device, unsigned int width, unsigned int height);
 		void CreateShadowDepthBuffer(ID3D12Device* device);
+		// G-Buffer 4枚と深度のSRVを作り直す（初期化とスワップチェーンのリサイズで共用）
+		void CreateGBuffers(ID3D12Device* device, DescriptorAllocator& srvAllocator, DescriptorAllocator& rtvAllocator);
 		// メイン深度バッファを R32_FLOAT として読むSRVを作る（深度を作り直したら呼び直す）
 		void CreateDepthTexture(ID3D12Device* device, DescriptorAllocator& srvAllocator);
 
